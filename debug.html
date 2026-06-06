@@ -1,0 +1,2822 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>暁の探訪者</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+    <style>/* style.css */
+
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #1a1a2e; /* ダークネイビー */
+    color: #e0e0e0; /* 明るいグレー */
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    position: relative;
+}
+
+.game-container {
+    background-color: #0f0f1a; /* さらに暗いネイビー */
+    border: 2px solid #ffcc00; /* ゴールド */
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(255, 204, 0, 0.5); /* ゴールドの光 */
+    padding: 20px;
+    width: 90%;
+    max-width: 800px;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+}
+
+h1, h2, h3 {
+    color: #ffcc00; /* ゴールド */
+    margin-bottom: 15px;
+}
+
+p {
+    line-height: 1.6;
+    margin-bottom: 10px;
+}
+
+.button {
+    background-color: #ffcc00; /* ゴールド */
+    color: #1a1a2e; /* ダークネイビー */
+    border: none;
+    padding: 10px 20px;
+    margin: 5px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.button:hover:not(:disabled) {
+    background-color: #e6b800; /* 少し暗いゴールド */
+}
+
+.button:disabled {
+    background-color: #555;
+    color: #bbb;
+    cursor: not-allowed;
+}
+
+input[type="text"],
+input[type="number"],
+select {
+    background-color: #333;
+    color: #e0e0e0;
+    border: 1px solid #ffcc00;
+    padding: 8px;
+    margin: 5px;
+    border-radius: 4px;
+    width: calc(100% - 20px);
+    box-sizing: border-box;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.game-screen {
+    animation: fadeIn 1s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Title Screen */
+#title-screen button {
+    display: block;
+    width: 60%;
+    margin: 10px auto;
+}
+
+/* Character Creation Screen */
+.allocation-controls {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.allocation-item {
+    background-color: #2a2a4a;
+    border: 1px solid #ffcc00;
+    border-radius: 8px;
+    padding: 10px;
+    width: calc(50% - 20px); /* 2列表示 */
+    box-sizing: border-box;
+    text-align: left;
+}
+
+.allocation-item label {
+    display: block;
+    margin-bottom: 5px;
+    color: #ffcc00;
+}
+
+.allocation-item input[type="number"] {
+    width: 100%;
+}
+
+#remaining-points-container {
+    background-color: #2a2a4a;
+    border: 1px solid #ffcc00;
+    border-radius: 8px;
+    padding: 10px;
+    margin-top: 15px;
+    display: inline-block;
+}
+
+#strong-new-game-stats-display {
+    background-color: #2a2a4a;
+    border: 1px solid #ffcc00;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 20px;
+    text-align: left;
+}
+
+#strong-new-game-stats-display p {
+    margin: 5px 0;
+}
+
+/* Main Game Screen */
+.player-status, .enemy-status {
+    background-color: #2a2a4a;
+    border: 1px solid #ffcc00;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 15px;
+    text-align: left;
+}
+
+.player-status-grid, .enemy-status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+}
+
+.player-status-grid p, .enemy-status-grid p {
+    margin: 0;
+}
+
+.hp-bar-container {
+    background-color: #555;
+    border: 1px solid #ffcc00;
+    border-radius: 5px;
+    height: 20px;
+    margin-top: 5px;
+    overflow: hidden;
+}
+
+.hp-bar-fill {
+    height: 100%;
+    width: 100%; /* 初期値 */
+    background-color: #28a745; /* 緑 */
+    transition: width 0.5s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 0.8em;
+}
+
+.hp-bar-fill.low-hp {
+    background-color: #dc3545; /* 赤 */
+}
+
+#game-message {
+    background-color: #0f0f1a;
+    border: 1px solid #ffcc00;
+    border-radius: 8px;
+    padding: 15px;
+    min-height: 150px;
+    max-height: 300px; /* メッセージエリアの最大高さを設定 */
+    overflow-y: auto; /* メッセージが多い場合にスクロール */
+    text-align: left;
+    margin-bottom: 15px;
+    color: #e0e0e0;
+}
+
+#game-message p {
+    margin: 0 0 5px 0;
+}
+
+.game-controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.choice-button {
+    background-color: #4a4a6a; /* 少し明るいネイビー */
+    color: #ffcc00;
+    border: 1px solid #ffcc00;
+    padding: 10px 15px;
+    margin: 5px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background-color 0.3s ease;
+    flex-grow: 1; /* ボタンが均等に広がるように */
+    max-width: 48%; /* 2列表示 */
+}
+
+.choice-button:hover:not(:disabled) {
+    background-color: #6a6a8a;
+}
+
+.choice-button.disabled-choice {
+    background-color: #333;
+    color: #888;
+    border-color: #888;
+    cursor: not-allowed;
+}
+
+#choices-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+/* Debug Panel */
+.debug-panel {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    width: 300px;
+    background-color: #0f0f1a;
+    border: 1px solid #ffcc00;
+    border-bottom: none;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    z-index: 1000;
+    box-shadow: 0 -5px 15px rgba(255, 204, 0, 0.3);
+}
+
+.debug-panel-header {
+    background-color: #ffcc00;
+    color: #1a1a2e;
+    padding: 10px 15px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+.debug-toggle-icon {
+    transition: transform 0.3s ease;
+}
+
+.debug-toggle-icon.open {
+    transform: rotate(180deg);
+}
+
+.debug-panel-content {
+    padding: 15px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.debug-panel-content h3 {
+    color: #ffcc00;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    font-size: 1.1em;
+}
+
+.debug-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 10px;
+}
+
+.debug-controls select,
+.debug-controls button {
+    flex: 1;
+    min-width: 100px;
+}
+
+/* Menu Button */
+#menu-button {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: #ffcc00;
+    color: #1a1a2e;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    z-index: 100; /* 他の要素より手前に */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+/* Modal Styles */
+.modal {
+    position: fixed;
+    z-index: 200; /* Debug Panelより手前に */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7); /* 半透明の黒い背景 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.modal-content {
+    background-color: #0f0f1a;
+    border: 2px solid #ffcc00;
+    border-radius: 10px;
+    box-shadow: 0 0 25px rgba(255, 204, 0, 0.7);
+    width: 90%;
+    max-width: 700px;
+    animation: slideIn 0.3s ease-out;
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh; /* モーダルの最大高さを設定 */
+}
+
+@keyframes slideIn {
+    from { transform: translateY(-50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #ffcc00;
+    background-color: #1a1a2e;
+}
+
+.modal-header h2 {
+    margin: 0;
+    color: #ffcc00;
+}
+
+.close-button {
+    color: #ffcc00;
+    font-size: 2em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: #e6b800;
+    text-decoration: none;
+}
+
+.modal-tabs {
+    display: flex;
+    justify-content: center;
+    border-bottom: 1px solid #ffcc00;
+    background-color: #2a2a4a;
+}
+
+.tab-button {
+    background-color: transparent;
+    color: #e0e0e0;
+    border: none;
+    padding: 12px 20px;
+    cursor: pointer;
+    font-size: 1.1em;
+    transition: color 0.3s ease, background-color 0.3s ease;
+}
+
+.tab-button:hover:not(.active) {
+    color: #ffcc00;
+    background-color: #3a3a5a;
+}
+
+.tab-button.active {
+    color: #ffcc00;
+    background-color: #1a1a2e;
+    border-bottom: 3px solid #ffcc00;
+    font-weight: bold;
+}
+
+.modal-body {
+    padding: 20px;
+    flex-grow: 1; /* 残りのスペースを埋める */
+    overflow-y: auto; /* タブコンテンツが長い場合にスクロール */
+}
+
+.tab-content {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+/* Status Tab */
+.player-stats-display {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 2列 */
+    gap: 10px 20px;
+    text-align: left;
+}
+
+.player-stats-display p {
+    margin: 0;
+    padding: 5px 0;
+    border-bottom: 1px dashed #4a4a6a;
+}
+
+.player-stats-display p:last-child,
+.player-stats-display p:nth-last-child(2) { /* 最後の2つの要素のボーダーをなくす */
+    border-bottom: none;
+}
+
+.player-stats-display span {
+    color: #ffcc00;
+    font-weight: bold;
+}
+
+/* Items Tab & Equipment Tab */
+.item-grid, .equipment-slots {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); /* 応答性の高いグリッド */
+    gap: 15px;
+}
+
+.item-card, .equipment-slot {
+    background-color: #2a2a4a;
+    border: 1px solid #ffcc00;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 120px;
+}
+
+.item-card h4, .equipment-slot h4 {
+    color: #ffcc00;
+    margin-top: 0;
+    margin-bottom: 5px;
+}
+
+.item-card p, .equipment-slot p {
+    font-size: 0.9em;
+    margin-bottom: 5px;
+    flex-grow: 1;
+}
+
+.item-card .button, .equipment-slot .button {
+    width: 80%;
+    margin: 5px auto 0;
+    padding: 8px 10px;
+    font-size: 0.9em;
+}
+
+/* Item Discard Modal Specific Styles */
+#discard-item-modal .item-card {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+#discard-item-modal .item-card.selected {
+    background-color: #4a4a6a; /* 選択されたアイテムの背景色 */
+    border-color: #e6b800;
+}
+
+#discard-item-modal .modal-body .button {
+    margin-top: 20px;
+    width: auto;
+    padding: 10px 30px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+    .game-container {
+        padding: 15px;
+    }
+
+    .allocation-item {
+        width: 100%; /* 小画面では1列 */
+    }
+
+    .choice-button {
+        max-width: 100%; /* 小画面では1列 */
+    }
+
+    .player-stats-display {
+        grid-template-columns: 1fr; /* 小画面では1列 */
+    }
+
+    .item-grid, .equipment-slots {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    }
+
+    .modal-content {
+        width: 95%;
+    }
+}
+</style>
+</head>
+<body>
+<div id="game-container">
+    <!-- Title Screen -->
+    <div id="title-screen" class="game-screen active">
+        <h1>暁の探訪者</h1>
+        <button id="new-game-button">新しく始める</button>
+        <button id="load-game-button" class="hidden">続きから</button>
+        <button id="strong-new-game-button" class="hidden">強くてニューゲーム</button>
+    </div>
+
+    <!-- Character Creation Screen -->
+    <div id="character-creation-screen" class="game-screen hidden">
+        <h2>キャラクター作成</h2>
+        <div class="input-group">
+            <label for="player-name">キャラクター名:</label>
+            <input type="text" id="player-name" value="名もなき探訪者">
+        </div>
+        <div class="input-group">
+            <label>能力値配分 (残りポイント: <span id="remaining-points">34</span>)</label>
+            <div class="stat-allocation">
+                <label>HP (1pt = +2HP):</label>
+                <input type="number" id="hp-allocation" min="5" value="10">
+                <span id="display-hp">HP: 20</span>
+            </div>
+            <div class="stat-allocation">
+                <label>攻撃力 (1pt = +1ATK):</label>
+                <input type="number" id="attack-allocation" min="3" value="10">
+                <span id="display-attack">攻撃力: 10</span>
+            </div>
+            <div class="stat-allocation">
+                <label>速度 (1pt = +1SPD):</label>
+                <input type="number" id="speed-allocation" min="3" value="5">
+                <span id="display-speed">速度: 5</span>
+            </div>
+            <div class="stat-allocation">
+                <label>知能 (1pt = +1INT):</label>
+                <input type="number" id="intel-allocation" min="3" value="3">
+                <span id="display-intel">知能: 3</span>
+            </div>
+            <div class="stat-allocation">
+                <label>器用 (1pt = +1DEX):</label>
+                <input type="number" id="dex-allocation" min="3" value="3">
+                <span id="display-dex">器用: 3</span>
+            </div>
+            <div class="stat-allocation">
+                <label>体格 (1pt = +1SIZ):</label>
+                <input type="number" id="size-allocation" min="3" value="3">
+                <span id="display-size">体格: 3</span>
+            </div>
+        </div>
+
+        <!-- 強くてニューゲーム時の表示 (追加) -->
+        <div id="strong-new-game-stats-display" class="input-group hidden">
+            <h3>引き継ぎ能力値</h3>
+            <p>HP: <span id="strong-new-game-hp">0</span></p>
+            <p>攻撃力: <span id="strong-new-game-attack">0</span></p>
+            <p>アーマー: <span id="strong-new-game-armor">0</span></p>
+            <p>速度: <span id="strong-new-game-speed">0</span></p>
+            <p>知能: <span id="strong-new-game-intel">0</span></p>
+            <p>器用: <span id="strong-new-game-dex">0</span></p>
+            <p>体格: <span id="strong-new-game-size">0</span></p>
+        </div>
+        <button id="start-adventure-button">冒険を始める</button>
+    </div>
+
+    <!-- Main Game Screen -->
+    <div id="main-game-screen" class="game-screen hidden">
+        <div class="player-status">
+            <p>名前: <span id="player-display-name"></span></p>
+            <div class="hp-bar-container">
+                <div class="hp-bar-fill"><span id="player-hp-text"></span></div>
+            </div>
+        </div>
+
+        <!-- 敵ステータス表示エリア -->
+        <div id="enemy-status-area" class="enemy-status hidden">
+            <p>敵: <span id="enemy-display-name"></span></p>
+            <div class="hp-bar-container">
+                <div class="hp-bar-fill enemy-hp-bar-fill"><span id="enemy-hp-text"></span></div>
+            </div>
+        </div>
+
+        <div id="game-message" class="game-message"></div>
+
+        <div id="choices-container" class="choices-container hidden"></div>
+
+        <div class="game-controls">
+            <button id="advance-button" class="button">進む</button>
+            <button id="attack-button" class="button hidden">攻撃</button>
+            <button id="surrender-button" class="button hidden">降参</button>
+        </div>
+    </div>
+
+    <!-- Menu Button -->
+    <button id="menu-button" class="button">メニュー</button>
+
+    <div id="game-over-screen" class="game-screen hidden">
+        <h2>ゲームオーバー</h2>
+        <p>あなたの冒険はここで終わった...</p>
+        <button id="back-to-title-from-gameover">タイトルへ戻る</button>
+    </div>
+
+    <!-- Clear Screen -->
+    <div id="clear-screen" class="game-screen hidden">
+        <h1>ゲームクリア！</h1>
+        <p>あなたは世界の真実を解き明かし、新たな夜明けを迎えました！</p>
+        <button id="back-to-title-from-clear" class="button">タイトルに戻る</button>
+    </div>
+
+    <!-- Menu Modal -->
+    <div id="menu-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>メニュー</h2>
+                <span class="close-button">&times;</span>
+            </div>
+            <div class="modal-tabs">
+                <button class="tab-button active" data-tab="status">ステータス</button>
+                <button class="tab-button" data-tab="items">アイテム</button>
+                <button class="tab-button" data-tab="equipment">装備</button>
+            </div>
+            <div class="modal-body">
+                <div id="status-tab" class="tab-content active">
+                    <!-- ステータス表示エリア -->
+                    <div class="player-stats-display">
+                        <p>名前: <span id="modal-player-name"></span></p>
+                        <p>HP: <span id="modal-player-hp"></span>/<span id="modal-player-max-hp"></span></p>
+                        <p>攻撃力: <span id="modal-player-attack"></span></p>
+                        <p>防御力: <span id="modal-player-armor"></span></p>
+                        <p>速度: <span id="modal-player-speed"></span></p>
+                        <p>知能: <span id="modal-player-intel"></span></p>
+                        <p>器用: <span id="modal-player-dex"></span></p>
+                        <p>体格: <span id="modal-player-size"></span></p>
+                        <p>所持金: <span id="modal-player-money"></span>G</p>
+                    </div>
+                </div>
+                <div id="items-tab" class="tab-content hidden">
+                    <!-- アイテム表示エリア -->
+                    <div class="item-grid">
+                        <!-- アイテムはここに動的に追加される -->
+                    </div>
+                </div>
+                <div id="equipment-tab" class="tab-content hidden">
+                    <!-- 装備表示エリア -->
+                    <div class="equipment-slots">
+                        <!-- 装備はここに動的に追加される -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Item Discard Modal -->
+    <div id="discard-item-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>アイテムを捨てる</h2>
+                <span class="close-button discard-close-button">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>新しいアイテムを取得するために、どれか一つアイテムを捨ててください。</p>
+                <div id="discard-item-list" class="item-grid">
+                    <!-- 捨てるアイテムリストはここに動的に追加される -->
+                </div>
+                <button id="discard-selected-item-button" class="button" disabled>選択したアイテムを捨てる</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Debug Panel -->
+    <div id="debug-panel" class="debug-panel hidden">
+        <div class="debug-panel-header" id="debug-panel-toggle">
+            <span>デバッグパネル</span>
+            <span class="debug-toggle-icon" id="debug-toggle-icon">▼</span>
+        </div>
+        <div id="debug-panel-content" class="debug-panel-content hidden">
+            <h3>イベント強制実行</h3>
+            <div class="debug-controls">
+                <select id="debug-event-category-select"></select>
+                <select id="debug-event-index-select"></select>
+                <button id="debug-trigger-event" class="button">イベント実行</button>
+            </div>
+            <h3>戦闘強制開始</h3>
+            <div class="debug-controls">
+                <select id="debug-enemy-select"></select>
+                <button id="debug-start-combat" class="button">戦闘開始</button>
+            </div>
+            <h3>アイテム取得</h3>
+            <div class="debug-controls">
+                <select id="debug-item-select"></select>
+                <button id="debug-acquire-item-button" class="button">アイテム取得</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>// save.js
+// localStorage セーブ・ロード処理
+
+/**
+ * ゲームデータをlocalStorageに保存する
+ * @param {object} player - プレイヤーデータオブジェクト
+ */
+function saveGame(player) {
+    const data = {
+        player: player,
+        timestamp: new Date().toISOString(),
+        version: "1.0"
+    };
+    localStorage.setItem("akatsuki_save", JSON.stringify(data));
+    console.log("Game saved:", data);
+}
+
+/**
+ * localStorageからゲームデータをロードする
+ * @returns {object|null} ロードされたゲームデータ、またはデータがない場合はnull
+ */
+function loadGame() {
+    const raw = localStorage.getItem("akatsuki_save");
+    if (!raw) {
+        console.log("No save data found.");
+        return null;
+    }
+    try {
+        const data = JSON.parse(raw);
+        // セーブデータバージョン確認
+        if (data.version !== "1.0") {
+            console.warn("Save data version mismatch. Ignoring old save data.");
+            return null;
+        }
+        console.log("Game loaded:", data);
+        return data;
+    } catch (e) {
+        console.error("Failed to parse save data:", e);
+        return null;
+    }
+}
+
+/**
+ * localStorageからセーブデータを削除する
+ */
+function deleteSaveData() {
+    localStorage.removeItem("akatsuki_save");
+    console.log("Save data deleted.");
+}
+</script>
+<script>// items.js
+// アイテムデータ定義
+
+/**
+ * @typedef {object} Effect
+ * @property {string} type - 効果のタイプ (例: "heal", "stat_change")
+ * @property {number} [value] - 効果量（固定値の場合）
+ * @property {string} [stat] - 変更するステータス名（stat_changeの場合）
+ * @property {number} [min] - 効果量の最小値（ランダム値の場合）
+ * @property {number} [max] - 効果量の最大値（ランダム値の場合）
+ * @property {number} [rate] - 割合（rate_referenceと併用）
+ * @property {string} [rate_reference] - 割合の参照元ステータス（rateと併用）
+ * @property {string} [text] - 効果メッセージ（個別のメッセージが必要な場合）
+ */
+
+/**
+ * @typedef {object} Item
+ * @property {string} id - アイテムID
+ * @property {string} name - アイテム名
+ * @property {string} description - アイテム説明文
+ * @property {"consumable" | "equipment"} category - アイテムカテゴリ
+ * @property {number} price - 価格
+ * @property {Effect[] | null} effects - 使用効果配列（消費アイテム用）
+ * @property {number} uses - 使用可能回数（消費アイテム。装備は0）
+ * @property {object | null} stat_modifier - 増減ステータス（例: { attack: +5, armor: +2 }）
+ * @property {"weapon" | "armor" | "shield" | "accessory" | null} equip_type - 装備種別
+ */
+
+/**
+ * @type {Item[]}
+ */
+const ITEMS = [
+    // 消費アイテム
+    {
+        id: "potion_of_decay",
+        name: "朽ちた回復薬",
+        description: "古びた瓶に入った、不気味な色合いの薬。飲むとわずかに活力が戻る。",
+        category: "consumable",
+        price: 50,
+        effects: [
+            { type: "heal", value: 10, text: "朽ちた回復薬を飲んだ。10 HP回復した！" }
+        ],
+        uses: 1,
+        stat_modifier: null,
+        equip_type: null
+    },
+    {
+        id: "elixir_of_shadow",
+        name: "影の秘薬",
+        description: "闇の奥底から抽出された、禍々しい輝きを放つ秘薬。一時的に力が漲る。",
+        category: "consumable",
+        price: 100,
+        effects: [
+            { type: "stat_change", stat: "attack", value: 5, text: "影の秘薬を飲んだ。攻撃力が5上昇した！" }
+        ],
+        uses: 1,
+        stat_modifier: null,
+        equip_type: null
+    },
+    {
+        id: "scroll_of_oblivion",
+        name: "忘却の巻物",
+        description: "古の呪文が記された巻物。使用すると、過去の記憶が薄れる代わりに精神が研ぎ澄まされる。",
+        category: "consumable",
+        price: 75,
+        effects: [
+            { type: "stat_change", stat: "intel", value: 3, text: "忘却の巻物を使った。知能が3上昇した！" }
+        ],
+        uses: 1,
+        stat_modifier: null,
+        equip_type: null
+    },
+    // 装備アイテム
+    {
+        id: "cursed_dagger",
+        name: "呪われた短剣",
+        description: "血に塗れた刃を持つ短剣。装備すると攻撃力が増すが、常に微かな悪寒がつきまとう。",
+        category: "equipment",
+        price: 150,
+        effects: null,
+        uses: 0,
+        stat_modifier: { attack: 5 },
+        equip_type: "weapon"
+    },
+    {
+        id: "chainmail_of_the_undead",
+        name: "亡者の鎖帷子",
+        description: "死者の骨と錆びた鎖で編まれた鎖帷子。身につけると防御力が増すが、重く動きを鈍らせる。",
+        category: "equipment",
+        price: 200,
+        effects: null,
+        uses: 0,
+        stat_modifier: { armor: 3, speed: -1 }, // 防御力+3、速度-1
+        equip_type: "armor"
+    },
+    {
+        id: "ring_of_the_ancients",
+        name: "古き者の指輪",
+        description: "古代の魔術師が身につけていたとされる指輪。知性を高める力がある。",
+        category: "equipment",
+        price: 120,
+        effects: null,
+        uses: 0,
+        stat_modifier: { intel: 2 },
+        equip_type: "accessory"
+    }
+];
+
+// グローバルスコープにITEMSを公開
+window.ITEMS = ITEMS;</script>
+<script>// events.js
+// イベントデータ配列（100マス分）
+
+/**
+ * @typedef {object} Enemy
+ * @property {string} name
+ * @property {number} hp
+ * @property {number} attack
+ * @property {string} description
+ * @property {boolean} isBoss
+ * @property {number} armor
+ * @property {number} speed
+ * @property {number} intel
+ * @property {number} dex
+ * @property {number} size
+ * @property {number} money // 撃破時にプレイヤーが獲得するお金
+ */
+
+/**
+ * heal、damage、stat_changeイベントは効果量の指定として次のいずれかを実装すること
+ * value=固定値
+ * min, max=ランダム値
+ * rate,rate_reference=能力の割合値
+ * @typedef {object} Effect
+ * @property {string} type - "heal" | "damage" | "stat_change" | "acquire_item"
+ * @property {number} value
+ * @property {number} min
+ * @property {number} max
+ * @property {number} rate
+ * @property {string} rate_reference - "maxHp" | "hp" | "attack" | "armor" | "speed" | "intel" | "dex" | "size"
+ * @property {string} item_id
+ */
+
+/**
+ * @typedef {object} EventCell
+ * @property {number} id
+ * @property {string} type - "normal" | "benefit" | "danger" | "milestone" | "boss"
+ * @property {string} title
+ * @property {string} text
+ * @property {array<Effect> | null} effects
+ * @property {Enemy | null} enemy
+ * @property {boolean} isMilestone
+ * @property {Array<Choice> | null} choices // 選択肢
+ */
+
+/**
+ * @typedef {object} Choice // 選択肢の型定義
+ * @property {string} text
+ * @property {string} outcomeText
+ * @property {array<Effect> | null} effects
+ * @property {Enemy | null} enemy
+ * @property {next | null} next
+ */
+
+window.NORMAL_EVENTS = [
+    {
+        title: "静かな森",
+        text: "木々の間を縫うように進む。鳥のさえずりが聞こえるが、他には何も起こらない。ただ静寂がそこにあるだけだ。",
+        choices: [
+            {
+                text: "森の奥を探索する",
+                outcomeText: "森の奥深くへと足を踏み入れた。小さな薬草を見つけ、体力が少し回復した。",
+                effects: [{ type: "heal", value: 5 }],
+                enemy: null,
+                next: null
+            },
+            {
+                text: "大地を踏みしめる",
+                outcomeText: "巨体を生かして力いっぱい大地を踏みしめた。周囲の期から見慣れない果実が落ちてきた。あなたはそれを口にした。",
+                condition: { stat: "size", operator: "gte", value: 10 },
+                effects: [{ type: "stat_change", value: 2, stat: "armor", text: "あなたの体は硬くなった。" }],
+                enemy: null,
+                next: null
+            },
+            {
+                text: "来た道を戻る",
+                outcomeText: "来た道を慎重に戻った。特に何も起こらなかった。",
+                effects: null,
+                enemy: null,
+                next: null
+            }
+        ]
+    },
+    { title: "古びた道", text: "苔むした石畳の道が続く。かつて多くの者が行き交ったであろう痕跡が、今はただ静かに横たわっている。" },
+    { title: "風の囁き", text: "どこからともなく風が吹き抜け、耳元で何かを囁くように通り過ぎていく。その声は、遠い過去の記憶を呼び覚ますようだ。" },
+    { title: "薄暗い洞窟", text: "入り口は狭いが、奥へと続く洞窟を見つけた。中を覗き込むが、暗闇が全てを覆い隠している。" },
+    { title: "朽ちた標識", text: "道端に朽ちた木製の標識が立っている。文字は風化して読めないが、かつては旅人を導いたのだろう。" },
+    { title: "霧の谷", text: "深い霧が立ち込める谷に差し掛かった。視界は悪く、足元を慎重に進む必要がある。何が潜んでいるか分からない。" },
+    { title: "忘れられた泉", text: "ひっそりと湧き出る泉を見つけた。水面は静かで、周囲の景色を鏡のように映し出している。誰も訪れない場所のようだ。" },
+    { title: "奇妙な足跡", text: "地面に奇妙な足跡が残されている。獣のものとも、人のものとも違う。未知の存在がこの地を歩いたのだろうか。" },
+    { title: "沈黙の遺跡", text: "草木に覆われた古代の遺跡が姿を現す。かつての繁栄を物語るかのように、巨大な石柱が空を突いている。" },
+    { title: "遠い雷鳴", text: "遠くの空で雷鳴が轟く。しかし、雨の気配はなく、ただ音が響くだけだ。不穏な予感がする。" },
+    {
+        title: "謎の祭壇",
+        text: "古びた祭壇を見つけた。何かの儀式に使われたようだが、今は静かに佇んでいる。触れてみるか？",
+        choices: [
+            {
+                text: "祭壇に触れる",
+                outcomeText: "祭壇に触れると、不思議な力が体に流れ込んできた。",
+                effects: [{
+                    type: "dice_check",
+                    success_threshold: 4, // 4以上で成功
+                    success_effect: { type: "stat_change", value: 2, stat: "attack", text: "あなたの体に力がみなぎった。" },
+                    fail_effect: { type: "damage", value: 5, text: "あなたは暴走した力によって傷ついた。" }
+                }],
+                next: null
+            },
+            {
+                text: "触れずに立ち去る",
+                outcomeText: "祭壇には触れず、そのまま立ち去った。何も起こらなかった。",
+                effects: null,
+                next: null
+            }
+        ]
+    }
+];
+
+window.BENEFIT_EVENTS = [
+    { title: "癒しの光", text: "空から柔らかな光が降り注ぎ、疲れた体を癒していく。傷が少しだけ和らいだ気がする。", effects: [{ type: "heal", value: 5 }] },
+    { title: "不思議な果実", text: "見慣れない木に、輝く果実が実っていた。一口食べると、力が湧いてくるのを感じる。", effects: [{ type: "heal", value: 12 }, {type: "stat_change", stat: "intel", value: 1 }] },
+    { title: "隠された薬草", text: "足元に珍しい薬草を見つけた。煎じて飲むと、体の奥から活力が蘇る。", effects: [{ type: "heal", rate: 1, rate_reference: "maxHp" }] },
+    { title: "古の加護", text: "朽ちた祭壇に触れると、温かい力が流れ込んできた。速度が増したようだ。", effects: [{ type: "stat_change", stat: "speed", value: 1 }] },
+    { title: "鍛冶屋の忘れ物", text: "道端に落ちていた古びた砥石を拾った。武器を研ぐと切れ味が増した。", effects: [{ type: "stat_change", stat: "attack", value: 1 }] },
+    { title: "精霊の贈り物", text: "森の奥で精霊と出会った。彼らはあなたに力を分け与え、攻撃の威力を高めてくれた。", effects: [{ type: "stat_change", stat: "attack", value: 2 }] },
+    { title: "消費アイテムゲット", text: "ポーションゲットだ。", effects: [{ type: "acquire_item", item_id: "potion_of_decay" }] },
+    { title: "装備アイテムゲット", text: "鎧ゲットだ。", effects: [{ type: "acquire_item", item_id: "chainmail_of_the_undead" }] }
+];
+
+window.DANGER_EVENTS = [
+    { title: "野獣の襲撃", text: "茂みから飢えた野獣が飛び出してきた！警戒を怠った代償を払う時だ。", enemy: { name: "飢えた野獣", hp: 15, attack: 3, description: "鋭い爪と牙を持つ、獰猛な獣だ。", isBoss: false, armor: 0, speed: 5, intel: 1 , dex: 1 , size: 1, money: 10 } },
+    { title: "盗賊の待ち伏せ", text: "人気のない道で、盗賊の一団が待ち伏せていた。彼らはあなたの持ち物を狙っている。", enemy: { name: "ならず者の盗賊", hp: 20, attack: 4, description: "数の利を活かそうとする、卑劣な盗賊だ。", isBoss: false, armor: 1, speed: 6, intel: 1 , dex: 1 , size: 1, money: 20 } },
+    { title: "毒沼", text: "足を踏み入れた場所は、毒々しい沼地だった。体に痺れが走り、体力が奪われる。", effects: [{ type: "damage", value: 5 }] },
+    {
+        title: "底なし沼",
+        text: "あなたは底のない沼に足を取られてしまった",
+        choices: [
+            {
+                text: "もがく",
+                outcomeText: "もがいて抜け出そうとした。",
+                effects: [{ type: "damage", rate: 0.05, rate_reference: "maxHp" }],
+                next: {
+                    type: "random_branch",
+                    branches: [
+                        { probability: 0.3, event: { title: "底なし沼", text: "なんとか抜け出せた。"} },
+                        { probability: 0.7, event: "SELF" }
+                    ]
+                }
+            }
+        ]
+    },
+    { title: "落石", text: "頭上から突然、大きな岩が落ちてきた！間一髪で避けたが、かすり傷を負ってしまった。", effects: [{ type: "damage", min: 3, max: 8 }] },
+    { title: "呪われた像", text: "不気味な像に近づくと、邪悪なオーラに包まれた。体が重くなり、力が抜けていく。", effects: [{ type: "damage", value: 12 }] },
+    { title: "彷徨う亡霊", text: "夜の帳が下りる頃、彷徨う亡霊と遭遇した。その冷たい視線があなたを貫く。", enemy: { name: "彷徨う亡霊", hp: 25, attack: 5, description: "実体のない、怨念の塊だ。", isBoss: false, armor: 0, speed: 7, intel: 1 , dex: 1 , size: 1, money: 30 } }
+];
+
+window.MILESTONE_EVENTS_DATA = {
+    20: {
+        title: "廃墟の番人",
+        text: "荒れ果てた廃墟の奥深く、巨大な番人が立ちはだかる。その目は、侵入者を決して許さないと告げている。",
+        enemy: { name: "廃墟の番人", hp: 20, attack: 5, description: "第一章の終幕を告げる、古の守護者だ。", isBoss: true, armor: 2, speed: 4, intel: 1 , dex: 1 , size: 1, money: 50 },
+        type: "milestone"
+    },
+    50: {
+        title: "森の守護者",
+        text: "鬱蒼とした森の中心で、自然の怒りを体現する守護者が現れた。その威圧感は、大地を震わせる。",
+        enemy: { name: "森の守護者", hp: 35, attack: 7, description: "中盤の山場、森の均衡を守る存在だ。", isBoss: true, armor: 3, speed: 6, intel: 1 , dex: 1 , size: 1, money: 100 },
+        type: "milestone"
+    },
+    80: {
+        title: "影の使者",
+        text: "闇が深まる洞窟の最深部、影から現れた使者があなたを待ち受ける。その存在は、世界の終焉を予感させる。",
+        enemy: { name: "影の使者", hp: 50, attack: 10, description: "終盤への入り口、闇の力を操る者だ。", isBoss: true, armor: 5, speed: 8, intel: 1 , dex: 1 , size: 1, money: 200 },
+        type: "milestone"
+    },
+    100: {
+        title: "暁の番人",
+        text: "旅の終着点、世界の夜明けを司る番人が、その巨大な姿を現した。全ての運命が、この一戦に懸かっている。",
+        enemy: { name: "暁の番人", hp: 80, attack: 14, description: "最終ボス、世界の運命を握る存在だ。", isBoss: true, armor: 7, speed: 10, intel: 1 , dex: 1 , size: 1, money: 500 },
+        type: "boss"
+    }
+};
+
+/**
+ * ランダムなイベントを生成するヘルパー関数
+ * @param {number} id - マスID
+ * @returns {{event: EventCell, category: string, index: number}} - 生成されたイベント、カテゴリ、インデックス
+ */
+function generateRandomEvent(id) {
+    const rand = Math.random();
+    let eventData;
+    let type;
+    let index;
+
+    if (rand < 0.5) { // 50% normal
+        index = Math.floor(Math.random() * window.NORMAL_EVENTS.length);
+        eventData = window.NORMAL_EVENTS[index];
+        type = "NORMAL"; // カテゴリ名を文字列で保存
+    } else if (rand < 0.7) { // 20% benefit
+        index = Math.floor(Math.random() * window.BENEFIT_EVENTS.length);
+        eventData = window.BENEFIT_EVENTS[index];
+        type = "BENEFIT"; // カテゴリ名を文字列で保存
+    } else { // 20% danger
+        index = Math.floor(Math.random() * window.DANGER_EVENTS.length);
+        eventData = window.DANGER_EVENTS[index];
+        type = "DANGER"; // カテゴリ名を文字列で保存
+    }
+
+    const event = {
+        id: id,
+        type: type.toLowerCase(), // EventCellのtypeは小文字
+        title: eventData.title,
+        text: eventData.text,
+        effects: eventData.effects || null,
+        enemy: eventData.enemy ? JSON.parse(JSON.stringify(eventData.enemy)) : null, // 敵データはディープコピー
+        isMilestone: false,
+        choices: eventData.choices || null,
+        // セーブ用にカテゴリとインデックスをEventCell自体にも含める
+        eventCategory: type,
+        eventIndex: index
+    };
+
+    return { event: event, category: type, index: index };
+}
+
+window.EVENTS = [];
+for (let i = 0; i <= 100; i++) {
+    if (window.MILESTONE_EVENTS_DATA[i]) {
+        const milestone = window.MILESTONE_EVENTS_DATA[i];
+        window.EVENTS.push({
+            id: i,
+            type: milestone.type,
+            title: milestone.title,
+            text: milestone.text,
+            effects: null, // マイルストーンは効果なし、戦闘のみ
+            enemy: JSON.parse(JSON.stringify(milestone.enemy)), // 敵データはディープコピー
+            isMilestone: true,
+            choices: milestone.choices || null, // 現状ないけど一応
+            eventCategory: "MILESTONE", // マイルストーンイベントのカテゴリ
+            eventIndex: Object.keys(window.MILESTONE_EVENTS_DATA).indexOf(String(i)) // マイルストーンイベントのインデックス
+        });
+    } else {
+        const randomEventResult = generateRandomEvent(i);
+        window.EVENTS.push(randomEventResult.event);
+    }
+}
+
+// マス0は常にノーマルイベント（スタート地点）
+window.EVENTS[0] = {
+    id: 0,
+    type: "normal",
+    title: "旅の始まり",
+    text: "あなたは暁の探訪者として、未知の世界へと足を踏み入れた。ここから、あなたの壮大な物語が始まる。",
+    effects: null,
+    enemy: null,
+    isMilestone: false,
+    choices: null,
+    eventCategory: "NORMAL", // スタートイベントのカテゴリ
+    eventIndex: 0 // スタートイベントのインデックス (NORMAL_EVENTSの最初の要素を想定)
+};
+
+console.log("EVENTS array generated with 101 elements (0-100).");
+
+</script>
+<script>// game.js
+// ゲームロジック・状態管理・メインループ
+
+// ============================================================================
+// 1. グローバル変数とDOM要素
+// ============================================================================
+
+/**
+ * @typedef {object} Effect
+ * @property {string} type - 効果のタイプ (例: "heal", "stat_change")
+ * @property {number} [value] - 効果量（固定値の場合）
+ * @property {string} [stat] - 変更するステータス名（stat_changeの場合）
+ * @property {number} [min] - 効果量の最小値（ランダム値の場合）
+ * @property {number} [max] - 効果量の最大値（ランダム値の場合）
+ * @property {number} [rate] - 割合（rate_referenceと併用）
+ * @property {string} [rate_reference] - 割合の参照元ステータス（rateと併用）
+ * @property {string} [text] - 効果メッセージ（個別のメッセージが必要な場合）
+ * @property {string} [itemId] - 取得するアイテムのID（acquire_itemの場合）
+ */
+
+/**
+ * @typedef {object} Item
+ * @property {string} id - アイテムID
+ * @property {string} name - アイテム名
+ * @property {string} description - アイテム説明文
+ * @property {"consumable" | "equipment"} category - アイテムカテゴリ
+ * @property {number} price - 価格
+ * @property {Effect[] | null} effects - 使用効果配列（消費アイテム用）
+ * @property {number} uses - 使用可能回数（消費アイテム。装備は0）
+ * @property {object | null} stat_modifier - 増減ステータス（例: { attack: +5, armor: +2 }）
+ * @property {"weapon" | "armor" | "shield" | "accessory" | null} equip_type - 装備種別
+ */
+
+let player = {
+    name: "",
+    hp: 0,
+    maxHp: 0,
+    attack: 0,
+    position: 0,
+    isGameOver: false,
+    isCleared: false,
+    currentEventCompleted: false, // 現在のマスでのイベントが完了したか
+    savedEventCategory: null, // セーブされたイベントのカテゴリ
+    savedEventIndex: null,    // セーブされたイベントのインデックス
+    armor: 0,
+    speed: 0,
+    intel: 0,
+    dex: 0,
+    size: 0,
+    money: 0,
+    item_slot: [],       // 最大20
+    equipment_slot: []  // 最大5
+};
+
+let currentEnemy = null;
+let isCombatActive = false;
+
+// DOM Elements
+const titleScreen = document.getElementById("title-screen");
+const newGameButton = document.getElementById("new-game-button");
+const loadGameButton = document.getElementById("load-game-button");
+const strongNewGameButton = document.getElementById("strong-new-game-button");
+
+const characterCreationScreen = document.getElementById("character-creation-screen");
+const playerNameInput = document.getElementById("player-name");
+const hpAllocationInput = document.getElementById("hp-allocation");
+const attackAllocationInput = document.getElementById("attack-allocation");
+const remainingPointsSpan = document.getElementById("remaining-points");
+const displayHpSpan = document.getElementById("display-hp");
+const displayAttackSpan = document.getElementById("display-attack");
+const speedAllocationInput = document.getElementById("speed-allocation");
+const intelAllocationInput = document.getElementById("intel-allocation");
+const dexAllocationInput = document.getElementById("dex-allocation");
+const sizeAllocationInput = document.getElementById("size-allocation");
+const displaySpeedSpan = document.getElementById("display-speed");
+const displayIntelSpan = document.getElementById("display-intel");
+const displayDexSpan = document.getElementById("display-dex");
+const displaySizeSpan = document.getElementById("display-size");
+const startAdventureButton = document.getElementById("start-adventure-button");
+
+// 強くてニューゲーム用の表示要素
+const strongNewGameStatsDisplay = document.getElementById("strong-new-game-stats-display");
+const strongNewGameHpDisplay = document.getElementById("strong-new-game-hp");
+const strongNewGameAttackDisplay = document.getElementById("strong-new-game-attack");
+const strongNewGameArmorDisplay = document.getElementById("strong-new-game-armor");
+const strongNewGameSpeedDisplay = document.getElementById("strong-new-game-speed");
+const strongNewGameIntelDisplay = document.getElementById("strong-new-game-intel");
+const strongNewGameDexDisplay = document.getElementById("strong-new-game-dex");
+const strongNewGameSizeDisplay = document.getElementById("strong-new-game-size");
+
+const mainGameScreen = document.getElementById("main-game-screen");
+const currentPositionSpan = document.getElementById("current-position");
+const playerDisplayName = document.getElementById("player-display-name");
+const playerHpText = document.getElementById("player-hp-text");
+const playerAttackSpan = document.getElementById("player-attack");
+const playerArmorSpan = document.getElementById("player-armor");
+const playerSpeedSpan = document.getElementById("player-speed");
+const playerIntelSpan = document.getElementById("player-intel");
+const playerDexSpan = document.getElementById("player-dex");
+const playerSizeSpan = document.getElementById("player-size");
+const hpBarFill = document.querySelector(".hp-bar-fill");
+const gameMessage = document.getElementById("game-message");
+const choicesContainer = document.getElementById("choices-container");
+const advanceButton = document.getElementById("advance-button");
+const attackButton = document.getElementById("attack-button");
+const surrenderButton = document.getElementById("surrender-button");
+const menuButton = document.getElementById("menu-button"); // 追加
+
+// アイテム破棄モーダル用DOM要素
+const discardItemModal = document.getElementById("discard-item-modal");
+const discardCloseButton = document.querySelector(".discard-close-button");
+const discardItemList = document.getElementById("discard-item-list");
+const discardSelectedItemButton = document.getElementById("discard-selected-item-button");
+
+let selectedItemToDiscardIndex = -1; // 破棄するアイテムのインデックス
+let itemToAcquireAfterDiscard = null; // 破棄後に取得するアイテム
+
+// 敵HP表示用DOM要素
+const enemyStatusArea = document.getElementById("enemy-status-area");
+const enemyDisplayName = document.getElementById("enemy-display-name");
+const enemyHpBarFill = document.querySelector(".enemy-hp-bar-fill");
+const enemyHpText = document.getElementById("enemy-hp-text");
+
+const gameOverScreen = document.getElementById("game-over-screen");
+const backToTitleFromGameOverButton = document.getElementById("back-to-title-from-gameover");
+
+const clearScreen = document.getElementById("clear-screen");
+
+// Debug Elements
+const debugPanel = document.getElementById("debug-panel");
+const debugPanelToggle = document.getElementById("debug-panel-toggle");
+const debugPanelContent = document.getElementById("debug-panel-content");
+const debugToggleIcon = document.getElementById("debug-toggle-icon");
+const debugEventCategorySelect = document.getElementById("debug-event-category-select");
+const debugEventIndexSelect = document.getElementById("debug-event-index-select");
+const debugTriggerEventButton = document.getElementById("debug-trigger-event");
+const debugEnemySelect = document.getElementById("debug-enemy-select");
+const debugItemSelect = document.getElementById("debug-item-select");
+const debugAcquireItemButton = document.getElementById("debug-acquire-item-button");
+
+/**
+ * デバッグ: 指定したイベントを強制的に発生させる
+ * @param {string} eventCategory - イベントのカテゴリ (例: "NORMAL", "BENEFIT", "DANGER", "MILESTONE")
+ * @param {number} eventIndex - カテゴリ内のイベントのインデックス
+ */
+function debugTriggerEvent(eventCategory, eventIndex) {
+    let eventData = null;
+    let eventId = player.position;
+
+    switch (eventCategory) {
+        case "NORMAL":
+            if (NORMAL_EVENTS[eventIndex]) {
+                eventData = { ...NORMAL_EVENTS[eventIndex], type: "normal" };
+            }
+            break;
+        case "BENEFIT":
+            if (BENEFIT_EVENTS[eventIndex]) {
+                eventData = { ...BENEFIT_EVENTS[eventIndex], type: "benefit" };
+            }
+            break;
+        case "DANGER":
+            if (DANGER_EVENTS[eventIndex]) {
+                eventData = { ...DANGER_EVENTS[eventIndex], type: "danger" };
+            }
+            break;
+        case "MILESTONE":
+            // MILESTONE_EVENTS_DATAはオブジェクトなので、キーでアクセス
+            const milestoneKeys = Object.keys(MILESTONE_EVENTS_DATA);
+            if (milestoneKeys[eventIndex]) {
+                const key = milestoneKeys[eventIndex];
+                eventData = { ...MILESTONE_EVENTS_DATA[key], type: "milestone" };
+                eventId = parseInt(key); // マイルストーンイベントはIDをそのマイルストーンのマスに設定
+            }
+            break;
+    }
+
+    if (eventData) {
+        // イベントIDを現在のプレイヤー位置に設定
+        const triggeredEvent = {
+            id: eventId,
+            type: eventData.type,
+            title: eventData.title,
+            text: eventData.text,
+            effects: eventData.effects || null,
+            enemy: eventData.enemy ? JSON.parse(JSON.stringify(eventData.enemy)) : null,
+            isMilestone: eventData.type === "milestone",
+            choices: eventData.choices || null
+        };
+        displayMessage(`デバッグ: イベント「${triggeredEvent.title}」を強制実行します！`, false);
+        displayCurrentEvent(triggeredEvent);
+        player.position = eventId; // プレイヤー位置も更新
+        updatePlayerStatus();
+        saveGame(player);
+    } else {
+        displayMessage("デバッグ: 指定されたイベントが見つかりませんでした。", false);
+    }
+}
+
+/**
+ * デバッグ: アイテム選択ドロップダウンを初期化する
+ */
+function populateDebugItemSelect() {
+    debugItemSelect.innerHTML = ''; // Clear existing options
+    window.ITEMS.forEach(item => {
+        const option = document.createElement("option");
+        option.value = item.id;
+        option.textContent = `${item.name} (${item.id})`;
+        debugItemSelect.appendChild(option);
+    });
+}
+
+/**
+ * デバッグ: 選択されたアイテムをプレイヤーに付与する
+ */
+async function debugAcquireItem() {
+    const selectedItemId = debugItemSelect.value;
+    if (selectedItemId) {
+        const itemToGive = getItemById(selectedItemId);
+        if (itemToGive) {
+            await acquireItem(itemToGive);
+            displayMessage(`デバッグ: ${itemToGive.name} を取得しました！`, false);
+            saveGame(player); // アイテム取得後にセーブ
+        } else {
+            displayMessage("デバッグ: 指定されたアイテムが見つかりませんでした。", false);
+        }
+    } else {
+        displayMessage("デバッグ: アイテムを選択してください。", false);
+    }
+}
+
+const debugStartCombatButton = document.getElementById("debug-start-combat");
+const backToTitleFromClearButton = document.getElementById("back-to-title-from-clear");
+
+// ============================================================================
+// 2. 画面管理
+// ============================================================================
+/**
+ * 全てのゲーム画面を非表示にし、指定された画面を表示する
+ * @param {HTMLElement} screenToShow - 表示する画面のDOM要素
+ */
+function showScreen(screenToShow) {
+    const screens = [titleScreen, characterCreationScreen, mainGameScreen, gameOverScreen, clearScreen];
+    screens.forEach(screen => screen.classList.add("hidden"));
+    screenToShow.classList.remove("hidden");
+    screenToShow.classList.add("active");
+}
+
+/**
+ * ゲームUIの状態をリセットする (ボタンの有効/無効、表示/非表示など)
+ */
+function resetGameUI() {
+    isCombatActive = false;
+    currentEnemy = null;
+    advanceButton.disabled = false;
+    advanceButton.classList.remove("hidden");
+    attackButton.disabled = false;
+    attackButton.classList.add("hidden");
+    enemyStatusArea.classList.add("hidden");
+    gameMessage.innerHTML = "";
+    choicesContainer.innerHTML = '';
+    choicesContainer.classList.add("hidden");
+    surrenderButton.classList.add("hidden");
+}
+
+/**
+ * タイトル画面を表示する
+ */
+function showTitleScreen() {
+    resetGameUI();
+    showScreen(titleScreen);
+    const savedData = loadGame();
+
+    // ボタンを初期状態に戻す
+    loadGameButton.classList.add("hidden");
+    strongNewGameButton.classList.add("hidden");
+
+    if (savedData) {
+        // セーブデータが存在する場合
+        if (savedData.player.isGameOver || savedData.player.isCleared) {
+            // ゲームオーバーまたはクリア済みのセーブデータがある場合
+            strongNewGameButton.classList.remove("hidden");
+        } else {
+            // 進行中のセーブデータがある場合
+            loadGameButton.classList.remove("hidden");
+        }
+    }
+}
+
+/**
+ * キャラクター作成画面を表示する
+ * @param {boolean} isStrongNewGame - 強くてニューゲームかどうか (変更)
+ * @param {number} inheritedMaxHp - 強くてニューゲームの場合に引き継ぐ最大HP
+ * @param {number} inheritedAttack - 強くてニューゲームの場合に引き継ぐ攻撃力
+ * @param {number} inheritedArmor - 強くてニューゲームの場合に引き継ぐアーマー
+ * @param {number} inheritedSpeed - 強くてニューゲームの場合に引き継ぐ速度
+ * @param {number} inheritedIntel - 強くてニューゲームの場合に引き継ぐ知能
+ * @param {number} inheritedDex - 強くてニューゲームの場合に引き継ぐ器用
+ * @param {number} inheritedSize - 強くてニューゲームの場合に引き継ぐ体格
+ */
+function showCharacterCreationScreen(isStrongNewGame = false, inheritedMaxHp = 0, inheritedAttack = 0, inheritedArmor = 0, inheritedSpeed = 0, inheritedIntel = 0, inheritedDex = 0, inheritedSize = 0) { // 変更
+    resetGameUI();
+    showScreen(characterCreationScreen);
+
+    if (isStrongNewGame) {
+        // 強くてニューゲームの場合
+        hpAllocationInput.classList.add("hidden");
+        attackAllocationInput.classList.add("hidden");
+        speedAllocationInput.classList.add("hidden");
+        intelAllocationInput.classList.add("hidden");
+        dexAllocationInput.classList.add("hidden");
+        sizeAllocationInput.classList.add("hidden");
+        remainingPointsSpan.parentElement.classList.add("hidden");
+
+        strongNewGameStatsDisplay.classList.remove("hidden");
+        strongNewGameHpDisplay.textContent = inheritedMaxHp;
+        strongNewGameAttackDisplay.textContent = inheritedAttack;
+        strongNewGameArmorDisplay.textContent = inheritedArmor;
+        strongNewGameSpeedDisplay.textContent = inheritedSpeed;
+        strongNewGameIntelDisplay.textContent = inheritedIntel;
+        strongNewGameDexDisplay.textContent = inheritedDex;
+        strongNewGameSizeDisplay.textContent = inheritedSize;
+
+        // 名前入力以外は無効化
+        playerNameInput.value = "名もなき探訪者";
+        playerNameInput.disabled = false;
+        startAdventureButton.disabled = false; // 名前入力のみなので常に有効
+    } else {
+        // 通常の新規ゲームの場合
+        hpAllocationInput.classList.remove("hidden");
+        attackAllocationInput.classList.remove("hidden");
+        speedAllocationInput.classList.remove("hidden");
+        intelAllocationInput.classList.remove("hidden");
+        dexAllocationInput.classList.remove("hidden");
+        sizeAllocationInput.classList.remove("hidden");
+        remainingPointsSpan.parentElement.classList.remove("hidden");
+        strongNewGameStatsDisplay.classList.add("hidden");
+
+        // 初期値を設定
+        playerNameInput.value = "名もなき探訪者";
+        hpAllocationInput.value = 10;
+        attackAllocationInput.value = 10;
+        speedAllocationInput.value = 5;
+        intelAllocationInput.value = 3;
+        dexAllocationInput.value = 3;
+        sizeAllocationInput.value = 3;
+        updateAllocationDisplay();
+    }
+}
+
+/**
+ * メインゲーム画面を表示する
+ */
+function showMainGameScreen() {
+    resetGameUI();
+    showScreen(mainGameScreen);
+    updateUI();
+    //populateDebugEnemySelect(); // デバッグ用敵選択を初期化
+    //populateDebugEventSelects(); // デバッグイベント選択を初期化
+    populateDebugItemSelect(); // デバッグ用アイテム選択を初期化
+
+    // ロード時にイベントが未完了だった場合の処理
+    if (!player.currentEventCompleted && player.savedEventCategory && player.savedEventIndex !== null) {
+        const event = getEventFromSavedData(player.savedEventCategory, player.savedEventIndex);
+        if (event) {
+            displayCurrentEvent(event);
+        } else {
+            console.error("Saved event not found:", player.savedEventCategory, player.savedEventIndex);
+            // フォールバックとして、現在の位置のイベントを再生成するか、エラーメッセージを表示する
+            // 今回はエラーメッセージを表示し、進むボタンを有効にする
+            displayMessage("セーブされたイベントが見つかりませんでした。先に進んでください。", false);
+            advanceButton.disabled = false;
+            advanceButton.classList.remove("hidden");
+            player.currentEventCompleted = true; // イベントが見つからない場合は完了とみなす
+        }
+    } else if (!player.currentEventCompleted) {
+        // savedEventCategoryやsavedEventIndexがない場合（古いセーブデータなど）
+        // またはマス0でイベントが未完了の場合
+        const event = EVENTS[player.position];
+        displayCurrentEvent(event);
+    }
+}
+
+/**
+ * 保存されたカテゴリとインデックスからイベントオブジェクトを再構築する
+ * @param {string} category - イベントカテゴリ (例: "NORMAL", "BENEFIT", "DANGER", "MILESTONE")
+ * @param {number} index - カテゴリ内のイベントのインデックス
+ * @returns {object|null} 再構築されたEventCellオブジェクト、または見つからない場合はnull
+ */
+function getEventFromSavedData(category, index) {
+    let eventData = null;
+    let eventType = category.toLowerCase(); // EventCellのtypeは小文字
+
+    switch (category) {
+        case "NORMAL":
+            if (window.NORMAL_EVENTS[index]) {
+                eventData = window.NORMAL_EVENTS[index];
+            }
+            break;
+        case "BENEFIT":
+            if (window.BENEFIT_EVENTS[index]) {
+                eventData = window.BENEFIT_EVENTS[index];
+            }
+            break;
+        case "DANGER":
+            if (window.DANGER_EVENTS[index]) {
+                eventData = window.DANGER_EVENTS[index];
+            }
+            break;
+        case "MILESTONE":
+            const milestoneKeys = Object.keys(window.MILESTONE_EVENTS_DATA);
+            if (milestoneKeys[index]) {
+                const key = milestoneKeys[index];
+                eventData = window.MILESTONE_EVENTS_DATA[key];
+                eventType = "milestone"; // マイルストーンイベントのtypeは"milestone"
+            }
+            break;
+    }
+
+    if (eventData) {
+        return {
+            id: player.position, // 現在のプレイヤー位置をIDとする
+            type: eventType,
+            title: eventData.title,
+            text: eventData.text,
+            effects: eventData.effects || null,
+            enemy: eventData.enemy ? JSON.parse(JSON.stringify(eventData.enemy)) : null,
+            isMilestone: category === "MILESTONE",
+            choices: eventData.choices || null,
+            eventCategory: category, // 保存用にカテゴリとインデックスをEventCell自体にも含める
+            eventIndex: index
+        };
+    }
+    return null;
+}
+
+/**
+ * ゲームオーバー画面を表示する
+ */
+function showGameOverScreen() {
+    resetGameUI();
+    showScreen(gameOverScreen);
+}
+
+/**
+ * クリア画面を表示する
+ */
+function showClearScreen() {
+    resetGameUI();
+    showScreen(clearScreen);
+}
+
+// ============================================================================
+// 3. プレイヤーキャラクター作成
+// ============================================================================
+/**
+ * 能力値配分の表示を更新する
+ */
+function updateAllocationDisplay() {
+    const hpPts = parseInt(hpAllocationInput.value);
+    const atkPts = parseInt(attackAllocationInput.value);
+    const speedVal = parseInt(speedAllocationInput.value);
+    const intelVal = parseInt(intelAllocationInput.value);
+    const dexVal = parseInt(dexAllocationInput.value);
+    const sizeVal = parseInt(sizeAllocationInput.value);
+
+    const remaining = 34 - hpPts - atkPts - speedVal - intelVal - dexVal - sizeVal;
+
+    remainingPointsSpan.textContent = remaining;
+    displayHpSpan.textContent = `HP: ${hpPts * 2}`;
+    displayAttackSpan.textContent = `攻撃力: ${atkPts}`;
+    displaySpeedSpan.textContent = `速度: ${speedVal}`;
+    displayIntelSpan.textContent = `知能: ${intelVal}`;
+    displayDexSpan.textContent = `器用: ${dexVal}`;
+    displaySizeSpan.textContent = `体格: ${sizeVal}`;
+
+    // ポイントがマイナスになったり能力が最低値を下回ったらボタンを無効化
+    if (remaining < 0 || hpPts < 5 || atkPts < 3 || speedVal < 3 || intelVal < 3 || dexVal < 3 || sizeVal < 3) {
+        startAdventureButton.disabled = true;
+    } else {
+        startAdventureButton.disabled = false;
+    }
+}
+
+/**
+ * プレイヤーオブジェクトを初期化する
+ * @param {boolean} isStrongNewGame - 強くてニューゲームかどうか
+ * @param {number} inheritedMaxHp - 強くてニューゲームの場合に引き継ぐ最大HP
+ * @param {number} inheritedAttack - 強くてニューゲームの場合に引き継ぐ攻撃力
+ * @param {number} inheritedArmor - 強くてニューゲームの場合に引き継ぐアーマー
+ * @param {number} inheritedSpeed - 強くてニューゲームの場合に引き継ぐ速度
+ * @param {number} inheritedIntel - 強くてニューゲームの場合に引き継ぐ知能
+ * @param {number} inheritedDex - 強くてニューゲームの場合に引き継ぐ器用
+ * @param {number} inheritedSize - 強くてニューゲームの場合に引き継ぐ体格
+ */
+function initializePlayer(isStrongNewGame = false, inheritedMaxHp = 0, inheritedAttack = 0, inheritedArmor = 0, inheritedSpeed = 0, inheritedIntel = 0, inheritedDex = 0, inheritedSize = 0) {
+    player.name = playerNameInput.value || "名もなき探訪者";
+    player.position = 0;
+    player.isGameOver = false;
+    player.isCleared = false;
+    player.currentEventCompleted = false;
+    player.savedEventCategory = null;
+    player.savedEventIndex = null;
+
+    if (isStrongNewGame) {
+        player.maxHp = inheritedMaxHp;
+        player.attack = inheritedAttack;
+        // 強くてニューゲームの場合、既存のステータスを引き継ぐ
+        player.armor = inheritedArmor;
+        player.speed = inheritedSpeed;
+        player.intel = inheritedIntel;
+        player.dex = inheritedDex;
+        player.size = inheritedSize;
+    } else {
+        const hpPts = parseInt(hpAllocationInput.value);
+        const atkPts = parseInt(attackAllocationInput.value);
+        player.maxHp = hpPts * 2;
+        player.attack = atkPts;
+        player.armor = 0;
+        player.speed = parseInt(speedAllocationInput.value);
+        player.intel = parseInt(intelAllocationInput.value);
+        player.dex = parseInt(dexAllocationInput.value);
+        player.size = parseInt(sizeAllocationInput.value);
+    }
+    player.hp = player.maxHp;
+
+    console.log("Player initialized:", player);
+    saveGame(player); // 初期化時にセーブ
+}
+
+/**
+ * アイテムをプレイヤーのアイテムスロットに追加する。
+ * アイテムスロットが満杯の場合、プレイヤーに選択肢を提示する。
+ * @param {Item} item - 取得しようとしているアイテムオブジェクト
+ * @returns {Promise<boolean>} アイテムが正常に取得された場合はtrue、諦めた場合はfalseを返すPromise
+ */
+async function acquireItem(item) {
+    if (player.item_slot.length < 20) {
+        player.item_slot.push(item);
+        displayMessage(`${item.name} を手に入れた！`);
+        updateUI();
+        // saveGame(player);// リロードとかの処理がちょっと怪しいので無効化
+        return true;
+    } else {
+        displayMessage("アイテムスロットが満杯です（20/20）。");
+        displayMessage("アイテムの取得を諦めますか、それとも何かを捨てて取得しますか？");
+
+        return new Promise(resolve => {
+            // 選択肢ボタンを生成
+            choicesContainer.innerHTML = '';
+            choicesContainer.classList.remove("hidden");
+
+            const giveUpButton = document.createElement("button");
+            giveUpButton.textContent = "諦める";
+            giveUpButton.classList.add("choice-button");
+            giveUpButton.addEventListener("click", () => {
+                choicesContainer.innerHTML = '';
+                choicesContainer.classList.add("hidden");
+                displayMessage("アイテムの取得を諦めました。");
+                // saveGame(player);
+                resolve(false); // 諦めた
+            });
+            choicesContainer.appendChild(giveUpButton);
+
+            const discardButton = document.createElement("button");
+            discardButton.textContent = "捨てて取得する";
+            discardButton.classList.add("choice-button");
+            discardButton.addEventListener("click", async () => {
+                choicesContainer.innerHTML = '';
+                choicesContainer.classList.add("hidden");
+                itemToAcquireAfterDiscard = item; // 破棄後に取得するアイテムを保存
+                const discarded = await openDiscardItemModal(); // 破棄モーダルを開く
+                if (discarded) {
+                    // 破棄が成功したら、保存しておいたアイテムを取得
+                    player.item_slot.push(itemToAcquireAfterDiscard);
+                    displayMessage(`${itemToAcquireAfterDiscard.name} を手に入れた！`);
+                    updateUI();
+                    // saveGame(player);
+                    resolve(true); // 取得成功
+                } else {
+                    displayMessage("アイテムの破棄をキャンセルしました。アイテムの取得を諦めます。");
+                    // saveGame(player);
+                    resolve(false); // 破棄をキャンセルしたため、取得も諦める
+                }
+                itemToAcquireAfterDiscard = null; // 使用済みなのでクリア
+            });
+            choicesContainer.appendChild(discardButton);
+        });
+    }
+}
+
+/**
+ * アイテム破棄モーダルを開き、プレイヤーのアイテムを表示する。
+ * プレイヤーがアイテムを破棄するか、キャンセルするまで待機する。
+ * @returns {Promise<boolean>} アイテムが破棄された場合はtrue、キャンセルされた場合はfalseを返すPromise
+ */
+function openDiscardItemModal() {
+    return new Promise(resolve => {
+        discardItemList.innerHTML = ''; // リストをクリア
+        selectedItemToDiscardIndex = -1; // 選択状態をリセット
+        discardSelectedItemButton.disabled = true; // ボタンを無効化
+
+        if (player.item_slot.length === 0) {
+            discardItemList.innerHTML = '<p>所持アイテムがありません。</p>';
+            // アイテムがない場合は破棄できないので、自動的にキャンセル扱い
+            displayMessage("破棄できるアイテムがありません。アイテムの取得を諦めます。");
+            discardItemModal.classList.add("hidden");
+            resolve(false);
+            return;
+        }
+
+        player.item_slot.forEach((item, index) => {
+            const listItem = document.createElement("li");
+            listItem.textContent = `${item.name} - ${item.description}`;
+            listItem.dataset.index = index;
+            listItem.addEventListener("click", () => {
+                // 選択状態を切り替える
+                if (selectedItemToDiscardIndex === index) {
+                    selectedItemToDiscardIndex = -1;
+                    listItem.classList.remove("selected");
+                } else {
+                    // 他の選択を解除
+                    const previouslySelected = discardItemList.querySelector(".selected");
+                    if (previouslySelected) {
+                        previouslySelected.classList.remove("selected");
+                    }
+                    selectedItemToDiscardIndex = index;
+                    listItem.classList.add("selected");
+                }
+                discardSelectedItemButton.disabled = selectedItemToDiscardIndex === -1;
+            });
+            discardItemList.appendChild(listItem);
+        });
+
+        discardItemModal.classList.remove("hidden");
+        document.body.style.overflow = "hidden"; // 背景のスクロールを禁止
+
+        // 閉じるボタンのイベントリスナー (モーダルを閉じてキャンセル)
+        const closeHandler = () => {
+            discardItemModal.classList.add("hidden");
+            document.body.style.overflow = "auto";
+            discardCloseButton.removeEventListener("click", closeHandler);
+            discardSelectedItemButton.removeEventListener("click", discardHandler);
+            resolve(false); // キャンセル
+        };
+        discardCloseButton.addEventListener("click", closeHandler);
+
+        // 破棄ボタンのイベントリスナー
+        const discardHandler = () => {
+            if (selectedItemToDiscardIndex !== -1) {
+                const discardedItem = player.item_slot.splice(selectedItemToDiscardIndex, 1)[0];
+                displayMessage(`${discardedItem.name} を捨てました。`);
+                discardItemModal.classList.add("hidden");
+                document.body.style.overflow = "auto";
+                updateUI();
+                saveGame(player);
+                discardCloseButton.removeEventListener("click", closeHandler);
+                discardSelectedItemButton.removeEventListener("click", discardHandler);
+                resolve(true); // 破棄成功
+            }
+        };
+        discardSelectedItemButton.addEventListener("click", discardHandler);
+    });
+}
+
+// ============================================================================
+// 4. UI更新関数
+// ============================================================================
+/**
+ * プレイヤーのステータス表示を更新する
+ */
+function updatePlayerStatus() {
+    playerDisplayName.textContent = player.name;
+    const hpPercentage = (player.hp / player.maxHp) * 100;
+    hpBarFill.style.width = `${hpPercentage}%`;
+    playerHpText.textContent = `${player.hp}/${player.maxHp}`;
+
+    if (hpPercentage <= 25) {
+        hpBarFill.classList.add("low-hp");
+    } else {
+        hpBarFill.classList.remove("low-hp");
+    }
+}
+
+/**
+ * ゲームメッセージをテキストエリアに表示する
+ * @param {string} message - 表示するメッセージ
+ * @param {boolean} append - trueの場合、既存のメッセージに追加する
+ */
+function displayMessage(message, append = true) {
+    const p = document.createElement("p");
+    p.textContent = message;
+    if (append) {
+        gameMessage.appendChild(p);
+    } else {
+        gameMessage.innerHTML = "";
+        gameMessage.appendChild(p);
+    }
+    gameMessage.scrollTop = gameMessage.scrollHeight; // スクロールを一番下へ
+}
+
+/**
+ * 選択肢ボタンを描画する
+ * @param {Array<Object>} choices - 選択肢の配列。各要素は { text: string, next: Object, effects: Array<Object> } の形式。
+ * @param {Object} event - イベント本体
+ */
+function renderChoices(choices, event) {
+    choicesContainer.innerHTML = ''; // 既存の選択肢をクリア
+
+    if (!choices || choices.length === 0) {
+        choicesContainer.classList.add("hidden"); // 選択肢がない場合は非表示
+        return;
+    }
+
+    choicesContainer.classList.remove("hidden"); // 選択肢がある場合は表示
+
+    choices.forEach((choice, index) => {
+        const button = document.createElement("button");
+        button.textContent = choice.text;
+        button.classList.add("choice-button"); // スタイリング用のクラスを追加
+        button.dataset.choiceIndex = index; // 選択肢のインデックスをデータ属性として保存
+
+        // 条件チェック
+        if (choice.condition) {
+            if (!checkCondition(choice.condition)) {
+                button.disabled = true;
+                button.classList.add("disabled-choice"); // グレーアウト用のクラス
+            }
+        }
+
+        button.addEventListener("click", async () => {
+            // 無効化されているボタンはクリックしても何もしない
+            if (button.disabled) {
+                return;
+            }
+
+            // 1. そのchoiceのeffectを適用する
+            displayMessage(choice.outcomeText);
+            if (choice.effects) {
+                for (const ef of choice.effects) {
+                    await applyEffect(ef);
+                }
+            }
+
+            // 2. choicesボタン群を非表示にする
+            choicesContainer.innerHTML = '';
+            choicesContainer.classList.add("hidden");
+
+            // 3. nextEventがあるならば続けて処理
+            const nextEvent = resolveNext(choice.next, event);
+            if (nextEvent !== null) {
+                updatePlayerStatus();
+                displayCurrentEvent(nextEvent);
+            } else {
+                // nextがない場合、イベントはここで終了し、進むボタンを再有効化
+                if (!isCombatActive && !player.isGameOver && !player.isCleared) {
+                    // 選択肢が選ばれたので、現在のイベントは完了
+                    player.currentEventCompleted = true;
+                    advanceButton.disabled = false;
+                    advanceButton.classList.remove("hidden");
+                }
+                saveGame(player); // 選択肢処理後にセーブ
+            }
+        });
+        choicesContainer.appendChild(button);
+    });
+}
+
+/**
+ * 選択肢のnext処理
+ * @param next
+ * @param currentEvent
+ * @returns {Event}
+ */
+function resolveNext(next, currentEvent) {
+    if (next === undefined || next === null) return null;
+    if (next === "SELF") return currentEvent;
+
+    if (next.type === "random_branch") {
+        const roll = Math.random();
+        let cumulative = 0;
+        for (const branch of next.branches) {
+            cumulative += branch.probability;
+            if (roll <= cumulative) {
+                return branch.event === "SELF" ? currentEvent : branch.event;
+            }
+        }
+    }
+
+    return next;  // 通常のEventCell
+}
+
+/**
+ * 全てのUI要素を更新する
+ */
+function updateUI() {
+    updatePlayerStatus();
+    // デバッグパネルの表示/非表示
+    if (player.name === "デバッグ") {
+        debugPanel.classList.remove("hidden");
+    } else {
+        debugPanel.classList.add("hidden");
+    }
+    // 他のUI要素も必要に応じて更新
+}
+
+/**
+ * 現在のプレイヤー位置のイベントを表示し、UIを更新する
+ * @param {Object} event - 現在のEventCellオブジェクト
+ */
+function displayCurrentEvent(event) {
+    displayMessage(`--- ${event.title} ---`, false); // 既存メッセージをクリアして表示
+    displayMessage(event.text);
+
+    player.currentEventCompleted = false; // イベント処理開始時に未完了にリセット
+    player.savedEventCategory = event.eventCategory || null;
+    player.savedEventIndex = event.eventIndex !== undefined ? event.eventIndex : null;
+
+    choicesContainer.innerHTML = ''; // 念のためクリア
+    choicesContainer.classList.add("hidden"); // 念のため非表示に
+
+    if (event.choices && event.choices.length > 0) {
+
+        renderChoices(event.choices, event);
+        advanceButton.classList.add("hidden");
+        advanceButton.disabled = true;
+        // player.currentEventCompleted は false のまま
+    } else if (event.enemy) {
+        currentEnemy = { ...event.enemy, currentHp: event.enemy.hp };
+        isCombatActive = true;
+        advanceButton.classList.add("hidden");
+        attackButton.disabled = false;
+        attackButton.classList.remove("hidden");
+        surrenderButton.classList.remove("hidden");
+        displayMessage(`\n${currentEnemy.description}`);
+        displayMessage(`${currentEnemy.name}が現れた！戦闘開始！`);
+        updateEnemyStatus();
+        // player.currentEventCompleted は false のまま
+    } else if (event.effects) {
+        for (const ef of event.effects) {
+            applyEffect(ef);
+        }
+        player.currentEventCompleted = true; // 効果イベントは即座に完了
+    } else if (event.choices) {
+        // 選択肢イベントは完了にしない
+    } else {
+        player.currentEventCompleted = true; // 何もないマスは即座に完了
+    }
+
+    // ゲーム終了判定
+    checkGameEnd();
+
+    // advanceButtonの再有効化ロジックを調整
+    if (!isCombatActive && !player.isGameOver && !player.isCleared && player.currentEventCompleted) {
+        advanceButton.disabled = false;
+        advanceButton.classList.remove("hidden");
+    }
+    saveGame(player); // イベント処理後にセーブ
+}
+
+/**
+ * 敵のステータス表示を更新する
+ */
+function updateEnemyStatus() {
+    if (currentEnemy) {
+        enemyDisplayName.textContent = currentEnemy.name;
+        const hpPercentage = (currentEnemy.currentHp / currentEnemy.hp) * 100;
+        enemyHpBarFill.style.width = `${hpPercentage}%`;
+        enemyHpText.textContent = `${currentEnemy.currentHp}/${currentEnemy.hp}`;
+        enemyStatusArea.classList.remove("hidden");
+    } else {
+        enemyStatusArea.classList.add("hidden");
+    }
+}
+
+/**
+ * デバッグ用の敵選択ドロップダウンを生成する
+ */
+function populateDebugEnemySelect() {
+    debugEnemySelect.innerHTML = '';
+    const uniqueEnemies = new Map();
+
+    EVENTS.forEach(event => {
+        if (event.enemy && !uniqueEnemies.has(event.enemy.name)) {
+            uniqueEnemies.set(event.enemy.name, event.enemy);
+        }
+    });
+
+    const defaultOption = document.createElement("option");
+    defaultOption.value = "";
+    defaultOption.textContent = "-- 敵を選択 --";
+    debugEnemySelect.appendChild(defaultOption);
+
+    uniqueEnemies.forEach(enemy => {
+        const option = document.createElement("option");
+        option.value = enemy.name;
+        option.textContent = `${enemy.name} (HP:${enemy.hp} ATK:${enemy.attack} ARM:${enemy.armor} SPD:${enemy.speed})`;
+        debugEnemySelect.appendChild(option);
+    });
+}
+
+/**
+ * デバッグ用のイベントカテゴリとインデックス選択ドロップダウンを生成する
+ */
+function populateDebugEventSelects() {
+    // カテゴリ選択の初期化
+    debugEventCategorySelect.innerHTML = '';
+    const categories = ["-- カテゴリを選択 --", "NORMAL", "BENEFIT", "DANGER", "MILESTONE"];
+    categories.forEach(category => {
+        const option = document.createElement("option");
+        option.value = category === "-- カテゴリを選択 --" ? "" : category;
+        option.textContent = category;
+        debugEventCategorySelect.appendChild(option);
+    });
+
+    // インデックス選択の初期化
+    debugEventIndexSelect.innerHTML = '';
+    const defaultIndexOption = document.createElement("option");
+    defaultIndexOption.value = "";
+    defaultIndexOption.textContent = "-- イベントを選択 --";
+    debugEventIndexSelect.appendChild(defaultIndexOption);
+
+    // カテゴリ選択が変更されたときのイベントリスナー
+    debugEventCategorySelect.addEventListener("change", () => {
+        const selectedCategory = debugEventCategorySelect.value;
+        debugEventIndexSelect.innerHTML = '';
+        debugEventIndexSelect.appendChild(defaultIndexOption.cloneNode(true));
+
+        let eventsToPopulate = [];
+        switch (selectedCategory) {
+            case "NORMAL":
+                eventsToPopulate = window.NORMAL_EVENTS;
+                break;
+            case "BENEFIT":
+                eventsToPopulate = window.BENEFIT_EVENTS;
+                break;
+            case "DANGER":
+                eventsToPopulate = window.DANGER_EVENTS;
+                break;
+            case "MILESTONE":
+                // MILESTONE_EVENTS_DATAはオブジェクトなので、values()で配列に変換
+                eventsToPopulate = Object.values(window.MILESTONE_EVENTS_DATA);
+                break;
+        }
+
+        eventsToPopulate.forEach((eventData, index) => {
+            const option = document.createElement("option");
+            option.value = index;
+            option.textContent = eventData.title;
+            debugEventIndexSelect.appendChild(option);
+        });
+    });
+}
+
+/**
+ * デバッグ: 指定した敵と戦闘を開始する
+ * @param {string} enemyName
+ */
+function debugStartCombat(enemyName) {
+    if (!enemyName) {
+        displayMessage("敵が選択されていません。", false);
+        return;
+    }
+    if (isCombatActive) {
+        displayMessage("すでに戦闘中です。", false);
+        return;
+    }
+
+    let enemyToFight = null;
+    // EVENTS配列から敵データを探す
+    for (const event of EVENTS) {
+        if (event.enemy && event.enemy.name === enemyName) {
+            enemyToFight = event.enemy;
+            break;
+        }
+    }
+    // DANGER_EVENTSからも探す (generateRandomEventで使われるため)
+    if (!enemyToFight) {
+        for (const eventData of window.DANGER_EVENTS) {
+            if (eventData.enemy && eventData.enemy.name === enemyName) {
+                enemyToFight = eventData.enemy;
+                break;
+            }
+        }
+    }
+    // MILESTONE_EVENTS_DATAからも探す
+    if (!enemyToFight) {
+        for (const key in window.MILESTONE_EVENTS_DATA) {
+            const milestoneEvent = window.MILESTONE_EVENTS_DATA[key];
+            if (milestoneEvent.enemy && milestoneEvent.enemy.name === enemyName) {
+                enemyToFight = milestoneEvent.enemy;
+                break;
+            }
+        }
+    }
+
+
+    if (enemyToFight) {
+        currentEnemy = { ...enemyToFight, currentHp: enemyToFight.hp };
+        isCombatActive = true;
+        advanceButton.classList.add("hidden");
+        attackButton.disabled = false;
+        attackButton.classList.remove("hidden");
+        displayMessage(`デバッグ: ${currentEnemy.name} との戦闘を開始します！`, false);
+        displayMessage(`\n${currentEnemy.description}`);
+        displayMessage(`${currentEnemy.name}が現れた！戦闘開始！`);
+    } else {
+        displayMessage(`デバッグ: 敵「${enemyName}」が見つかりませんでした。`, false);
+    }
+}
+
+/**
+ * メニューモーダルを開く
+ */
+function openMenuModal() {
+    showTab("status-tab");
+    const menuModal = document.getElementById("menu-modal");
+    menuModal.classList.remove("hidden");
+    // 背景のスクロールを禁止
+    document.body.style.overflow = "hidden";
+}
+
+/**
+ * メニューモーダルを閉じる
+ */
+function closeMenuModal() {
+    const menuModal = document.getElementById("menu-modal");
+    menuModal.classList.add("hidden");
+    // 背景のスクロール禁止を解除
+    document.body.style.overflow = "auto";
+}
+
+/**
+ * メニューモーダルのステータスタブを更新する
+ * (renderMenuStatsにリネームし、表形式で全ステータスを表示するように変更)
+ */
+function renderMenuStats() {
+    const statusTab = document.getElementById("status-tab");
+    statusTab.innerHTML = `
+        <div class="player-stats-display">
+            <p>名前: <span>${player.name}</span></p>
+            <p>現在地: <span>${player.position}</span></p>
+            <p>HP: <span>${player.hp}</span>/<span>${player.maxHp}</span></p>
+            <p>攻撃力: <span>${player.attack}</span></p>
+            <p>防御力: <span>${player.armor}</span></p>
+            <p>速度: <span>${player.speed}</span></p>
+            <p>知能: <span>${player.intel}</span></p>
+            <p>器用: <span>${player.dex}</span></p>
+            <p>体格: <span>${player.size}</span></p>
+            <p>所持金: <span>${player.money}</span>G</p>
+        </div>
+    `;
+}
+
+/**
+ * メニューモーダルのアイテムタブを更新する
+ */
+function renderMenuItems() {
+    const itemsTab = document.getElementById("items-tab");
+    const itemGrid = itemsTab.querySelector(".item-grid");
+    itemGrid.innerHTML = ''; // クリア
+
+    if (player.item_slot.length === 0) {
+        itemGrid.innerHTML = "<p>アイテムはありません。</p>";
+        return;
+    }
+
+    player.item_slot.forEach((item, index) => {
+        const itemCard = document.createElement("div");
+        itemCard.classList.add("item-card");
+        itemCard.innerHTML = `
+            <h4>${item.name}</h4>
+            <p>${item.description}</p>
+        `;
+        // 使用効果があるアイテムにのみ「使用」ボタンを追加
+        if (item.effects && item.effects.length > 0) {
+            const useButton = document.createElement("button");
+            useButton.classList.add("button");
+            useButton.textContent = "使用";
+            // useButton.dataset.itemIndex = index; 不要かも
+            useButton.addEventListener("click", {item: item, handleEvent: useItem});
+            itemCard.appendChild(useButton);
+        }
+        // 戦闘中でないなら装備品にのみ「装備」ボタンを追加
+        if (!isCombatActive && item.category === "equipment") {
+            const equipButton = document.createElement("button");
+            equipButton.classList.add("button");
+            equipButton.textContent = "装備";
+            // equipButton.dataset.itemIndex = index;
+            equipButton.addEventListener("click", {item: item, handleEvent: equip});
+            itemCard.appendChild(equipButton);
+        }
+        itemGrid.appendChild(itemCard);
+    });
+}
+
+/**
+ * 使用ボタンのイベント
+ */
+async function useItem(_) {
+    for (const ef of this.item.effects) {
+        await applyEffect(ef);
+    }
+
+    this.item.uses -= 1;
+    if (this.item.uses <= 0) {
+        player.item_slot = player.item_slot.filter(i => i !== this.item);
+        displayMessage(`${this.item.name} を使い切った！`);
+    }
+
+    renderMenuItems();
+    saveGame(player);
+}
+
+/**
+ * 装備ボタンのイベント
+ */
+function equip(_) {
+    // 1. 同タイプチェックを先に
+    const sameType = player.equipment_slot.some(e => e.equip_type === this.item.equip_type);
+    if (sameType) {
+        displayMessage(`すでに${this.item.equip_type}を装備しています`);
+        return;
+    }
+
+    // 2. 枠数チェック
+    if (player.equipment_slot.length >= 5) {
+        displayMessage("装備枠が一杯です");
+        return;
+    }
+
+    // 3. stat_modifierをプレイヤーに反映
+    if (this.item.stat_modifier) {
+        Object.entries(this.item.stat_modifier).forEach(([stat, val]) => {
+            player[stat] += val;
+        });
+    }
+
+    player.equipment_slot.push(this.item);
+    player.item_slot = player.item_slot.filter(i => i !== this.item);
+
+    displayMessage(`${this.item.name}を装備した`);
+    renderMenuItems();
+    renderMenuEquip();
+    saveGame(player);
+}
+
+/**
+ * メニューモーダルの装備タブを更新する
+ */
+function renderMenuEquip() {
+    const equipmentTab = document.getElementById("equipment-tab");
+    const equipmentSlots = equipmentTab.querySelector(".equipment-slots");
+    equipmentSlots.innerHTML = ''; // クリア
+
+    if (player.equipment_slot.length === 0) {
+        equipmentSlots.innerHTML = "<p>装備中のアイテムはありません。</p>";
+        return;
+    }
+
+    player.equipment_slot.forEach((item, index) => {
+        const equipmentSlot = document.createElement("div");
+        equipmentSlot.classList.add("equipment-slot");
+        equipmentSlot.innerHTML = `
+            <h4>${item.name}</h4>
+            <p>${item.description}</p>
+        `;
+        // 戦闘中でないなら
+        if (!isCombatActive) {
+            const unequipButton = document.createElement("button");
+            unequipButton.classList.add("button");
+            unequipButton.textContent = "解除";
+            // unequipButton.dataset.equipmentIndex = index;
+            unequipButton.addEventListener("click", {item: item, handleEvent: unequip});
+            equipmentSlot.appendChild(unequipButton);
+            equipmentSlots.appendChild(equipmentSlot);
+        }
+    });
+}
+
+/**
+ * 装備解除ボタンのイベント
+ */
+function unequip(_) {
+    // 1. アイテム枠チェック
+    if (player.item_slot.length >= 20) {
+        displayMessage("アイテム枠が一杯で外せません");
+        return;
+    }
+
+    // 2. stat_modifierを戻す
+    if (this.item.stat_modifier) {
+        Object.entries(this.item.stat_modifier).forEach(([stat, val]) => {
+            player[stat] -= val;
+        });
+    }
+
+    player.item_slot.push(this.item);
+    player.equipment_slot = player.equipment_slot.filter(i => i !== this.item);
+
+    displayMessage(`${this.item.name}を外した`);
+    renderMenuItems();
+    renderMenuEquip();
+    saveGame(player);
+}
+
+/**
+ * 指定されたタブを表示し、他のタブを非表示にする
+ * @param {string} tabId - 表示するタブのID (例: "status-tab")
+ */
+function showTab(tabId) {
+    const tabs = document.querySelectorAll(".tab-content");
+    tabs.forEach(tab => tab.classList.add("hidden"));
+    document.getElementById(tabId).classList.remove("hidden");
+
+    const tabButtons = document.querySelectorAll(".tab-button");
+    tabButtons.forEach(button => button.classList.remove("active"));
+    document.querySelector(`.tab-button[data-tab="${tabId.replace("-tab", "")}"]`).classList.add("active");
+
+    // タブが切り替わった際に内容を更新
+    if (tabId === "status-tab") {
+        renderMenuStats();
+    } else if (tabId === "items-tab") {
+        renderMenuItems();
+    } else if (tabId === "equipment-tab") {
+        renderMenuEquip();
+    }
+}
+
+// ============================================================================
+// 5. ゲームループ (「進む」ボタン押下時)
+async function advance() {
+    if (isCombatActive || player.isGameOver || player.isCleared) return;
+
+    // 現在のマスでのイベントが未完了の場合、先に進めない
+    if (player.position > 0 && !player.currentEventCompleted) {
+        displayMessage("現在のイベントを完了するまで先に進めません！", false);
+        return;
+    }
+
+    advanceButton.disabled = true; // ボタンを一時的に無効化
+    advanceButton.classList.add("hidden");
+
+    // 1. ダイスロール
+    const roll = Math.ceil(Math.random() * 6);
+    displayMessage(`🎲 ${roll}が出た！`, false); // 既存メッセージをクリアしてダイス結果を表示
+
+    // 2. プレイヤー位置更新
+    const oldPosition = player.position;
+    let targetPosition = oldPosition + roll;
+    let newPosition = targetPosition;
+
+    const milestones = [20, 50, 80, 100];
+    for (const milestone of milestones) {
+        if (oldPosition < milestone && milestone <= targetPosition) {
+            newPosition = milestone;
+            break;
+        }
+    }
+    player.position = Math.min(newPosition, 100);
+    player.currentEventCompleted = false; // 新しいマスに移動したのでイベントは未完了
+    updatePlayerStatus();
+
+    // 3. ダイス演出テキスト表示
+    await new Promise(resolve => setTimeout(() => {
+        displayMessage(`${roll}マス進む（現在: ${player.position}マス）`);
+        resolve();
+    }, 1500)); // 1.5秒後にイベントテキストを追記
+
+    // 4. イベント取得と処理
+    let event;
+    if (MILESTONE_EVENTS_DATA[player.position]) {
+        // マイルストーンイベントはEVENTS配列から直接取得
+        event = EVENTS[player.position];
+    } else if (player.position === 0) {
+        // スタート地点もEVENTS配列から直接取得
+        event = EVENTS[0];
+    } else {
+        // それ以外のマスでは新しいランダムイベントを生成
+        const randomEventResult = generateRandomEvent(player.position);
+        event = randomEventResult.event;
+        // 生成されたイベントのカテゴリとインデックスをプレイヤーに保存
+        player.savedEventCategory = randomEventResult.category;
+        player.savedEventIndex = randomEventResult.index;
+    }
+
+    console.log("Current event:", event);
+    displayCurrentEvent(event);
+}
+
+/**
+ * 効果をプレイヤーに適用する
+ * @param {Effect} effect - 適用する効果オブジェクト
+ */
+async function applyEffect(effect) {
+    let value = 0;
+    switch (effect.type) {
+        case "heal":
+            value = resolveValue(effect, player);
+            player.hp = Math.min(player.hp + value, player.maxHp);
+            displayMessage(`${value} HP回復した！`);
+            break;
+        case "damage":
+            value = resolveValue(effect, player);
+            const actualDamage = calculateDamage(value, player.armor);
+            player.hp -= actualDamage;
+            displayMessage(`${actualDamage} ダメージを受けた！ (元ダメージ: ${value}, あなたのアーマー: ${player.armor})`);
+            break;
+        case "stat_change":
+            value = resolveValue(effect, player);
+            player[effect.stat] = Math.max(0, player[effect.stat] + value);
+            if (value > 0) {
+                displayMessage(`${effect.stat} が ${value} 上がった！`);// TODO: effect.statに応じたラベル表示
+            } else {
+                displayMessage(`${effect.stat} が ${Math.abs(value)} 下がった！`);// TODO: effect.statに応じたラベル表示
+            }
+            break;
+        case "dice_check":
+            const roll = Math.ceil(Math.random() * 6);
+            displayMessage(`🎲 ダイスロール！ ${roll} が出た！ (成功閾値: ${effect.success_threshold})`);
+
+            if (roll >= effect.success_threshold) {
+                displayMessage("ダイスロール成功！");
+                if (effect.success_effect) {
+                    // TODO: effectsにするか決断
+                    displayMessage(effect.success_effect.text);
+                    await applyEffect(effect.success_effect); // 成功時の効果を適用
+                }
+            } else {
+                displayMessage("ダイスロール失敗...");
+                if (effect.fail_effect) {
+                    displayMessage(effect.fail_effect.text);
+                    await applyEffect(effect.fail_effect); // 失敗時の効果を適用
+                }
+            }
+            break;
+        case "acquire_item":
+            const item = getItemById(effect.item_id);
+            await acquireItem(item);
+            break;
+    }
+    updatePlayerStatus();
+    checkGameEnd(); // 効果適用後にゲーム終了判定
+}
+
+/**
+ * イベントの効果量を計算して返す
+ * @param effect - イベントの効果
+ * @param player - プレイヤー
+ * @returns {number} イベントの効果量
+ */
+function resolveValue(effect, player) {
+    if (effect.min !== undefined && effect.max !== undefined) {
+        return Math.floor(Math.random() * (effect.max - effect.min + 1)) + effect.min;
+    }
+    if (effect.rate !== undefined && effect.rate_reference !== undefined) {
+        const base = player[effect.rate_reference];
+        return Math.floor(base * effect.rate);
+    }
+    if (effect.value !== undefined) {
+        return effect.value;
+    }
+    console.warn("effect has no valid value definition:", effect);
+    return 0;
+}
+
+/**
+ * IDをキーにアイテムデータをマスタから取得してクローンを返す
+ * @param id
+ * @returns {Item}
+ */
+function getItemById(id) {
+    const item = ITEMS.find(i => i.id === id);
+    if (!item) {
+        console.warn(`Item not found: ${id}`);
+        return null;
+    }
+    return structuredClone(item);
+}
+
+/**
+ * ダメージ計算（アーマー軽減込み）
+ * @param {number} rawDamage - 軽減前のダメージ
+ * @param {number} targetArmor - 対象のアーマー値
+ * @returns {number} 軽減後のダメージ
+ */
+function calculateDamage(rawDamage, targetArmor) {
+    return Math.max(0, rawDamage - targetArmor);
+}
+
+/**
+ * 条件をチェックし、プレイヤーが満たしているか判定する
+ * @param {Object} condition - Conditionオブジェクト { stat: string, operator: string, value: number }
+ * @returns {boolean} 条件を満たしていれば true、そうでなければ false
+ */
+function checkCondition(condition) {
+    if (!condition || !condition.stat || !condition.operator || condition.value === undefined) {
+        console.warn("Invalid condition object:", condition);
+        return true; // 無効な条件は常に満たすとみなす
+    }
+
+    const playerStat = player[condition.stat];
+    if (playerStat === undefined) {
+        console.warn(`Player stat "${condition.stat}" not found for condition check.`);
+        return false; // 存在しないステータスは条件を満たさない
+    }
+
+    switch (condition.operator) {
+        case "gte": // Greater Than or Equal to
+            return playerStat >= condition.value;
+        case "lte": // Less Than or Equal to
+            return playerStat <= condition.value;
+        case "eq":  // Equal to
+            return playerStat === condition.value;
+        default:
+            console.warn("Unknown operator in condition:", condition.operator);
+            return false;
+    }
+}
+
+// ============================================================================
+// 6. 戦闘ロジック
+// ============================================================================
+async function attack() {
+    if (!isCombatActive || player.isGameOver || player.isCleared) return;
+
+    attackButton.disabled = true; // ボタンを一時的に無効化
+    attackButton.classList.add("hidden"); // 変更: hidden プロパティではなくクラスを使用
+
+    let turnOrder = [];
+    if (player.speed >= currentEnemy.speed) {
+        turnOrder = ['player', 'enemy'];
+    } else {
+        turnOrder = ['enemy', 'player'];
+    }
+
+    for (const attacker of turnOrder) {
+        if (!isCombatActive || player.isGameOver || player.isCleared) break; // 途中で戦闘終了した場合
+
+        await new Promise(resolve => setTimeout(resolve, 1000)); // 1秒待機
+
+        if (attacker === 'player') {
+            // プレイヤー攻撃
+            const playerRawDmg = Math.ceil(Math.random() * player.attack);
+            const actualDamageToEnemy = calculateDamage(playerRawDmg, currentEnemy.armor);
+            currentEnemy.currentHp -= actualDamageToEnemy;
+            displayMessage(`あなたの攻撃！ ${currentEnemy.name} に ${actualDamageToEnemy} のダメージ！ (元ダメージ: ${playerRawDmg}, 敵アーマー: ${currentEnemy.armor})`);
+            updateEnemyStatus(); // 敵HP表示を更新
+
+            if (currentEnemy.currentHp <= 0) {
+                displayMessage(`${currentEnemy.name}を倒した！`);
+                player.money += currentEnemy.money; // お金の加算
+                displayMessage(`${currentEnemy.money}Gを手に入れた！`); // 獲得メッセージ
+                isCombatActive = false;
+                attackButton.classList.add("hidden");
+                advanceButton.classList.remove("hidden");
+                advanceButton.disabled = false; // 戦闘終了後、進むボタンを有効化
+                surrenderButton.classList.add("hidden"); // 戦闘終了時に降参ボタンを非表示に
+                enemyStatusArea.classList.add("hidden"); // 敵HP表示を非表示に
+                currentEnemy = null; // 敵をクリア
+                player.currentEventCompleted = true; // 戦闘イベント完了
+
+                // 最終ボス撃破判定
+                if (player.position === 100 && EVENTS[100].enemy.isBoss) {
+                    player.isCleared = true;
+                }
+                checkGameEnd();
+                saveGame(player); // 戦闘勝利後にセーブ
+                return;
+            }
+        } else {
+            // 敵攻撃
+            const enemyRawDmg = Math.ceil(Math.random() * currentEnemy.attack);
+            const actualDamageToPlayer = calculateDamage(enemyRawDmg, player.armor);
+            player.hp -= actualDamageToPlayer;
+            displayMessage(`${currentEnemy.name} の攻撃！ ${actualDamageToPlayer} のダメージを受けた！ (元ダメージ: ${enemyRawDmg}, あなたのアーマー: ${player.armor})`);
+            updatePlayerStatus();
+            updateEnemyStatus(); // 敵HP表示を更新 (プレイヤーのターンではないが、念のため)
+
+            if (player.hp <= 0) {
+                surrenderButton.classList.add("hidden"); // プレイヤー敗北時に降参ボタンを非表示に
+                enemyStatusArea.classList.add("hidden"); // 敵HP表示を非表示に
+                checkGameEnd();
+                saveGame(player); // ゲームオーバー時にセーブ
+                return; // 戦闘終了
+            }
+        }
+    }
+
+    attackButton.disabled = false; // ターン終了後、攻撃ボタンを有効化
+    attackButton.classList.remove("hidden"); // hidden プロパティではなくクラスを使用
+}
+
+// ============================================================================
+// 7. ゲーム終了判定
+// ============================================================================
+function checkGameEnd() {
+    if (player.hp <= 0 && !player.isGameOver) {
+        player.isGameOver = true;
+        displayMessage("HPが0になった... あなたの冒険はここで終わった...");
+        saveGame(player);
+        setTimeout(showGameOverScreen, 3000); // 3秒後にゲームオーバー画面へ
+        return true;
+    }
+
+    if (player.isCleared) {
+        displayMessage("暁の番人を打ち破り、あなたは新たな夜明けを迎えた！");
+        saveGame(player);
+        setTimeout(showClearScreen, 3000); // 3秒後にクリア画面へ
+        return true;
+    }
+    return false;
+}
+
+/**
+ * プレイヤーが降参する
+ */
+function surrender() {
+    if (!isCombatActive) {
+        displayMessage("戦闘中でないため降参できません。", false);
+        return;
+    }
+    player.isGameOver = true;
+    displayMessage("あなたは降参した... 冒険はここで終わった...");
+    saveGame(player);
+    setTimeout(showGameOverScreen, 3000); // 3秒後にゲームオーバー画面へ
+}
+
+// ============================================================================
+// 8. イベントリスナー
+// ============================================================================
+newGameButton.addEventListener("click", () => {
+    deleteSaveData(); // 新しく始める場合はセーブデータを削除
+    showCharacterCreationScreen();
+});
+
+loadGameButton.addEventListener("click", () => {
+    const savedData = loadGame();
+    if (savedData) {
+        player = savedData.player;
+        showMainGameScreen();
+        displayMessage("セーブデータをロードしました。冒険を再開します.");
+    } else {
+        displayMessage("セーブデータが見つかりませんでした。", false);
+        loadGameButton.classList.add("hidden"); // ボタンを非表示にする
+    }
+});
+
+strongNewGameButton.addEventListener("click", () => {
+    startStrongNewGame();
+});
+
+hpAllocationInput.addEventListener("input", updateAllocationDisplay);
+attackAllocationInput.addEventListener("input", updateAllocationDisplay);
+speedAllocationInput.addEventListener("input", updateAllocationDisplay);
+intelAllocationInput.addEventListener("input", updateAllocationDisplay);
+dexAllocationInput.addEventListener("input", updateAllocationDisplay);
+sizeAllocationInput.addEventListener("input", updateAllocationDisplay);
+
+startAdventureButton.addEventListener("click", () => {
+    // 強くてニューゲームかどうかを判定
+    const isStrong = strongNewGameStatsDisplay && !strongNewGameStatsDisplay.classList.contains("hidden");
+    const inheritedMaxHp = isStrong ? parseInt(strongNewGameHpDisplay.textContent) : 0;
+    const inheritedAttack = isStrong ? parseInt(strongNewGameAttackDisplay.textContent) : 0;
+    const inheritedArmor = isStrong ? parseInt(strongNewGameArmorDisplay.textContent) : 0;
+    const inheritedSpeed = isStrong ? parseInt(strongNewGameSpeedDisplay.textContent) : 0;
+    const inheritedIntel = isStrong ? parseInt(strongNewGameIntelDisplay.textContent) : 0;
+    const inheritedDex = isStrong ? parseInt(strongNewGameDexDisplay.textContent) : 0;
+    const inheritedSize = isStrong ? parseInt(strongNewGameSizeDisplay.textContent) : 0;
+
+    initializePlayer(isStrong, inheritedMaxHp, inheritedAttack, inheritedArmor, inheritedSpeed, inheritedIntel, inheritedDex, inheritedSize);
+    showMainGameScreen();
+    displayMessage("新たな冒険が始まります！");
+});
+
+advanceButton.addEventListener("click", advance);
+attackButton.addEventListener("click", attack);
+surrenderButton.addEventListener("click", surrender);
+
+backToTitleFromGameOverButton.addEventListener("click", () => {
+    // ゲームオーバー時はセーブデータを削除しないが、タイトルに戻る
+    showTitleScreen();
+});
+
+backToTitleFromClearButton.addEventListener("click", () => {
+    // クリア時はセーブデータを削除しないが、タイトルに戻る
+    showTitleScreen();
+});
+
+debugTriggerEventButton.addEventListener("click", () => {
+    const eventCategory = debugEventCategorySelect.value;
+    const eventIndex = parseInt(debugEventIndexSelect.value);
+    if (eventCategory && !isNaN(eventIndex)) {
+        debugTriggerEvent(eventCategory, eventIndex);
+    } else {
+        displayMessage("デバッグ: イベントカテゴリとインデックスを選択してください。", false);
+    }
+});
+
+debugStartCombatButton.addEventListener("click", () => {
+    const enemyName = debugEnemySelect.value;
+    debugStartCombat(enemyName);
+});
+
+debugAcquireItemButton.addEventListener("click", debugAcquireItem);
+
+// デバッグパネルの切り替え
+debugPanelToggle.addEventListener("click", () => {
+    debugPanelContent.classList.toggle("hidden");
+    debugToggleIcon.classList.toggle("open");
+});
+
+// メニューボタンのイベントリスナー
+menuButton.addEventListener("click", openMenuModal);
+
+// モーダルの閉じるボタンのイベントリスナー
+document.querySelector("#menu-modal .close-button").addEventListener("click", closeMenuModal);
+
+// タブボタンのイベントリスナー
+document.querySelectorAll(".tab-button").forEach(button => {
+    button.addEventListener("click", (event) => {
+        const tab = event.target.dataset.tab;
+        showTab(`${tab}-tab`);
+    });
+});
+
+/**
+ * 強くてニューゲームを開始する
+ */
+function startStrongNewGame() {
+    const savedData = loadGame();
+    if (savedData && (savedData.player.isGameOver || savedData.player.isCleared)) {
+        const inheritedMaxHp = savedData.player.maxHp;
+        const inheritedAttack = savedData.player.attack;
+        const inheritedArmor = savedData.player.armor || 0;
+        const inheritedSpeed = savedData.player.speed || 0;
+        const inheritedIntel = savedData.player.intel || 0;
+        const inheritedDex = savedData.player.dex || 0;
+        const inheritedSize = savedData.player.size || 0;
+        showCharacterCreationScreen(true, inheritedMaxHp, inheritedAttack, inheritedArmor, inheritedSpeed, inheritedIntel, inheritedDex, inheritedSize);
+    } else {
+        // エラーハンドリング、通常はここには来ないはず
+        console.error("強くてニューゲームを開始できません。適切なセーブデータが見つかりません。");
+        showTitleScreen();
+    }
+}
+
+// ============================================================================
+// 9. 初期化
+// ============================================================================
+document.addEventListener("DOMContentLoaded", () => {
+    showTitleScreen();
+});
+</script>
+</body>
+</html>

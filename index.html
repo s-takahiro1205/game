@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>暁の探訪者</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="game-container">
+    <!-- Title Screen -->
+    <div id="title-screen" class="game-screen active">
+        <h1>暁の探訪者</h1>
+        <button id="new-game-button">新しく始める</button>
+        <button id="load-game-button" class="hidden">続きから</button>
+        <button id="strong-new-game-button" class="hidden">強くてニューゲーム</button>
+    </div>
+
+    <!-- Character Creation Screen -->
+    <div id="character-creation-screen" class="game-screen hidden">
+        <h2>キャラクター作成</h2>
+        <div class="input-group">
+            <label for="player-name">キャラクター名:</label>
+            <input type="text" id="player-name" value="名もなき探訪者">
+        </div>
+        <div class="input-group">
+            <label>能力値配分 (残りポイント: <span id="remaining-points">34</span>)</label>
+            <div class="stat-allocation">
+                <label>HP (1pt = +2HP):</label>
+                <input type="number" id="hp-allocation" min="5" value="10">
+                <span id="display-hp">HP: 20</span>
+            </div>
+            <div class="stat-allocation">
+                <label>攻撃力 (1pt = +1ATK):</label>
+                <input type="number" id="attack-allocation" min="3" value="10">
+                <span id="display-attack">攻撃力: 10</span>
+            </div>
+            <div class="stat-allocation">
+                <label>速度 (1pt = +1SPD):</label>
+                <input type="number" id="speed-allocation" min="3" value="5">
+                <span id="display-speed">速度: 5</span>
+            </div>
+            <div class="stat-allocation">
+                <label>知能 (1pt = +1INT):</label>
+                <input type="number" id="intel-allocation" min="3" value="3">
+                <span id="display-intel">知能: 3</span>
+            </div>
+            <div class="stat-allocation">
+                <label>器用 (1pt = +1DEX):</label>
+                <input type="number" id="dex-allocation" min="3" value="3">
+                <span id="display-dex">器用: 3</span>
+            </div>
+            <div class="stat-allocation">
+                <label>体格 (1pt = +1SIZ):</label>
+                <input type="number" id="size-allocation" min="3" value="3">
+                <span id="display-size">体格: 3</span>
+            </div>
+        </div>
+
+        <!-- 強くてニューゲーム時の表示 (追加) -->
+        <div id="strong-new-game-stats-display" class="input-group hidden">
+            <h3>引き継ぎ能力値</h3>
+            <p>HP: <span id="strong-new-game-hp">0</span></p>
+            <p>攻撃力: <span id="strong-new-game-attack">0</span></p>
+            <p>アーマー: <span id="strong-new-game-armor">0</span></p>
+            <p>速度: <span id="strong-new-game-speed">0</span></p>
+            <p>知能: <span id="strong-new-game-intel">0</span></p>
+            <p>器用: <span id="strong-new-game-dex">0</span></p>
+            <p>体格: <span id="strong-new-game-size">0</span></p>
+        </div>
+        <button id="start-adventure-button">冒険を始める</button>
+    </div>
+
+    <!-- Main Game Screen -->
+    <div id="main-game-screen" class="game-screen hidden">
+        <div class="player-status">
+            <p>名前: <span id="player-display-name"></span></p>
+            <div class="hp-bar-container">
+                <div class="hp-bar-fill"><span id="player-hp-text"></span></div>
+            </div>
+        </div>
+
+        <!-- 敵ステータス表示エリア -->
+        <div id="enemy-status-area" class="enemy-status hidden">
+            <p>敵: <span id="enemy-display-name"></span></p>
+            <div class="hp-bar-container">
+                <div class="hp-bar-fill enemy-hp-bar-fill"><span id="enemy-hp-text"></span></div>
+            </div>
+        </div>
+
+        <div id="game-message" class="game-message"></div>
+
+        <div id="choices-container" class="choices-container hidden"></div>
+
+        <div class="game-controls">
+            <button id="advance-button" class="button">進む</button>
+            <button id="attack-button" class="button hidden">攻撃</button>
+        </div>
+    </div>
+
+    <!-- Menu Button -->
+    <button id="menu-button" class="button hidden">メニュー</button>
+
+    <!-- Toast Notification -->
+    <div id="toast"></div>
+
+    <div id="game-over-screen" class="game-screen hidden">
+        <h2>ゲームオーバー</h2>
+        <p>あなたの冒険はここで終わった...</p>
+        <button id="back-to-title-from-gameover">タイトルへ戻る</button>
+    </div>
+
+    <!-- Clear Screen -->
+    <div id="clear-screen" class="game-screen hidden">
+        <h1>ゲームクリア！</h1>
+        <p>あなたは世界の真実を解き明かし、新たな夜明けを迎えました！</p>
+        <button id="back-to-title-from-clear" class="button">タイトルに戻る</button>
+    </div>
+
+    <!-- Menu Modal -->
+    <div id="menu-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>メニュー</h2>
+                <span class="close-button">&times;</span>
+            </div>
+            <div class="modal-tabs">
+                <button class="tab-button active" data-tab="status">ステータス</button>
+                <button class="tab-button" data-tab="items">アイテム</button>
+                <button class="tab-button" data-tab="equipment">装備</button>
+            </div>
+            <div class="modal-body">
+                <div id="status-tab" class="tab-content active">
+                    <!-- ステータス表示エリア -->
+                    <div class="player-stats-display">
+                        <p>名前: <span id="modal-player-name"></span></p>
+                        <p>現在地: <span></span></p>
+                        <p>HP: <span id="modal-player-hp"></span>/<span id="modal-player-max-hp"></span></p>
+                        <p>攻撃力: <span id="modal-player-attack"></span></p>
+                        <p>防御力: <span id="modal-player-armor"></span></p>
+                        <p>速度: <span id="modal-player-speed"></span></p>
+                        <p>知能: <span id="modal-player-intel"></span></p>
+                        <p>器用: <span id="modal-player-dex"></span></p>
+                        <p>体格: <span id="modal-player-size"></span></p>
+                        <p>所持金: <span id="modal-player-money"></span>G</p>
+                    </div>
+                </div>
+                <div id="items-tab" class="tab-content hidden">
+                    <!-- アイテム表示エリア -->
+                    <div class="item-grid">
+                        <!-- アイテムはここに動的に追加される -->
+                    </div>
+                </div>
+                <div id="equipment-tab" class="tab-content hidden">
+                    <!-- 装備表示エリア -->
+                    <div class="equipment-slots">
+                        <!-- 装備はここに動的に追加される -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <!-- ボタン表示エリア -->
+                <div>
+                    <button id="surrender-button" class="button">降参</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Item Discard Modal -->
+    <div id="discard-item-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>アイテムを捨てる</h2>
+                <span class="close-button discard-close-button">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>新しいアイテムを取得するために、どれか一つアイテムを捨ててください。</p>
+                <div id="discard-item-list" class="item-grid">
+                    <!-- 捨てるアイテムリストはここに動的に追加される -->
+                </div>
+                <button id="discard-selected-item-button" class="button" disabled>選択したアイテムを捨てる</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Debug Panel -->
+    <div id="debug-panel" class="debug-panel hidden">
+        <div class="debug-panel-header" id="debug-panel-toggle">
+            <span>デバッグパネル</span>
+            <span class="debug-toggle-icon" id="debug-toggle-icon">▼</span>
+        </div>
+        <div id="debug-panel-content" class="debug-panel-content hidden">
+            <h3>イベント強制実行</h3>
+            <div class="debug-controls">
+                <select id="debug-event-category-select"></select>
+                <select id="debug-event-index-select"></select>
+                <button id="debug-trigger-event" class="button">イベント実行</button>
+            </div>
+            <h3>戦闘強制開始</h3>
+            <div class="debug-controls">
+                <select id="debug-enemy-select"></select>
+                <button id="debug-start-combat" class="button">戦闘開始</button>
+            </div>
+            <h3>アイテム取得</h3>
+            <div class="debug-controls">
+                <select id="debug-item-select"></select>
+                <button id="debug-acquire-item-button" class="button">アイテム取得</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="save.js"></script>
+<script src="items.js"></script>
+<script src="events.js"></script>
+<script src="game.js"></script>
+
+</body>
+</html>

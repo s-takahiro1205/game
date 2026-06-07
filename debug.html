@@ -518,6 +518,15 @@ input[type="number"] {
     padding: 10px 30px;
 }
 
+.modal-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-top: 1px solid #ffcc00;
+    background-color: #1a1a2e;
+}
+
 /* Responsive adjustments */
 @media (max-width: 600px) {
     .game-container {
@@ -635,12 +644,11 @@ input[type="number"] {
         <div class="game-controls">
             <button id="advance-button" class="button">進む</button>
             <button id="attack-button" class="button hidden">攻撃</button>
-            <button id="surrender-button" class="button hidden">降参</button>
         </div>
     </div>
 
     <!-- Menu Button -->
-    <button id="menu-button" class="button">メニュー</button>
+    <button id="menu-button" class="button hidden">メニュー</button>
 
     <div id="game-over-screen" class="game-screen hidden">
         <h2>ゲームオーバー</h2>
@@ -672,6 +680,7 @@ input[type="number"] {
                     <!-- ステータス表示エリア -->
                     <div class="player-stats-display">
                         <p>名前: <span id="modal-player-name"></span></p>
+                        <p>現在地: <span></span></p>
                         <p>HP: <span id="modal-player-hp"></span>/<span id="modal-player-max-hp"></span></p>
                         <p>攻撃力: <span id="modal-player-attack"></span></p>
                         <p>防御力: <span id="modal-player-armor"></span></p>
@@ -693,6 +702,12 @@ input[type="number"] {
                     <div class="equipment-slots">
                         <!-- 装備はここに動的に追加される -->
                     </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <!-- ボタン表示エリア -->
+                <div>
+                    <button id="surrender-button" class="button">降参</button>
                 </div>
             </div>
         </div>
@@ -1271,7 +1286,7 @@ const choicesContainer = document.getElementById("choices-container");
 const advanceButton = document.getElementById("advance-button");
 const attackButton = document.getElementById("attack-button");
 const surrenderButton = document.getElementById("surrender-button");
-const menuButton = document.getElementById("menu-button"); // 追加
+const menuButton = document.getElementById("menu-button");
 
 // アイテム破棄モーダル用DOM要素
 const discardItemModal = document.getElementById("discard-item-modal");
@@ -1426,7 +1441,6 @@ function resetGameUI() {
     gameMessage.innerHTML = "";
     choicesContainer.innerHTML = '';
     choicesContainer.classList.add("hidden");
-    surrenderButton.classList.add("hidden");
 }
 
 /**
@@ -1440,6 +1454,7 @@ function showTitleScreen() {
     // ボタンを初期状態に戻す
     loadGameButton.classList.add("hidden");
     strongNewGameButton.classList.add("hidden");
+    menuButton.classList.add("hidden");
 
     if (savedData) {
         // セーブデータが存在する場合
@@ -1521,9 +1536,10 @@ function showMainGameScreen() {
     resetGameUI();
     showScreen(mainGameScreen);
     updateUI();
-    //populateDebugEnemySelect(); // デバッグ用敵選択を初期化
-    //populateDebugEventSelects(); // デバッグイベント選択を初期化
+    populateDebugEnemySelect(); // デバッグ用敵選択を初期化
+    populateDebugEventSelects(); // デバッグイベント選択を初期化
     populateDebugItemSelect(); // デバッグ用アイテム選択を初期化
+    menuButton.classList.remove("hidden");
 
     // ロード時にイベントが未完了だった場合の処理
     if (!player.currentEventCompleted && player.savedEventCategory && player.savedEventIndex !== null) {
@@ -1997,7 +2013,6 @@ function displayCurrentEvent(event) {
         advanceButton.classList.add("hidden");
         attackButton.disabled = false;
         attackButton.classList.remove("hidden");
-        surrenderButton.classList.remove("hidden");
         displayMessage(`\n${currentEnemy.description}`);
         displayMessage(`${currentEnemy.name}が現れた！戦闘開始！`);
         updateEnemyStatus();
@@ -2621,7 +2636,6 @@ async function attack() {
                 attackButton.classList.add("hidden");
                 advanceButton.classList.remove("hidden");
                 advanceButton.disabled = false; // 戦闘終了後、進むボタンを有効化
-                surrenderButton.classList.add("hidden"); // 戦闘終了時に降参ボタンを非表示に
                 enemyStatusArea.classList.add("hidden"); // 敵HP表示を非表示に
                 currentEnemy = null; // 敵をクリア
                 player.currentEventCompleted = true; // 戦闘イベント完了
@@ -2644,7 +2658,6 @@ async function attack() {
             updateEnemyStatus(); // 敵HP表示を更新 (プレイヤーのターンではないが、念のため)
 
             if (player.hp <= 0) {
-                surrenderButton.classList.add("hidden"); // プレイヤー敗北時に降参ボタンを非表示に
                 enemyStatusArea.classList.add("hidden"); // 敵HP表示を非表示に
                 checkGameEnd();
                 saveGame(player); // ゲームオーバー時にセーブ
@@ -2682,10 +2695,7 @@ function checkGameEnd() {
  * プレイヤーが降参する
  */
 function surrender() {
-    if (!isCombatActive) {
-        displayMessage("戦闘中でないため降参できません。", false);
-        return;
-    }
+    closeMenuModal();
     player.isGameOver = true;
     displayMessage("あなたは降参した... 冒険はここで終わった...");
     saveGame(player);

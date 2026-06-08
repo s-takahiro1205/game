@@ -20,9 +20,9 @@
 
 ### 0-1. ホスティング移行
 
-- [ ] GitHubリポジトリを作成してコードをpush git remote add origin https://github.com/s-takahiro1205/game
-- [ ] GitHub Pagesを有効化して動作確認
-- [ ] CodePenの説明欄に「移行済み」と新URLを記載
+- [x] GitHubリポジトリを作成してコードをpush git remote add origin https://github.com/s-takahiro1205/game
+- [x] GitHub Pagesを有効化して動作確認
+- [x] CodePenの説明欄に「移行済み」と新URLを記載
 
 ### 0-2. ファイル分割
 

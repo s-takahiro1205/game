@@ -5,16 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>暁の探訪者</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 <div id="game-container">
     <!-- Title Screen -->
     <div id="title-screen" class="game-screen active">
         <h1>暁の探訪者</h1>
-        <button id="new-game-button">新しく始める</button>
-        <button id="load-game-button" class="hidden">続きから</button>
-        <button id="strong-new-game-button" class="hidden">強くてニューゲーム</button>
+        <button id="new-game-button" class="button">新しく始める</button>
+        <button id="load-game-button" class="button hidden">続きから</button>
+        <button id="strong-new-game-button" class="button hidden">引き継いで始める</button>
     </div>
 
     <!-- Character Creation Screen -->
@@ -69,7 +69,7 @@
             <p>器用: <span id="strong-new-game-dex">0</span></p>
             <p>体格: <span id="strong-new-game-size">0</span></p>
         </div>
-        <button id="start-adventure-button">冒険を始める</button>
+        <button id="start-adventure-button" class="button">冒険を始める</button>
     </div>
 
     <!-- Main Game Screen -->
@@ -211,10 +211,10 @@
         </div>
     </div>
 </div>
-<script src="save.js"></script>
-<script src="items.js"></script>
-<script src="events.js"></script>
-<script src="game.js"></script>
+<script src="js/save.js"></script>
+<script src="js/data/items.js"></script>
+<script src="js/data/events.js"></script>
+<script src="js/game.js"></script>
 
 </body>
 </html>

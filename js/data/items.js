@@ -28,7 +28,7 @@
 /**
  * @type {Item[]}
  */
-const ITEMS = [
+export const ITEMS = [
     // 消費アイテム
     {
         id: "potion_of_decay",
@@ -107,6 +107,3 @@ const ITEMS = [
         equip_type: "accessory"
     }
 ];
-
-// グローバルスコープにITEMSを公開
-window.ITEMS = ITEMS;

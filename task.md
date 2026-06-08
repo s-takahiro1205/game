@@ -30,11 +30,11 @@
 > 動作が壊れないことをブラウザで確認しながら進める。
 
 - [x] `css/style.css` を切り出し、`index.html` から `<link>` で読み込む
-- [ ] `js/data/events.js` を切り出し、`type="module"` で読み込む
-- [ ] `js/data/items.js` を切り出す
-- [ ] `js/save.js` を切り出す
-- [ ] `js/game.js` を切り出す（最後。依存が一番多いため）
-- [ ] 全ファイル分割後、全画面・全機能を手動で動作確認
+- [x] `js/data/events.js` を切り出し、`type="module"` で読み込む
+- [x] `js/data/items.js` を切り出す
+- [x] `js/save.js` を切り出す
+- [x] `js/game.js` を切り出す（最後。依存が一番多いため）
+- [x] 全ファイル分割後、全画面・全機能を手動で動作確認
 
 ### 0-3. 単一レンダリングパターンへの移行
 

@@ -51,7 +51,7 @@
  * @property {next | null} next
  */
 
-window.NORMAL_EVENTS = [
+export const NORMAL_EVENTS = [
     {
         title: "静かな森",
         text: "木々の間を縫うように進む。鳥のさえずりが聞こえるが、他には何も起こらない。ただ静寂がそこにあるだけだ。",
@@ -124,7 +124,7 @@ window.NORMAL_EVENTS = [
     }
 ];
 
-window.BENEFIT_EVENTS = [
+export const BENEFIT_EVENTS = [
     { title: "癒しの光", text: "空から柔らかな光が降り注ぎ、疲れた体を癒していく。傷が少しだけ和らいだ気がする。", effects: [{ type: "heal", value: 8 }] },
     { title: "不思議な果実", text: "見慣れない木に、輝く果実が実っていた。一口食べると、力が湧いてくるのを感じる。", effects: [{type: "stat_change", stat: "maxHp", value: 1 }, { type: "heal", value: 12 }] },
     { title: "隠された薬草", text: "足元に珍しい薬草を見つけた。煎じて飲むと、体の奥から活力が蘇る。", effects: [{ type: "heal", rate: 0.8, rate_reference: "maxHp" }] },
@@ -166,7 +166,7 @@ window.BENEFIT_EVENTS = [
     }
 ];
 
-window.DANGER_EVENTS = [
+export const DANGER_EVENTS = [
     { title: "野獣の襲撃", text: "茂みから飢えた野獣が飛び出してきた！警戒を怠った代償を払う時だ。", enemy: { name: "飢えた野獣", hp: 15, attack: 3, description: "鋭い爪と牙を持つ、獰猛な獣だ。", isBoss: false, armor: 0, speed: 5, intel: 1 , dex: 1 , size: 1, money: 10 } },
     { title: "盗賊の待ち伏せ", text: "人気のない道で、盗賊の一団が待ち伏せていた。彼らはあなたの持ち物を狙っている。", enemy: { name: "ならず者の盗賊", hp: 20, attack: 4, description: "数の利を活かそうとする、卑劣な盗賊だ。", isBoss: false, armor: 1, speed: 6, intel: 1 , dex: 1 , size: 1, money: 20 } },
     { title: "毒沼", text: "足を踏み入れた場所は、毒々しい沼地だった。体に痺れが走り、体力が奪われる。", effects: [{ type: "damage", value: 5 }] },
@@ -193,7 +193,7 @@ window.DANGER_EVENTS = [
     { title: "彷徨う亡霊", text: "夜の帳が下りる頃、彷徨う亡霊と遭遇した。その冷たい視線があなたを貫く。", enemy: { name: "彷徨う亡霊", hp: 25, attack: 5, description: "実体のない、怨念の塊だ。", isBoss: false, armor: 0, speed: 7, intel: 1 , dex: 1 , size: 1, money: 30 } }
 ];
 
-window.MILESTONE_EVENTS_DATA = {
+export const MILESTONE_EVENTS_DATA = {
     20: {
         title: "廃墟の番人",
         text: "荒れ果てた廃墟の奥深く、巨大な番人が立ちはだかる。その目は、侵入者を決して許さないと告げている。",
@@ -225,23 +225,23 @@ window.MILESTONE_EVENTS_DATA = {
  * @param {number} id - マスID
  * @returns {{event: EventCell, category: string, index: number}} - 生成されたイベント、カテゴリ、インデックス
  */
-function generateRandomEvent(id) {
+export function generateRandomEvent(id) {
     const rand = Math.random();
     let eventData;
     let type;
     let index;
 
     if (rand < 0.5) { // 50% normal
-        index = Math.floor(Math.random() * window.NORMAL_EVENTS.length);
-        eventData = window.NORMAL_EVENTS[index];
+        index = Math.floor(Math.random() * NORMAL_EVENTS.length);
+        eventData = NORMAL_EVENTS[index];
         type = "NORMAL"; // カテゴリ名を文字列で保存
     } else if (rand < 0.7) { // 20% benefit
-        index = Math.floor(Math.random() * window.BENEFIT_EVENTS.length);
-        eventData = window.BENEFIT_EVENTS[index];
+        index = Math.floor(Math.random() * BENEFIT_EVENTS.length);
+        eventData = BENEFIT_EVENTS[index];
         type = "BENEFIT"; // カテゴリ名を文字列で保存
     } else { // 20% danger
-        index = Math.floor(Math.random() * window.DANGER_EVENTS.length);
-        eventData = window.DANGER_EVENTS[index];
+        index = Math.floor(Math.random() * DANGER_EVENTS.length);
+        eventData = DANGER_EVENTS[index];
         type = "DANGER"; // カテゴリ名を文字列で保存
     }
 
@@ -262,11 +262,11 @@ function generateRandomEvent(id) {
     return { event: event, category: type, index: index };
 }
 
-window.EVENTS = [];
+export const EVENTS = [];
 for (let i = 0; i <= 100; i++) {
-    if (window.MILESTONE_EVENTS_DATA[i]) {
-        const milestone = window.MILESTONE_EVENTS_DATA[i];
-        window.EVENTS.push({
+    if (MILESTONE_EVENTS_DATA[i]) {
+        const milestone = MILESTONE_EVENTS_DATA[i];
+        EVENTS.push({
             id: i,
             type: milestone.type,
             title: milestone.title,
@@ -276,16 +276,16 @@ for (let i = 0; i <= 100; i++) {
             isMilestone: true,
             choices: milestone.choices || null, // 現状ないけど一応
             eventCategory: "MILESTONE", // マイルストーンイベントのカテゴリ
-            eventIndex: Object.keys(window.MILESTONE_EVENTS_DATA).indexOf(String(i)) // マイルストーンイベントのインデックス
+            eventIndex: Object.keys(MILESTONE_EVENTS_DATA).indexOf(String(i)) // マイルストーンイベントのインデックス
         });
     } else {
         const randomEventResult = generateRandomEvent(i);
-        window.EVENTS.push(randomEventResult.event);
+        EVENTS.push(randomEventResult.event);
     }
 }
 
 // マス0は常にノーマルイベント（スタート地点）
-window.EVENTS[0] = {
+EVENTS[0] = {
     id: 0,
     type: "normal",
     title: "旅の始まり",
@@ -297,5 +297,3 @@ window.EVENTS[0] = {
     eventCategory: "NORMAL", // スタートイベントのカテゴリ
     eventIndex: 0 // スタートイベントのインデックス (NORMAL_EVENTSの最初の要素を想定)
 };
-
-console.log("EVENTS array generated with 101 elements (0-100).");

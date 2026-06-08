@@ -1,16 +1,19 @@
 // localStorage セーブ・ロード処理
 
+const SAVE_KEY = "akatsuki_save";
+const SAVE_VERSION = "1.0";
+
 /**
  * ゲームデータをlocalStorageに保存する
  * @param {object} player - プレイヤーデータオブジェクト
  */
-function saveGame(player) {
+export function saveGame(player) {
     const data = {
         player: player,
         timestamp: new Date().toISOString(),
-        version: "1.0"
+        version: SAVE_VERSION
     };
-    localStorage.setItem("akatsuki_save", JSON.stringify(data));
+    localStorage.setItem(SAVE_KEY, JSON.stringify(data));
     console.log("Game saved:", data);
 }
 
@@ -18,8 +21,8 @@ function saveGame(player) {
  * localStorageからゲームデータをロードする
  * @returns {object|null} ロードされたゲームデータ、またはデータがない場合はnull
  */
-function loadGame() {
-    const raw = localStorage.getItem("akatsuki_save");
+export function loadGame() {
+    const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) {
         console.log("No save data found.");
         return null;
@@ -27,7 +30,7 @@ function loadGame() {
     try {
         const data = JSON.parse(raw);
         // セーブデータバージョン確認
-        if (data.version !== "1.0") {
+        if (data.version !== SAVE_VERSION) {
             console.warn("Save data version mismatch. Ignoring old save data.");
             return null;
         }
@@ -42,7 +45,7 @@ function loadGame() {
 /**
  * localStorageからセーブデータを削除する
  */
-function deleteSaveData() {
-    localStorage.removeItem("akatsuki_save");
+export function deleteSaveData() {
+    localStorage.removeItem(SAVE_KEY);
     console.log("Save data deleted.");
 }

@@ -1,5 +1,9 @@
 // ゲームロジック・状態管理・メインループ
 
+import { saveGame, loadGame, deleteSaveData } from './save.js';
+import { ITEMS } from './data/items.js';
+import { NORMAL_EVENTS, BENEFIT_EVENTS, DANGER_EVENTS, MILESTONE_EVENTS_DATA, EVENTS, generateRandomEvent } from './data/events.js';
+
 // ============================================================================
 // 1. グローバル変数とDOM要素
 // ============================================================================
@@ -200,7 +204,7 @@ function debugTriggerEvent(eventCategory, eventIndex) {
  */
 function populateDebugItemSelect() {
     debugItemSelect.innerHTML = ''; // Clear existing options
-    window.ITEMS.forEach(item => {
+    ITEMS.forEach(item => {
         const option = document.createElement("option");
         option.value = item.id;
         option.textContent = `${item.name} (${item.id})`;
@@ -392,25 +396,25 @@ function getEventFromSavedData(category, index) {
 
     switch (category) {
         case "NORMAL":
-            if (window.NORMAL_EVENTS[index]) {
-                eventData = window.NORMAL_EVENTS[index];
+            if (NORMAL_EVENTS[index]) {
+                eventData = NORMAL_EVENTS[index];
             }
             break;
         case "BENEFIT":
-            if (window.BENEFIT_EVENTS[index]) {
-                eventData = window.BENEFIT_EVENTS[index];
+            if (BENEFIT_EVENTS[index]) {
+                eventData = BENEFIT_EVENTS[index];
             }
             break;
         case "DANGER":
-            if (window.DANGER_EVENTS[index]) {
-                eventData = window.DANGER_EVENTS[index];
+            if (DANGER_EVENTS[index]) {
+                eventData = DANGER_EVENTS[index];
             }
             break;
         case "MILESTONE":
-            const milestoneKeys = Object.keys(window.MILESTONE_EVENTS_DATA);
+            const milestoneKeys = Object.keys(MILESTONE_EVENTS_DATA);
             if (milestoneKeys[index]) {
                 const key = milestoneKeys[index];
-                eventData = window.MILESTONE_EVENTS_DATA[key];
+                eventData = MILESTONE_EVENTS_DATA[key];
                 eventType = "milestone"; // マイルストーンイベントのtypeは"milestone"
             }
             break;
@@ -927,17 +931,17 @@ function populateDebugEventSelects() {
         let eventsToPopulate = [];
         switch (selectedCategory) {
             case "NORMAL":
-                eventsToPopulate = window.NORMAL_EVENTS;
+                eventsToPopulate = NORMAL_EVENTS;
                 break;
             case "BENEFIT":
-                eventsToPopulate = window.BENEFIT_EVENTS;
+                eventsToPopulate = BENEFIT_EVENTS;
                 break;
             case "DANGER":
-                eventsToPopulate = window.DANGER_EVENTS;
+                eventsToPopulate = DANGER_EVENTS;
                 break;
             case "MILESTONE":
                 // MILESTONE_EVENTS_DATAはオブジェクトなので、values()で配列に変換
-                eventsToPopulate = Object.values(window.MILESTONE_EVENTS_DATA);
+                eventsToPopulate = Object.values(MILESTONE_EVENTS_DATA);
                 break;
         }
 
@@ -974,7 +978,7 @@ function debugStartCombat(enemyName) {
     }
     // DANGER_EVENTSからも探す (generateRandomEventで使われるため)
     if (!enemyToFight) {
-        for (const eventData of window.DANGER_EVENTS) {
+        for (const eventData of DANGER_EVENTS) {
             if (eventData.enemy && eventData.enemy.name === enemyName) {
                 enemyToFight = eventData.enemy;
                 break;
@@ -983,8 +987,8 @@ function debugStartCombat(enemyName) {
     }
     // MILESTONE_EVENTS_DATAからも探す
     if (!enemyToFight) {
-        for (const key in window.MILESTONE_EVENTS_DATA) {
-            const milestoneEvent = window.MILESTONE_EVENTS_DATA[key];
+        for (const key in MILESTONE_EVENTS_DATA) {
+            const milestoneEvent = MILESTONE_EVENTS_DATA[key];
             if (milestoneEvent.enemy && milestoneEvent.enemy.name === enemyName) {
                 enemyToFight = milestoneEvent.enemy;
                 break;
@@ -1430,7 +1434,7 @@ async function applyEffect(effect) {
             break;
         case "random_item": {
             const count = effect.count ?? 1;
-            const pool = window.ITEMS;
+            const pool = ITEMS;
             for (let i = 0; i < count; i++) {
                 const randomItem = getItemById(pool[Math.floor(Math.random() * pool.length)].id);
                 await acquireItem(randomItem);

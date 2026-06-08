@@ -39,7 +39,7 @@ export const ITEMS = [
         effects: [
             { type: "heal", value: 10, text: "朽ちた回復薬を飲んだ。10 HP回復した！" }
         ],
-        uses: 1,
+        uses: 2,
         stat_modifier: null,
         equip_type: null
     },

@@ -292,6 +292,7 @@ function showTitleScreen() {
 /**
  * キャラクター作成画面を表示する
  * @param {boolean} isStrongNewGame - 強くてニューゲームかどうか (変更)
+ * @param {string} inheritedName - 強くてニューゲームの場合に引き継ぐ名前
  * @param {number} inheritedMaxHp - 強くてニューゲームの場合に引き継ぐ最大HP
  * @param {number} inheritedAttack - 強くてニューゲームの場合に引き継ぐ攻撃力
  * @param {number} inheritedArmor - 強くてニューゲームの場合に引き継ぐアーマー
@@ -300,7 +301,7 @@ function showTitleScreen() {
  * @param {number} inheritedDex - 強くてニューゲームの場合に引き継ぐ器用
  * @param {number} inheritedSize - 強くてニューゲームの場合に引き継ぐ体格
  */
-function showCharacterCreationScreen(isStrongNewGame = false, inheritedMaxHp = 0, inheritedAttack = 0, inheritedArmor = 0, inheritedSpeed = 0, inheritedIntel = 0, inheritedDex = 0, inheritedSize = 0) { // 変更
+function showCharacterCreationScreen(isStrongNewGame = false, inheritedName = "名もなき探訪者", inheritedMaxHp = 0, inheritedAttack = 0, inheritedArmor = 0, inheritedSpeed = 0, inheritedIntel = 0, inheritedDex = 0, inheritedSize = 0) { // 変更
     resetGameUI();
     showScreen(characterCreationScreen);
 
@@ -324,7 +325,7 @@ function showCharacterCreationScreen(isStrongNewGame = false, inheritedMaxHp = 0
         strongNewGameSizeDisplay.textContent = inheritedSize;
 
         // 名前入力以外は無効化
-        playerNameInput.value = "名もなき探訪者";
+        playerNameInput.value = inheritedName;
         playerNameInput.disabled = false;
         startAdventureButton.disabled = false; // 名前入力のみなので常に有効
     } else {
@@ -1145,7 +1146,14 @@ function renderMenuItems() {
         const effectText = formatItemEffect(item);
         itemCard.innerHTML = `
             <h4>${item.name}</h4>
-            <p>${item.description}</p>
+            <p>${item.description}</p>`;
+        if (item.uses > 0) {
+            itemCard.innerHTML += `<p style="margin: 0;">残り${item.uses}回</p>`;
+        }
+        itemCard.innerHTML += `
+            ${effectText ? `<p class="item-effect-text">${effectText}</p>` : ""}
+        `;
+        itemCard.innerHTML += `
             ${effectText ? `<p class="item-effect-text">${effectText}</p>` : ""}
         `;
         if (item.effects && item.effects.length > 0) {
@@ -1728,6 +1736,7 @@ document.querySelectorAll(".tab-button").forEach(button => {
 function startStrongNewGame() {
     const savedData = loadGame();
     if (savedData && (savedData.player.isGameOver || savedData.player.isCleared)) {
+        const inheritedName = savedData.player.name;
         const inheritedMaxHp = savedData.player.maxHp;
         const inheritedAttack = savedData.player.attack;
         const inheritedArmor = savedData.player.armor || 0;
@@ -1735,7 +1744,7 @@ function startStrongNewGame() {
         const inheritedIntel = savedData.player.intel || 0;
         const inheritedDex = savedData.player.dex || 0;
         const inheritedSize = savedData.player.size || 0;
-        showCharacterCreationScreen(true, inheritedMaxHp, inheritedAttack, inheritedArmor, inheritedSpeed, inheritedIntel, inheritedDex, inheritedSize);
+        showCharacterCreationScreen(true, inheritedName, inheritedMaxHp, inheritedAttack, inheritedArmor, inheritedSpeed, inheritedIntel, inheritedDex, inheritedSize);
     } else {
         // エラーハンドリング、通常はここには来ないはず
         console.error("強くてニューゲームを開始できません。適切なセーブデータが見つかりません。");

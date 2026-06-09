@@ -69,7 +69,7 @@ const gameState = new Proxy({
         // // データ
         // currentEvent: null,
         // currentChoices: null,
-        // currentEnemy: null,
+        currentEnemy: null,
         // exploreLog: [],
         // combatLog: []
     },
@@ -81,9 +81,6 @@ const gameState = new Proxy({
             return true;
         }
 });
-
-let currentEnemy = null;
-let isCombatActive = false;
 
 // DOM Elements
 const titleScreen = document.getElementById("title-screen");
@@ -313,9 +310,8 @@ function showScreen() {
  * ゲームUIの状態をリセットする (ボタンの有効/無効、表示/非表示など)
  */
 function resetGameUI() {
-    isCombatActive = false;
     gameState.currentScreen = 'main-game-screen';
-    currentEnemy = null;
+    gameState.currentEnemy = null;
     advanceButton.disabled = false;
     advanceButton.classList.remove("hidden");
     attackButton.disabled = false;
@@ -839,7 +835,7 @@ function renderChoices(choices, event) {
                 displayCurrentEvent(nextEvent);
             } else {
                 // nextがない場合、イベントはここで終了し、進むボタンを再有効化
-                if (!isCombatActive && !player.isGameOver && !player.isCleared) {
+                if (!player.isGameOver && !player.isCleared) {
                     // 選択肢が選ばれたので、現在のイベントは完了
                     player.currentEventCompleted = true;
                     advanceButton.disabled = false;
@@ -912,14 +908,13 @@ function displayCurrentEvent(event) {
         advanceButton.disabled = true;
         // player.currentEventCompleted は false のまま
     } else if (event.enemy) {
-        currentEnemy = { ...event.enemy, currentHp: event.enemy.hp };
-        isCombatActive = true;
+        gameState.currentEnemy = { ...event.enemy, currentHp: event.enemy.hp };
         gameState.currentScreen = 'battle-screen';
         advanceButton.classList.add("hidden");
         attackButton.disabled = false;
         attackButton.classList.remove("hidden");
-        displayMessage(`\n${currentEnemy.description}`);
-        displayMessage(`${currentEnemy.name}が現れた！戦闘開始！`);
+        displayMessage(`\n${gameState.currentEnemy.description}`);
+        displayMessage(`${gameState.currentEnemy.name}が現れた！戦闘開始！`);
         updateEnemyStatus();
         // player.currentEventCompleted は false のまま
     } else if (event.effects) {
@@ -937,7 +932,7 @@ function displayCurrentEvent(event) {
     checkGameEnd();
 
     // advanceButtonの再有効化ロジックを調整
-    if (!isCombatActive && !player.isGameOver && !player.isCleared && player.currentEventCompleted) {
+    if (!player.isGameOver && !player.isCleared && player.currentEventCompleted) {
         advanceButton.disabled = false;
         advanceButton.classList.remove("hidden");
     }
@@ -948,11 +943,11 @@ function displayCurrentEvent(event) {
  * 敵のステータス表示を更新する
  */
 function updateEnemyStatus() {
-    if (currentEnemy) {
-        enemyDisplayName.textContent = currentEnemy.name;
-        const hpPercentage = (currentEnemy.currentHp / currentEnemy.hp) * 100;
+    if (gameState.currentEnemy) {
+        enemyDisplayName.textContent = gameState.currentEnemy.name;
+        const hpPercentage = (gameState.currentEnemy.currentHp / gameState.currentEnemy.hp) * 100;
         enemyHpBarFill.style.width = `${hpPercentage}%`;
-        enemyHpText.textContent = `${currentEnemy.currentHp}/${currentEnemy.hp}`;
+        enemyHpText.textContent = `${gameState.currentEnemy.currentHp}/${gameState.currentEnemy.hp}`;
         enemyStatusArea.classList.remove("hidden");
     } else {
         enemyStatusArea.classList.add("hidden");
@@ -1047,7 +1042,7 @@ function debugStartCombat(enemyName) {
         displayMessage("敵が選択されていません。", false);
         return;
     }
-    if (isCombatActive) {
+    if (gameState.currentScreen === 'battle-screen') {
         displayMessage("すでに戦闘中です。", false);
         return;
     }
@@ -1082,15 +1077,14 @@ function debugStartCombat(enemyName) {
 
 
     if (enemyToFight) {
-        currentEnemy = { ...enemyToFight, currentHp: enemyToFight.hp };
-        isCombatActive = true;
+        gameState.currentEnemy = { ...enemyToFight, currentHp: enemyToFight.hp };
         gameState.currentScreen = 'battle-screen';
         advanceButton.classList.add("hidden");
         attackButton.disabled = false;
         attackButton.classList.remove("hidden");
-        displayMessage(`デバッグ: ${currentEnemy.name} との戦闘を開始します！`, false);
-        displayMessage(`\n${currentEnemy.description}`);
-        displayMessage(`${currentEnemy.name}が現れた！戦闘開始！`);
+        displayMessage(`デバッグ: ${gameState.currentEnemy.name} との戦闘を開始します！`, false);
+        displayMessage(`\n${gameState.currentEnemy.description}`);
+        displayMessage(`${gameState.currentEnemy.name}が現れた！戦闘開始！`);
     } else {
         displayMessage(`デバッグ: 敵「${enemyName}」が見つかりませんでした。`, false);
     }
@@ -1244,7 +1238,8 @@ function renderMenuItems() {
             useButton.addEventListener("click", {item: item, handleEvent: useItem});
             itemCard.appendChild(useButton);
         }
-        if (!isCombatActive && item.category === "equipment") {
+
+        if (item.category === "equipment") {
             const equipButton = document.createElement("button");
             equipButton.classList.add("button");
             equipButton.textContent = "装備";
@@ -1337,7 +1332,7 @@ function renderMenuEquip() {
             ${effectText ? `<p class="item-effect-text">${effectText}</p>` : ""}
         `;
         // 戦闘中でないなら
-        if (!isCombatActive) {
+        if (gameState.currentScreen !== 'battle-screen') {
             const unequipButton = document.createElement("button");
             unequipButton.classList.add("button");
             unequipButton.textContent = "解除";
@@ -1404,7 +1399,7 @@ function showTab(tabId) {
 // ============================================================================
 // 5. ゲームループ (「進む」ボタン押下時)
 async function advance() {
-    if (isCombatActive || player.isGameOver || player.isCleared) return;
+    if (player.isGameOver || player.isCleared) return;
 
     // 現在のマスでのイベントが未完了の場合、先に進めない
     if (player.position > 0 && !player.currentEventCompleted) {
@@ -1613,42 +1608,41 @@ function checkCondition(condition) {
 // 6. 戦闘ロジック
 // ============================================================================
 async function attack() {
-    if (!isCombatActive || player.isGameOver || player.isCleared) return;
+    if (player.isGameOver || player.isCleared) return;
 
     attackButton.disabled = true; // ボタンを一時的に無効化
     attackButton.classList.add("hidden"); // 変更: hidden プロパティではなくクラスを使用
 
     let turnOrder = [];
-    if (player.speed >= currentEnemy.speed) {
+    if (player.speed >= gameState.currentEnemy.speed) {
         turnOrder = ['player', 'enemy'];
     } else {
         turnOrder = ['enemy', 'player'];
     }
 
     for (const attacker of turnOrder) {
-        if (!isCombatActive || player.isGameOver || player.isCleared) break; // 途中で戦闘終了した場合
+        if (player.isGameOver || player.isCleared) break; // 途中で戦闘終了した場合
 
         await new Promise(resolve => setTimeout(resolve, 1000)); // 1秒待機
 
         if (attacker === 'player') {
             // プレイヤー攻撃
             const playerRawDmg = Math.ceil(Math.random() * player.attack);
-            const actualDamageToEnemy = calculateDamage(playerRawDmg, currentEnemy.armor);
-            currentEnemy.currentHp -= actualDamageToEnemy;
-            displayMessage(`あなたの攻撃！ ${currentEnemy.name} に ${actualDamageToEnemy} のダメージ！ (元ダメージ: ${playerRawDmg}, 敵アーマー: ${currentEnemy.armor})`);
+            const actualDamageToEnemy = calculateDamage(playerRawDmg, gameState.currentEnemy.armor);
+            gameState.currentEnemy.currentHp -= actualDamageToEnemy;
+            displayMessage(`あなたの攻撃！ ${gameState.currentEnemy.name} に ${actualDamageToEnemy} のダメージ！ (元ダメージ: ${playerRawDmg}, 敵アーマー: ${gameState.currentEnemy.armor})`);
             updateEnemyStatus(); // 敵HP表示を更新
 
-            if (currentEnemy.currentHp <= 0) {
-                displayMessage(`${currentEnemy.name}を倒した！`);
-                player.money += currentEnemy.money; // お金の加算
-                displayMessage(`${currentEnemy.money}Gを手に入れた！`); // 獲得メッセージ
-                isCombatActive = false;
+            if (gameState.currentEnemy.currentHp <= 0) {
+                displayMessage(`${gameState.currentEnemy.name}を倒した！`);
+                player.money += gameState.currentEnemy.money; // お金の加算
+                displayMessage(`${gameState.currentEnemy.money}Gを手に入れた！`); // 獲得メッセージ
                 gameState.currentScreen = 'main-game-screen';
                 attackButton.classList.add("hidden");
                 advanceButton.classList.remove("hidden");
                 advanceButton.disabled = false; // 戦闘終了後、進むボタンを有効化
                 enemyStatusArea.classList.add("hidden"); // 敵HP表示を非表示に
-                currentEnemy = null; // 敵をクリア
+                gameState.currentEnemy = null; // 敵をクリア
                 player.currentEventCompleted = true; // 戦闘イベント完了
 
                 // 最終ボス撃破判定
@@ -1661,10 +1655,10 @@ async function attack() {
             }
         } else {
             // 敵攻撃
-            const enemyRawDmg = Math.ceil(Math.random() * currentEnemy.attack);
+            const enemyRawDmg = Math.ceil(Math.random() * gameState.currentEnemy.attack);
             const actualDamageToPlayer = calculateDamage(enemyRawDmg, player.armor);
             player.hp -= actualDamageToPlayer;
-            displayMessage(`${currentEnemy.name} の攻撃！ ${actualDamageToPlayer} のダメージを受けた！ (元ダメージ: ${enemyRawDmg}, あなたのアーマー: ${player.armor})`);
+            displayMessage(`${gameState.currentEnemy.name} の攻撃！ ${actualDamageToPlayer} のダメージを受けた！ (元ダメージ: ${enemyRawDmg}, あなたのアーマー: ${player.armor})`);
             updatePlayerStatus();
             updateEnemyStatus(); // 敵HP表示を更新 (プレイヤーのターンではないが、念のため)
 

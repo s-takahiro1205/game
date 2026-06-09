@@ -42,7 +42,7 @@
 
 - [x] 0-3-1: `gameState` proxyオブジェクトを定義し、setメソッドとdirtyプロパティ追加
 - [x] 0-3-2: battle-screenを追加し、現在の戦闘画面を移植する
-- [ ] 0-3-3: `gameState` に現状の散在した状態変数を移植する(currentEnemy, isCombatActive)
+- [x] 0-3-3: `gameState` に現状の散在した状態変数を移植する(currentEnemy, isCombatActive)
 - [ ] 0-3-4: ダメージ計算・効果適用など純粋計算の関数を `game.js` 上部にまとめる
 - [ ] 0-3-5: `render()` を新設し内部でrequestAnimationFrameにて再起呼び出しする。gameStateの初期化時にrequestAnimationFrame()で呼び出す
 - [ ] 0-3-6: タイトル画面系のrender関数を `gameState` 参照に書き換えてrender()に集約する

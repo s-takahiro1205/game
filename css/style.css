@@ -219,7 +219,7 @@ input[type="number"] {
     background-color: #dc3545; /* 赤 */
 }
 
-#game-message {
+.game-message {
     background-color: #0f0f1a;
     border: 1px solid #ffcc00;
     border-radius: 8px;
@@ -232,9 +232,10 @@ input[type="number"] {
     color: #e0e0e0;
     font-size: 0.8em;
     letter-spacing: -0.05em;
+    width: 30em;
 }
 
-#game-message p {
+.game-message p {
     margin: 0;
     border-bottom: dotted 0.05em gray;
 }

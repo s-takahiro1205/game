@@ -128,13 +128,23 @@ const playerSpeedSpan = document.getElementById("player-speed");
 const playerIntelSpan = document.getElementById("player-intel");
 const playerDexSpan = document.getElementById("player-dex");
 const playerSizeSpan = document.getElementById("player-size");
-const hpBarFill = document.querySelector(".hp-bar-fill");
+const gameHpBarFill = document.getElementById("game-hp-bar-fill");
 const gameMessage = document.getElementById("game-message");
 const choicesContainer = document.getElementById("choices-container");
 const advanceButton = document.getElementById("advance-button");
 const attackButton = document.getElementById("attack-button");
 const surrenderButton = document.getElementById("surrender-button");
 const menuButton = document.getElementById("menu-button");
+
+const battleScreen = document.getElementById("battle-screen");
+const battlePlayerDisplayName = document.getElementById("battle-player-display-name");
+const battlePlayerHpText = document.getElementById("battle-player-hp-text");
+const battleHpBarFill = document.getElementById("battle-hp-bar-fill");
+const battleMessage = document.getElementById("battle-message");
+const enemyStatusArea = document.getElementById("enemy-status-area");
+const enemyDisplayName = document.getElementById("enemy-display-name");
+const enemyHpBarFill = document.getElementById("enemy-hp-bar-fill");
+const enemyHpText = document.getElementById("enemy-hp-text");
 
 // アイテム破棄モーダル用DOM要素
 const discardItemModal = document.getElementById("discard-item-modal");
@@ -145,11 +155,6 @@ const discardSelectedItemButton = document.getElementById("discard-selected-item
 let selectedItemToDiscardIndex = -1; // 破棄するアイテムのインデックス
 let itemToAcquireAfterDiscard = null; // 破棄後に取得するアイテム
 
-// 敵HP表示用DOM要素
-const enemyStatusArea = document.getElementById("enemy-status-area");
-const enemyDisplayName = document.getElementById("enemy-display-name");
-const enemyHpBarFill = document.querySelector(".enemy-hp-bar-fill");
-const enemyHpText = document.getElementById("enemy-hp-text");
 
 const gameOverScreen = document.getElementById("game-over-screen");
 const backToTitleFromGameOverButton = document.getElementById("back-to-title-from-gameover");
@@ -271,6 +276,7 @@ let renderReserved = false;
 // レンダリングメソッド
 function render() {
     showScreen();
+    updateUI();// TODO これバラして
 }
 
 // レンダリング実行メソッド
@@ -292,6 +298,7 @@ function showScreen() {
         'title-screen': titleScreen,
         'character-creation-screen': characterCreationScreen,
         'main-game-screen': mainGameScreen,
+        'battle-screen': battleScreen,
         'game-over-screen': gameOverScreen,
         'clear-screen': clearScreen
     };
@@ -307,6 +314,7 @@ function showScreen() {
  */
 function resetGameUI() {
     isCombatActive = false;
+    gameState.currentScreen = 'main-game-screen';
     currentEnemy = null;
     advanceButton.disabled = false;
     advanceButton.classList.remove("hidden");
@@ -633,11 +641,9 @@ async function acquireItem(item) {
                     player.item_slot.push(itemToAcquireAfterDiscard);
                     displayMessage(`${itemToAcquireAfterDiscard.name} を手に入れた！`);
                     updateUI();
-                    // saveGame(player);
                     resolve(true); // 取得成功
                 } else {
                     displayMessage("アイテムの破棄をキャンセルしました。アイテムの取得を諦めます。");
-                    // saveGame(player);
                     resolve(false); // 破棄をキャンセルしたため、取得も諦める
                 }
                 itemToAcquireAfterDiscard = null; // 使用済みなのでクリア
@@ -726,35 +732,57 @@ function openDiscardItemModal() {
 // ============================================================================
 /**
  * プレイヤーのステータス表示を更新する
+ * TODO: いったんbattle側も更新、のちのち分離
  */
 function updatePlayerStatus() {
-    playerDisplayName.textContent = player.name;
     const hpPercentage = (player.hp / player.maxHp) * 100;
-    hpBarFill.style.width = `${hpPercentage}%`;
-    playerHpText.textContent = `${player.hp}/${player.maxHp}`;
 
-    if (hpPercentage <= 25) {
-        hpBarFill.classList.add("low-hp");
+    if (gameState.currentScreen === 'battle-screen') {
+        battlePlayerDisplayName.textContent = player.name;
+        battlePlayerHpText.textContent = `${player.hp}/${player.maxHp}`;
+        battleHpBarFill.style.width = `${hpPercentage}%`;
+        if (hpPercentage <= 25) {
+            gameHpBarFill.classList.add("low-hp");
+        } else {
+            gameHpBarFill.classList.remove("low-hp");
+        }
     } else {
-        hpBarFill.classList.remove("low-hp");
+        playerDisplayName.textContent = player.name;
+        playerHpText.textContent = `${player.hp}/${player.maxHp}`;
+        gameHpBarFill.style.width = `${hpPercentage}%`;
+        if (hpPercentage <= 25) {
+            gameHpBarFill.classList.add("low-hp");
+        } else {
+            gameHpBarFill.classList.remove("low-hp");
+        }
     }
+
 }
 
 /**
  * ゲームメッセージをテキストエリアに表示する
+ * TODO: いったんbattleにも追加している。のちのち分離。ログ管理
  * @param {string} message - 表示するメッセージ
  * @param {boolean} append - trueの場合、既存のメッセージに追加する
  */
 function displayMessage(message, append = true) {
+    let targetArea = null;
+    if (gameState.currentScreen === 'battle-screen') {
+        targetArea = battleMessage;
+    } else {
+        targetArea = gameMessage;
+    }
+
+
     const p = document.createElement("p");
     p.textContent = message;
     if (append) {
-        gameMessage.appendChild(p);
+        targetArea.appendChild(p);
     } else {
-        gameMessage.innerHTML = "";
-        gameMessage.appendChild(p);
+        targetArea.innerHTML = "";
+        targetArea.appendChild(p);
     }
-    gameMessage.scrollTop = gameMessage.scrollHeight; // スクロールを一番下へ
+    targetArea.scrollTop = targetArea.scrollHeight; // スクロールを一番下へ\
 }
 
 /**
@@ -886,6 +914,7 @@ function displayCurrentEvent(event) {
     } else if (event.enemy) {
         currentEnemy = { ...event.enemy, currentHp: event.enemy.hp };
         isCombatActive = true;
+        gameState.currentScreen = 'battle-screen';
         advanceButton.classList.add("hidden");
         attackButton.disabled = false;
         attackButton.classList.remove("hidden");
@@ -1055,6 +1084,7 @@ function debugStartCombat(enemyName) {
     if (enemyToFight) {
         currentEnemy = { ...enemyToFight, currentHp: enemyToFight.hp };
         isCombatActive = true;
+        gameState.currentScreen = 'battle-screen';
         advanceButton.classList.add("hidden");
         attackButton.disabled = false;
         attackButton.classList.remove("hidden");
@@ -1613,6 +1643,7 @@ async function attack() {
                 player.money += currentEnemy.money; // お金の加算
                 displayMessage(`${currentEnemy.money}Gを手に入れた！`); // 獲得メッセージ
                 isCombatActive = false;
+                gameState.currentScreen = 'main-game-screen';
                 attackButton.classList.add("hidden");
                 advanceButton.classList.remove("hidden");
                 advanceButton.disabled = false; // 戦闘終了後、進むボタンを有効化

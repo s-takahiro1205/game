@@ -1,0 +1,98 @@
+https://zenn.dev/yend724/articles/20220915-t0ws2v8agxiaa8gi
+ 
+### 0-3. ロジック・描画の分離とrender()への統合
+ 
+> 0-3aを終えてから0-3b以降に進む。
+> 新機能は追加しない。画面の見た目・挙動は変えない。
+ 
+- [ ] 0-3-1: `gameState` proxyオブジェクトを定義し、setメソッドとdirtyプロパティ追加
+- [ ] 0-3-2: `gameState` の初期化処理を追加し、ゲーム開始時に呼び出し（初期化メソッドを作ればよろし）
+- [ ] 0-3-3: `gameState` に現状の散在した状態変数を移植する(currentEnemy, isCombatActive)
+  currentEnemyは戦闘開始時に敵情報をディープコピーしたもの。gameStatusに入れるならコピー時に再起proxyか描画呼び出し付きのヘルパー関数が必要かも。状態異常とか入りだしたら必須。
+  isCombatActiveは現在戦闘中かを示す。
+  参考 うえから置換していく 仕様書書き直したほうがよろし
+const gameState = {
+  // ページ制御（排他的で同時表示がありえないもの）
+  currentPage: "title" | "register" | "explore" | "combat" | "gameclear" | "gameover",
+  // 探索内サブ状態
+  explorePhase: "is_idle" | "is_rolling" | "is_event" | "is_event_choice",
+  // 戦闘内サブ状態
+  combatPhase: "start" | "command_waiting" | "enemy_act" | "result",
+  // モーダル（currentPageと独立して重なる）
+  openModal: null | "menu" | "item_discard",
+  menuTab: "status" | "items" | "equipment",
+  // データ
+  currentEvent: null,
+  currentChoices: null,
+  currentEnemy: null,
+  exploreLog: [],
+  combatLog: []
+};
+  メモ：async/await全部に必須かも
+- [ ] 0-3-4: ダメージ計算・効果適用など純粋計算の関数を `game.js` 上部にまとめる
+- [ ] 0-3-5: `render()` を新設し内部でrequestAnimationFrameにて再起呼び出しする。gameStateの初期化時にrequestAnimationFrame()で呼び出す
+- [ ] 0-3-6: タイトル画面系のrender関数を `gameState` 参照に書き換えてrender()に集約する
+- [ ] 0-3-7: 探索画面系のrender関数を `gameState` 参照に書き換えて集約する
+- [ ] 0-3-8: 探索・イベント・ダイスロールが正常に動くことを確認
+- [ ] 0-3-9: 戦闘画面系のrender関数を同様に書き換えて集約する
+- [ ] 0-3-10: 戦闘・勝敗判定が正常に動くことを確認
+- [ ] 0-3-11: メニュー系のrender関数を同様に書き換えて集約する
+- [ ] 0-3-12: アイテム使用・装備変更が正常に動くことを確認
+- [ ] 0-3-13: 既存の `renderXxx()` の存在チェック
+- [ ] 0-3-14: render.jsの分離
+- [ ] 0-3-15: 全画面・全機能を通しで手動確認する
+ 
+ループなら 不採用
+function renderLoop() {
+    updateAnimations(); //なんだこれ
+ 
+    if (dirty) {
+        render();
+        dirty = false;
+    }
+ 
+    requestAnimationFrame(renderLoop);
+}
+//ループでないなら playerとgameStateをproxy化 
+let renderReserved = false;
+ 
+function scheduleRender() {
+    if (renderReserved) return;
+ 
+    renderReserved = true;
+ 
+    requestAnimationFrame(() => {
+        renderReserved = false;
+        render();
+    });
+}
+ 
+const gameState = new Proxy(
+    {},
+    {
+        set(target, key, value) {
+            target[key] = value;
+            scheduleRender(); //連続render対策
+            return true;
+        }
+    }
+);
+ 
+セーブ関連処理の見直し(Step4書き換え もっと手前でやっちゃってもいいかも）
+サーバーやめて拠点でセーブダウンロードと読み込みをできるようにする。改造へのお気持ち抵抗として一応暗号化する。
+タイトルにセーブはlocalstorageなので定期的にローカルバックアップしてねといれる。
+ 
+数値計算（すべて切り捨て）
+攻撃
+ダイス数：速度 / 333 + 装備の値 + 1：下限1 999で3
+ダイス面：攻撃の25% + 装備の値：下限1 999で250
+修正値：器用 ^ 0.80 - 1 + 装備の値：下限0 999で250
+素手だと3D250+250で最大で1000出せる
+ 
+防御
+防御値：(防御 + 体格/10) / 5 + 装備の値：下限0
+回避値：速さ / 20 + (1001 - 体格 ^ 1.5) / 100 + 装備の値：下限0上限99
+ 
+ダメージ計算
+ダメージ：攻撃のダイスロール - 防御値：下限0
+回避判定：1D100 < 防御側回避値 - 攻撃側回避値

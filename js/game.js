@@ -1153,9 +1153,6 @@ function renderMenuItems() {
         itemCard.innerHTML += `
             ${effectText ? `<p class="item-effect-text">${effectText}</p>` : ""}
         `;
-        itemCard.innerHTML += `
-            ${effectText ? `<p class="item-effect-text">${effectText}</p>` : ""}
-        `;
         if (item.effects && item.effects.length > 0) {
             const useButton = document.createElement("button");
             useButton.classList.add("button");
@@ -1189,8 +1186,9 @@ async function useItem(_) {
         displayMessage(msg);
         showToast(msg);
     } else {
+        const msg = `${this.item.name} を使用した！`;
         displayMessage(msg);
-        showToast(`${this.item.name} を使用した！`);
+        showToast(msg);
     }
 
     renderMenuItems();
@@ -1204,14 +1202,12 @@ function equip(_) {
     // 1. 同タイプチェックを先に
     const sameType = player.equipment_slot.some(e => e.equip_type === this.item.equip_type);
     if (sameType) {
-        // displayMessage(`すでに${this.item.equip_type}を装備しています`);
-        showToast("すでに${this.item.equip_type}を装備しています");
+        showToast(`すでに${this.item.equip_type}を装備しています`);
         return;
     }
 
     // 2. 枠数チェック
     if (player.equipment_slot.length >= 5) {
-        // displayMessage("装備枠が一杯です");
         showToast("装備枠が一杯です");
         return;
     }

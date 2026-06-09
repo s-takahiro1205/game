@@ -304,14 +304,15 @@ function showScreen() {
     }
     screens[gameState.currentScreen].classList.remove("hidden");
     screens[gameState.currentScreen].classList.add("active");
+    if (gameState.currentScreen === 'title-screen') {
+        showTitleScreen();
+    }
 }
 
 /**
  * ゲームUIの状態をリセットする (ボタンの有効/無効、表示/非表示など)
  */
 function resetGameUI() {
-    gameState.currentScreen = 'main-game-screen';
-    gameState.currentEnemy = null;
     advanceButton.disabled = false;
     advanceButton.classList.remove("hidden");
     attackButton.disabled = false;
@@ -327,7 +328,6 @@ function resetGameUI() {
  */
 function showTitleScreen() {
     resetGameUI();
-    gameState.currentScreen = 'title-screen';
     const savedData = loadGame();
 
     // ボタンを初期状態に戻す
@@ -359,7 +359,7 @@ function showTitleScreen() {
  * @param {number} inheritedDex - 強くてニューゲームの場合に引き継ぐ器用
  * @param {number} inheritedSize - 強くてニューゲームの場合に引き継ぐ体格
  */
-function showCharacterCreationScreen(isStrongNewGame = false, inheritedName = "名もなき探訪者", inheritedMaxHp = 0, inheritedAttack = 0, inheritedArmor = 0, inheritedSpeed = 0, inheritedIntel = 0, inheritedDex = 0, inheritedSize = 0) { // 変更
+function showCharacterCreationScreen(isStrongNewGame = false, inheritedName = "名もなき探訪者", inheritedMaxHp = 0, inheritedAttack = 0, inheritedArmor = 0, inheritedSpeed = 0, inheritedIntel = 0, inheritedDex = 0, inheritedSize = 0) {
     resetGameUI();
     gameState.currentScreen = 'character-creation-screen';
 
@@ -1760,12 +1760,12 @@ surrenderButton.addEventListener("click", surrender);
 
 backToTitleFromGameOverButton.addEventListener("click", () => {
     // ゲームオーバー時はセーブデータを削除しないが、タイトルに戻る
-    showTitleScreen();
+    gameState.currentScreen = 'title-screen';
 });
 
 backToTitleFromClearButton.addEventListener("click", () => {
     // クリア時はセーブデータを削除しないが、タイトルに戻る
-    showTitleScreen();
+    gameState.currentScreen = 'title-screen';
 });
 
 debugTriggerEventButton.addEventListener("click", () => {
@@ -1823,7 +1823,7 @@ function startStrongNewGame() {
     } else {
         // エラーハンドリング、通常はここには来ないはず
         console.error("強くてニューゲームを開始できません。適切なセーブデータが見つかりません。");
-        showTitleScreen();
+        gameState.currentScreen = 'title-screen';
     }
 }
 
@@ -1831,5 +1831,5 @@ function startStrongNewGame() {
 // 9. 初期化
 // ============================================================================
 document.addEventListener("DOMContentLoaded", () => {
-    showTitleScreen();
+    gameState.currentScreen = 'title-screen';
 });

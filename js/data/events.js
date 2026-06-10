@@ -66,7 +66,7 @@ export const NORMAL_EVENTS = [
             {
                 text: "大地を踏みしめる",
                 outcomeText: "巨体を生かして力いっぱい大地を踏みしめた。周囲の木から見慣れない果実が落ちてきた。あなたはそれを口にした。",
-                condition: { stat: "size", operator: "gte", value: 10 },
+                condition: { stat: "size", operator: "gte", value: 5 },
                 effects: [{ type: "stat_change", value: 2, stat: "armor", text: "あなたの体は硬くなった。" }],
                 enemy: null,
                 next: null

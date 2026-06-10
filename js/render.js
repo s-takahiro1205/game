@@ -52,6 +52,7 @@ const gameMessage = document.getElementById("game-message");
 const choicesContainer = document.getElementById("choices-container");
 const advanceButton = document.getElementById("advance-button");
 const attackButton = document.getElementById("attack-button");
+const battleEndButton = document.getElementById("battle-end");
 const surrenderButton = document.getElementById("surrender-button");
 const menuButton = document.getElementById("menu-button");
 
@@ -150,7 +151,7 @@ function showScreen() {
  * 現状名前とHPだけ
  */
 function updatePlayerStatus() {
-    const hpPercentage = (player.hp / player.maxHp) * 100;
+    const hpPercentage = Math.max((player.hp / player.maxHp) * 100);
 
     if (gameState.currentScreen === 'battle-screen') {
         battlePlayerDisplayName.textContent = player.name;
@@ -178,9 +179,14 @@ function updatePlayerStatus() {
  */
 function updateEnemyStatus() {
     enemyDisplayName.textContent = gameState.currentEnemy.name;
-    const hpPercentage = (gameState.currentEnemy.currentHp / gameState.currentEnemy.hp) * 100;
+    const hpPercentage = Math.max((gameState.currentEnemy.currentHp / gameState.currentEnemy.hp) * 100, 0);
     enemyHpBarFill.style.width = `${hpPercentage}%`;
     enemyHpText.textContent = `${gameState.currentEnemy.currentHp}/${gameState.currentEnemy.hp}`;
+    if (hpPercentage <= 25) {
+        enemyHpBarFill.classList.add("low-hp");
+    } else {
+        enemyHpBarFill.classList.remove("low-hp");
+    }
 }
 
 /**
@@ -196,10 +202,6 @@ function updateExploreCommand() {
         advanceButton.disabled = true;
         advanceButton.classList.add("hidden");        
     }
-
-    if (gameState.explorePhase === "choice") {
-        
-    }
 }
 
 
@@ -214,6 +216,15 @@ function updateCombatCommand() {
     } else {
         // start | exec | enemy_act | result
         attackButton.disabled = true;
-        attackButton.classList.add("hidden");        
+        attackButton.classList.add("hidden");
+    }
+
+    if (gameState.combatPhase === "result") {
+        battleEndButton.disabled = false;
+        battleEndButton.classList.remove("hidden");
+    } else {
+        // start | exec | enemy_act | command_waiting
+        battleEndButton.disabled = true;
+        battleEndButton.classList.add("hidden");
     }
 }

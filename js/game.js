@@ -68,6 +68,8 @@ export let player = new Proxy({
 
 // ゲーム管理用Proxyオブジェクト
 export const gameState = new Proxy({
+        // 強制描画用フラグ
+        dirty: false,
         // ページ制御
         currentScreen: null,
         // 探索内サブ状態
@@ -75,8 +77,8 @@ export const gameState = new Proxy({
         // 戦闘内サブ状態
         combatPhase: null,// "start" | "command_waiting" | "exec" | "enemy_act" | "result",
         // // モーダル（currentPageと独立して重なる）
-        // openModal: null | "menu" | "item_discard",
-        // menuTab: "status" | "items" | "equipment",
+        openModal: null,// null | "menu" | "item_discard",
+        menuTab: "status",// "status" | "items" | "equipments",
         // // データ
         // currentEvent: null,
         // currentChoices: null,
@@ -274,7 +276,6 @@ function showTitleScreen() {
     // ボタンを初期状態に戻す
     loadGameButton.classList.add("hidden");
     strongNewGameButton.classList.add("hidden");
-    menuButton.classList.add("hidden");
 
     if (savedData) {
         // セーブデータが存在する場合
@@ -358,7 +359,6 @@ function showMainGameScreen() {
     populateDebugEnemySelect(); // デバッグ用敵選択を初期化
     populateDebugEventSelects(); // デバッグイベント選択を初期化
     populateDebugItemSelect(); // デバッグ用アイテム選択を初期化
-    menuButton.classList.remove("hidden");
 
     // ロード時にイベントが未完了だった場合の処理
     if (!player.currentEventCompleted && player.savedEventCategory && player.savedEventIndex !== null) {
@@ -989,143 +989,21 @@ function showToast(message, duration = 3000) {
  * メニューモーダルを開く
  */
 function openMenuModal() {
-    showTab("status-tab");
-    const menuModal = document.getElementById("menu-modal");
-    menuModal.classList.remove("hidden");
-    // 背景のスクロールを禁止
-    document.body.style.overflow = "hidden";
+    gameState.openModal = "menu";
 }
 
 /**
  * メニューモーダルを閉じる
  */
 function closeMenuModal() {
-    const menuModal = document.getElementById("menu-modal");
-    menuModal.classList.add("hidden");
-    // 背景のスクロール禁止を解除
-    document.body.style.overflow = "auto";
+    gameState.openModal = null;
 }
 
-/**
- * メニューモーダルのステータスタブを更新する
- * (renderMenuStatsにリネームし、表形式で全ステータスを表示するように変更)
- */
-function renderMenuStats() {
-    const statusTab = document.getElementById("status-tab");
-    statusTab.innerHTML = `
-        <div class="player-stats-display">
-            <p>名前: <span>${player.name}</span></p>
-            <p>現在地: <span>${player.position}</span></p>
-            <p>HP: <span>${player.hp}</span>/<span>${player.maxHp}</span></p>
-            <p>攻撃力: <span>${player.attack}</span></p>
-            <p>防御力: <span>${player.armor}</span></p>
-            <p>速度: <span>${player.speed}</span></p>
-            <p>知能: <span>${player.intel}</span></p>
-            <p>器用: <span>${player.dex}</span></p>
-            <p>体格: <span>${player.size}</span></p>
-            <p>所持金: <span>${player.money}</span>G</p>
-        </div>
-    `;
-}
-
-/**
- * アイテムの効果を人間が読める形式の文字列に変換する
- * @param {Item} item
- * @returns {string|null}
- */
-function formatItemEffect(item) {
-    const parts = [];
-    const STAT_LABEL = { hp: "HP", attack: "攻撃力", armor: "防御力", speed: "速度", intel: "知能", dex: "器用", size: "体格" };
-
-    if (item.effects && item.effects.length > 0) {
-        item.effects.forEach(ef => {
-            switch (ef.type) {
-                case "heal":
-                    if (ef.value !== undefined)      parts.push(`HP +${ef.value}`);
-                    else if (ef.min !== undefined)   parts.push(`HP +${ef.min}〜${ef.max}`);
-                    else if (ef.rate !== undefined)  parts.push(`HP +${ef.rate * 100}%`);
-                    break;
-                case "damage":
-                    if (ef.value !== undefined)      parts.push(`ダメージ ${ef.value}`);
-                    else if (ef.min !== undefined)   parts.push(`ダメージ ${ef.min}〜${ef.max}`);
-                    break;
-                case "stat_change": {
-                    const label = STAT_LABEL[ef.stat] || ef.stat;
-                    const sign = (ef.value ?? ef.min ?? 0) >= 0 ? "+" : "";
-                    if (ef.value !== undefined)      parts.push(`${label} ${sign}${ef.value}`);
-                    else if (ef.min !== undefined)   parts.push(`${label} ${sign}${ef.min}〜${ef.max}`);
-                    break;
-                }
-                case "dice_check":
-                    parts.push(`ダイスチェック (閾値:${ef.success_threshold})`);
-                    break;
-                case "acquire_item":
-                    parts.push("アイテム獲得");
-                    break;
-            }
-        });
-    }
-
-    if (item.stat_modifier) {
-        Object.entries(item.stat_modifier).forEach(([stat, val]) => {
-            const label = STAT_LABEL[stat] || stat;
-            const sign = val >= 0 ? "+" : "";
-            parts.push(`${label} ${sign}${val}`);
-        });
-    }
-
-    return parts.length > 0 ? parts.join(" / ") : null;
-}
-
-/**
- * メニューモーダルのアイテムタブを更新する
- */
-function renderMenuItems() {
-    const itemsTab = document.getElementById("items-tab");
-    const itemGrid = itemsTab.querySelector(".item-grid");
-    itemGrid.innerHTML = '';
-
-    if (player.item_slot.length === 0) {
-        itemGrid.innerHTML = "<p>アイテムはありません。</p>";
-        return;
-    }
-
-    player.item_slot.forEach((item, index) => {
-        const itemCard = document.createElement("div");
-        itemCard.classList.add("item-card");
-        const effectText = formatItemEffect(item);
-        itemCard.innerHTML = `
-            <h4>${item.name}</h4>
-            <p>${item.description}</p>`;
-        if (item.uses > 0) {
-            itemCard.innerHTML += `<p style="margin: 0;">残り${item.uses}回</p>`;
-        }
-        itemCard.innerHTML += `
-            ${effectText ? `<p class="item-effect-text">${effectText}</p>` : ""}
-        `;
-        if (item.effects && item.effects.length > 0) {
-            const useButton = document.createElement("button");
-            useButton.classList.add("button");
-            useButton.textContent = "使用";
-            useButton.addEventListener("click", {item: item, handleEvent: useItem});
-            itemCard.appendChild(useButton);
-        }
-
-        if (item.category === "equipment") {
-            const equipButton = document.createElement("button");
-            equipButton.classList.add("button");
-            equipButton.textContent = "装備";
-            equipButton.addEventListener("click", {item: item, handleEvent: equip});
-            itemCard.appendChild(equipButton);
-        }
-        itemGrid.appendChild(itemCard);
-    });
-}
 
 /**
  * 使用ボタンのイベント
  */
-async function useItem(_) {
+export async function useItem(_) {
     for (const ef of this.item.effects) {
         await applyEffect(ef);
     }
@@ -1142,14 +1020,14 @@ async function useItem(_) {
         showToast(msg);
     }
 
-    renderMenuItems();
+    gameState.dirty = true;
     saveGame(player);
 }
 
 /**
  * 装備ボタンのイベント
  */
-function equip(_) {
+export function equip(_) {
     // 1. 同タイプチェックを先に
     const sameType = player.equipment_slot.some(e => e.equip_type === this.item.equip_type);
     if (sameType) {
@@ -1176,50 +1054,14 @@ function equip(_) {
     const equipMsg = `${this.item.name}を装備した`;
     displayMessage(equipMsg);
     showToast(equipMsg);
-    renderMenuItems();
-    renderMenuEquip();
+    gameState.dirty = true;
     saveGame(player);
-}
-
-/**
- * メニューモーダルの装備タブを更新する
- */
-function renderMenuEquip() {
-    const equipmentTab = document.getElementById("equipment-tab");
-    const equipmentSlots = equipmentTab.querySelector(".equipment-slots");
-    equipmentSlots.innerHTML = ''; // クリア
-
-    if (player.equipment_slot.length === 0) {
-        equipmentSlots.innerHTML = "<p>装備中のアイテムはありません。</p>";
-        return;
-    }
-
-    player.equipment_slot.forEach((item, index) => {
-        const equipmentSlot = document.createElement("div");
-        equipmentSlot.classList.add("equipment-slot");
-        const effectText = formatItemEffect(item);
-        equipmentSlot.innerHTML = `
-            <h4>${item.name}</h4>
-            <p>${item.description}</p>
-            ${effectText ? `<p class="item-effect-text">${effectText}</p>` : ""}
-        `;
-        // 戦闘中でないなら
-        if (gameState.currentScreen !== 'battle-screen') {
-            const unequipButton = document.createElement("button");
-            unequipButton.classList.add("button");
-            unequipButton.textContent = "解除";
-            // unequipButton.dataset.equipmentIndex = index;
-            unequipButton.addEventListener("click", {item: item, handleEvent: unequip});
-            equipmentSlot.appendChild(unequipButton);
-            equipmentSlots.appendChild(equipmentSlot);
-        }
-    });
 }
 
 /**
  * 装備解除ボタンのイベント
  */
-function unequip(_) {
+export function unequip(_) {
     // 1. アイテム枠チェック
     if (player.item_slot.length >= 20) {
         // displayMessage("アイテム枠が一杯で外せません");
@@ -1240,32 +1082,8 @@ function unequip(_) {
     const unequipMsg = `${this.item.name}を外した`;
     displayMessage(unequipMsg);
     showToast(unequipMsg);
-    renderMenuItems();
-    renderMenuEquip();
+    gameState.dirty = true;
     saveGame(player);
-}
-
-/**
- * 指定されたタブを表示し、他のタブを非表示にする
- * @param {string} tabId - 表示するタブのID (例: "status-tab")
- */
-function showTab(tabId) {
-    const tabs = document.querySelectorAll(".tab-content");
-    tabs.forEach(tab => tab.classList.add("hidden"));
-    document.getElementById(tabId).classList.remove("hidden");
-
-    const tabButtons = document.querySelectorAll(".tab-button");
-    tabButtons.forEach(button => button.classList.remove("active"));
-    document.querySelector(`.tab-button[data-tab="${tabId.replace("-tab", "")}"]`).classList.add("active");
-
-    // タブが切り替わった際に内容を更新
-    if (tabId === "status-tab") {
-        renderMenuStats();
-    } else if (tabId === "items-tab") {
-        renderMenuItems();
-    } else if (tabId === "equipment-tab") {
-        renderMenuEquip();
-    }
 }
 
 // ============================================================================
@@ -1672,7 +1490,7 @@ document.querySelector("#menu-modal .close-button").addEventListener("click", cl
 document.querySelectorAll(".tab-button").forEach(button => {
     button.addEventListener("click", (event) => {
         const tab = event.target.dataset.tab;
-        showTab(`${tab}-tab`);
+        gameState.menuTab = tab;
     });
 });
 

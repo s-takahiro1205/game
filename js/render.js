@@ -1,6 +1,6 @@
 // 画面描画
 
-import { player, gameState } from './game.js';
+import { player, gameState, useItem, equip, unequip } from './game.js';
 import { loadGame } from './save.js';
 
 // DOM Elements
@@ -66,6 +66,11 @@ const enemyDisplayName = document.getElementById("enemy-display-name");
 const enemyHpBarFill = document.getElementById("enemy-hp-bar-fill");
 const enemyHpText = document.getElementById("enemy-hp-text");
 
+const menuModal = document.getElementById("menu-modal");
+const menuTabStatus = document.getElementById("status-tab");
+const menuTabItems = document.getElementById("items-tab");
+const menuTabEquipments = document.getElementById("equipment-tab");
+
 // アイテム破棄モーダル用DOM要素
 const discardItemModal = document.getElementById("discard-item-modal");
 const discardCloseButton = document.querySelector(".discard-close-button");
@@ -74,7 +79,6 @@ const discardSelectedItemButton = document.getElementById("discard-selected-item
 
 let selectedItemToDiscardIndex = -1; // 破棄するアイテムのインデックス
 let itemToAcquireAfterDiscard = null; // 破棄後に取得するアイテム
-
 
 const gameOverScreen = document.getElementById("game-over-screen");
 const backToTitleFromGameOverButton = document.getElementById("back-to-title-from-gameover");
@@ -97,11 +101,18 @@ let renderReserved = false;
 
 // レンダリングメソッド
 function render() {
+    if (gameState.dirty) {
+        gameState.dirty = false;
+        return;// dirty=falseでもう一度走るためreturn
+    }
     showScreen();
     updatePlayerStatus();
 
+    menuButton.classList.toggle("hidden", gameState.currentScreen !== 'main-game-screen');
+
     if (gameState.currentScreen === 'main-game-screen') {
         updateExploreCommand();
+        updateModal();
     }
     if (gameState.currentScreen === 'battle-screen') {
         updateEnemyStatus();
@@ -149,6 +160,7 @@ function showScreen() {
 /**
  * プレイヤーデータを描画する
  * 現状名前とHPだけ
+ * 探索と戦闘
  */
 function updatePlayerStatus() {
     const hpPercentage = Math.max((player.hp / player.maxHp) * 100);
@@ -176,6 +188,7 @@ function updatePlayerStatus() {
 
 /**
  * 敵のステータス表示を更新する
+ * 戦闘
  */
 function updateEnemyStatus() {
     enemyDisplayName.textContent = gameState.currentEnemy.name;
@@ -227,4 +240,195 @@ function updateCombatCommand() {
         battleEndButton.disabled = true;
         battleEndButton.classList.add("hidden");
     }
+}
+
+/**
+ * メニュー/アイテム破棄の表示切替
+ * TODO: 定数にあとで置き換え
+ */
+function updateModal() {
+    if (!gameState.openModal) {
+        // 背景のスクロール禁止を解除
+        document.body.style.overflow = "auto";
+        menuModal.classList.add("hidden");
+        return;
+    }
+    if (gameState.openModal === "menu") {
+        // 背景のスクロールを禁止
+        document.body.style.overflow = "hidden";
+        menuModal.classList.remove("hidden");
+        updateTab();
+    } else {
+        menuModal.classList.add("hidden");
+
+    }
+}
+
+/**
+ * 指定されたタブの内容を更新する
+ */
+function updateTab() {
+    menuTabStatus.classList.toggle("hidden", gameState.menuTab !== "status");
+    menuTabItems.classList.toggle("hidden", gameState.menuTab !== "items");
+    menuTabEquipments.classList.toggle("hidden", gameState.menuTab !== "equipments");
+
+    const tabButtons = document.querySelectorAll(".tab-button");
+    tabButtons.forEach(button => button.classList.remove("active"));
+    document.querySelector(`.tab-button[data-tab="${gameState.menuTab}"]`).classList.add("active");
+
+    // タブが切り替わった際に内容を更新
+    if (gameState.menuTab === "status") {
+        renderMenuStats();
+    } else if (gameState.menuTab === "items") {
+        renderMenuItems();
+    } else if (gameState.menuTab === "equipments") {
+        renderMenuEquip();
+    }
+}
+
+/**
+ * メニューモーダルのステータスタブを更新する
+ */
+function renderMenuStats() {
+    const statusTab = document.getElementById("status-tab");
+    statusTab.innerHTML = `
+        <div class="player-stats-display">
+            <p>名前: <span>${player.name}</span></p>
+            <p>現在地: <span>${player.position}</span></p>
+            <p>HP: <span>${player.hp}</span>/<span>${player.maxHp}</span></p>
+            <p>攻撃力: <span>${player.attack}</span></p>
+            <p>防御力: <span>${player.armor}</span></p>
+            <p>速度: <span>${player.speed}</span></p>
+            <p>知能: <span>${player.intel}</span></p>
+            <p>器用: <span>${player.dex}</span></p>
+            <p>体格: <span>${player.size}</span></p>
+            <p>所持金: <span>${player.money}</span>G</p>
+        </div>
+    `;
+}
+
+/**
+ * メニューモーダルのアイテムタブを更新する
+ */
+function renderMenuItems() {
+    const itemsTab = document.getElementById("items-tab");
+    const itemGrid = itemsTab.querySelector(".item-grid");
+    itemGrid.innerHTML = '';
+
+    if (player.item_slot.length === 0) {
+        itemGrid.innerHTML = "<p>アイテムはありません。</p>";
+        return;
+    }
+
+    player.item_slot.forEach((item, index) => {
+        const itemCard = document.createElement("div");
+        itemCard.classList.add("item-card");
+        const effectText = formatItemEffect(item);
+        itemCard.innerHTML = `
+            <h4>${item.name}</h4>
+            <p>${item.description}</p>`;
+        if (item.uses > 0) {
+            itemCard.innerHTML += `<p style="margin: 0;">残り${item.uses}回</p>`;
+        }
+        itemCard.innerHTML += `
+            ${effectText ? `<p class="item-effect-text">${effectText}</p>` : ""}
+        `;
+        if (item.effects && item.effects.length > 0) {
+            const useButton = document.createElement("button");
+            useButton.classList.add("button");
+            useButton.textContent = "使用";
+            useButton.addEventListener("click", {item: item, handleEvent: useItem});
+            itemCard.appendChild(useButton);
+        }
+
+        if (item.category === "equipment") {
+            const equipButton = document.createElement("button");
+            equipButton.classList.add("button");
+            equipButton.textContent = "装備";
+            equipButton.addEventListener("click", {item: item, handleEvent: equip});
+            itemCard.appendChild(equipButton);
+        }
+        itemGrid.appendChild(itemCard);
+    });
+}
+
+/**
+ * メニューモーダルの装備タブを更新する
+ */
+function renderMenuEquip() {
+    const equipmentTab = document.getElementById("equipment-tab");
+    const equipmentSlots = equipmentTab.querySelector(".equipment-slots");
+    equipmentSlots.innerHTML = ''; // クリア
+
+    if (player.equipment_slot.length === 0) {
+        equipmentSlots.innerHTML = "<p>装備中のアイテムはありません。</p>";
+        return;
+    }
+
+    player.equipment_slot.forEach((item, index) => {
+        const equipmentSlot = document.createElement("div");
+        equipmentSlot.classList.add("equipment-slot");
+        const effectText = formatItemEffect(item);
+        equipmentSlot.innerHTML = `
+            <h4>${item.name}</h4>
+            <p>${item.description}</p>
+            ${effectText ? `<p class="item-effect-text">${effectText}</p>` : ""}
+        `;
+        const unequipButton = document.createElement("button");
+        unequipButton.classList.add("button");
+        unequipButton.textContent = "解除";
+        // unequipButton.dataset.equipmentIndex = index;
+        unequipButton.addEventListener("click", {item: item, handleEvent: unequip});
+        equipmentSlot.appendChild(unequipButton);
+        equipmentSlots.appendChild(equipmentSlot);
+    });
+}
+
+/**
+ * アイテムの効果を人間が読める形式の文字列に変換する
+ * @param {Item} item
+ * @returns {string|null}
+ */
+function formatItemEffect(item) {
+    const parts = [];
+    const STAT_LABEL = { hp: "HP", attack: "攻撃力", armor: "防御力", speed: "速度", intel: "知能", dex: "器用", size: "体格" };
+
+    if (item.effects && item.effects.length > 0) {
+        item.effects.forEach(ef => {
+            switch (ef.type) {
+                case "heal":
+                    if (ef.value !== undefined)      parts.push(`HP +${ef.value}`);
+                    else if (ef.min !== undefined)   parts.push(`HP +${ef.min}〜${ef.max}`);
+                    else if (ef.rate !== undefined)  parts.push(`HP +${ef.rate * 100}%`);
+                    break;
+                case "damage":
+                    if (ef.value !== undefined)      parts.push(`ダメージ ${ef.value}`);
+                    else if (ef.min !== undefined)   parts.push(`ダメージ ${ef.min}〜${ef.max}`);
+                    break;
+                case "stat_change": {
+                    const label = STAT_LABEL[ef.stat] || ef.stat;
+                    const sign = (ef.value ?? ef.min ?? 0) >= 0 ? "+" : "";
+                    if (ef.value !== undefined)      parts.push(`${label} ${sign}${ef.value}`);
+                    else if (ef.min !== undefined)   parts.push(`${label} ${sign}${ef.min}〜${ef.max}`);
+                    break;
+                }
+                case "dice_check":
+                    parts.push(`ダイスチェック (閾値:${ef.success_threshold})`);
+                    break;
+                case "acquire_item":
+                    parts.push("アイテム獲得");
+                    break;
+            }
+        });
+    }
+
+    if (item.stat_modifier) {
+        Object.entries(item.stat_modifier).forEach(([stat, val]) => {
+            const label = STAT_LABEL[stat] || stat;
+            const sign = val >= 0 ? "+" : "";
+            parts.push(`${label} ${sign}${val}`);
+        });
+    }
+
+    return parts.length > 0 ? parts.join(" / ") : null;
 }

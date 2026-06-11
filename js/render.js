@@ -107,6 +107,7 @@ function render() {
     }
     showScreen();
     updatePlayerStatus();
+    updateLog();
 
     menuButton.classList.toggle("hidden", gameState.currentScreen !== 'main-game-screen');
 
@@ -154,6 +155,29 @@ function showScreen() {
         debugPanel.classList.remove("hidden");
     } else {
         debugPanel.classList.add("hidden");
+    }
+}
+
+/**
+ * 現在の画面に応じてログを表示する
+ */
+function updateLog() {
+    if (gameState.currentScreen === 'main-game-screen') {
+        gameMessage.innerHTML = "";
+        for (const message of gameState.exploreLog) {
+            const p = document.createElement("p");
+            p.textContent = message;
+            gameMessage.appendChild(p);
+        }
+        gameMessage.scrollTop = gameMessage.scrollHeight; // スクロールを一番下へ
+    } else if (gameState.currentScreen === 'battle-screen') {
+        battleMessage.innerHTML = "";
+        for (const message of gameState.combatLog) {
+            const p = document.createElement("p");
+            p.textContent = message;
+            battleMessage.appendChild(p);
+        }
+        battleMessage.scrollTop = battleMessage.scrollHeight; // スクロールを一番下へ
     }
 }
 
@@ -260,7 +284,6 @@ function updateModal() {
         updateTab();
     } else {
         menuModal.classList.add("hidden");
-
     }
 }
 

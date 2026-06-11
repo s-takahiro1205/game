@@ -66,8 +66,8 @@ export const NORMAL_EVENTS = [
             {
                 text: "大地を踏みしめる",
                 outcomeText: "巨体を生かして力いっぱい大地を踏みしめた。周囲の木から見慣れない果実が落ちてきた。あなたはそれを口にした。",
-                condition: { stat: "size", operator: "gte", value: 5 },
-                effects: [{ type: "stat_change", value: 2, stat: "armor", text: "あなたの体は硬くなった。" }],
+                condition: { stat: "size", operator: "gte", value: 6 },
+                effects: [{ type: "stat_change", value: 1, stat: "armor", text: "あなたの体は硬くなった。" }],
                 enemy: null,
                 next: null
             },
@@ -98,8 +98,8 @@ export const NORMAL_EVENTS = [
                 outcomeText: "祭壇に触れると、不思議な力が体に流れ込んできた。",
                 effects: [{
                     type: "dice_check",
-                    success_threshold: 4, // 4以上で成功
-                    success_effect: { type: "stat_change", value: 2, stat: "attack", text: "あなたの体に力がみなぎった。" },
+                    success_threshold: 3, // 3以上で成功
+                    success_effect: { type: "stat_change", value: 1, stat: "attack", text: "あなたの体に力がみなぎった。" },
                     fail_effect: { type: "damage", value: 5, text: "あなたは暴走した力によって傷ついた。" }
                 }],
                 next: null

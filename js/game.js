@@ -83,8 +83,9 @@ export const gameState = new Proxy({
         // currentEvent: null,
         // currentChoices: null,
         currentEnemy: null,
-        // exploreLog: [],
-        // combatLog: []
+        exploreLog: [],
+        combatLog: [],
+        backLog: [],// {type, text}
     },
     {
         set: setAndRender
@@ -169,6 +170,7 @@ const debugTriggerEventButton = document.getElementById("debug-trigger-event");
 const debugEnemySelect = document.getElementById("debug-enemy-select");
 const debugItemSelect = document.getElementById("debug-item-select");
 const debugAcquireItemButton = document.getElementById("debug-acquire-item-button");
+const debugBackLog = document.getElementById("debug-back-log-button");
 
 /**
  * デバッグ: 指定したイベントを強制的に発生させる
@@ -218,12 +220,12 @@ function debugTriggerEvent(eventCategory, eventIndex) {
             isMilestone: eventData.type === "milestone",
             choices: eventData.choices || null
         };
-        displayMessage(`デバッグ: イベント「${triggeredEvent.title}」を強制実行します！`, false);
+        addMessage(`デバッグ: イベント「${triggeredEvent.title}」を強制実行します！`, false);
         displayCurrentEvent(triggeredEvent);
         player.position = eventId; // プレイヤー位置も更新
         saveGame(player);
     } else {
-        displayMessage("デバッグ: 指定されたイベントが見つかりませんでした。", false);
+        addMessage("デバッグ: 指定されたイベントが見つかりませんでした。", false);
     }
 }
 
@@ -249,13 +251,13 @@ async function debugAcquireItem() {
         const itemToGive = getItemById(selectedItemId);
         if (itemToGive) {
             await acquireItem(itemToGive);
-            displayMessage(`デバッグ: ${itemToGive.name} を取得しました！`, false);
+            addMessage(`デバッグ: ${itemToGive.name} を取得しました！`, false);
             saveGame(player); // アイテム取得後にセーブ
         } else {
-            displayMessage("デバッグ: 指定されたアイテムが見つかりませんでした。", false);
+            addMessage("デバッグ: 指定されたアイテムが見つかりませんでした。", false);
         }
     } else {
-        displayMessage("デバッグ: アイテムを選択してください。", false);
+        addMessage("デバッグ: アイテムを選択してください。", false);
     }
 }
 
@@ -369,7 +371,7 @@ function showMainGameScreen() {
             console.error("Saved event not found:", player.savedEventCategory, player.savedEventIndex);
             // フォールバックとして、現在の位置のイベントを再生成するか、エラーメッセージを表示する
             // 今回はエラーメッセージを表示し、進むボタンを有効にする
-            displayMessage("セーブされたイベントが見つかりませんでした。先に進んでください。", false);
+            addMessage("セーブされたイベントが見つかりませんでした。先に進んでください。", false);
             gameState.explorePhase = "idle";
             player.currentEventCompleted = true; // イベントが見つからない場合は完了とみなす
         }
@@ -445,8 +447,8 @@ function showBattleScreen(enemy) {
         {
             set: setAndRender
         });
-    displayMessage(`\n${gameState.currentEnemy.description}`, false);
-    displayMessage(`${gameState.currentEnemy.name}が現れた！戦闘開始！`);
+    addMessage(`\n${gameState.currentEnemy.description}`, false);
+    addMessage(`${gameState.currentEnemy.name}が現れた！戦闘開始！`);
     gameState.combatPhase = "command_waiting";
 }
 
@@ -551,11 +553,11 @@ function initializePlayer(isStrongNewGame = false, inheritedMaxHp = 0, inherited
 async function acquireItem(item) {
     if (player.item_slot.length < 20) {
         player.item_slot.push(item);
-        displayMessage(`${item.name} を手に入れた！`);
+        addMessage(`${item.name} を手に入れた！`);
         return true;
     } else {
-        displayMessage("アイテムスロットが満杯です（20/20）。");
-        displayMessage("アイテムの取得を諦めますか、それとも何かを捨てて取得しますか？");
+        addMessage("アイテムスロットが満杯です（20/20）。");
+        addMessage("アイテムの取得を諦めますか、それとも何かを捨てて取得しますか？");
 
         return new Promise(resolve => {
             // 選択肢ボタンを生成
@@ -568,7 +570,7 @@ async function acquireItem(item) {
             giveUpButton.addEventListener("click", () => {
                 choicesContainer.innerHTML = '';
                 choicesContainer.classList.add("hidden");
-                displayMessage("アイテムの取得を諦めました。");
+                addMessage("アイテムの取得を諦めました。");
                 // saveGame(player);
                 resolve(false); // 諦めた
             });
@@ -585,10 +587,10 @@ async function acquireItem(item) {
                 if (discarded) {
                     // 破棄が成功したら、保存しておいたアイテムを取得
                     player.item_slot.push(itemToAcquireAfterDiscard);
-                    displayMessage(`${itemToAcquireAfterDiscard.name} を手に入れた！`);
+                    addMessage(`${itemToAcquireAfterDiscard.name} を手に入れた！`);
                     resolve(true); // 取得成功
                 } else {
-                    displayMessage("アイテムの破棄をキャンセルしました。アイテムの取得を諦めます。");
+                    addMessage("アイテムの破棄をキャンセルしました。アイテムの取得を諦めます。");
                     resolve(false); // 破棄をキャンセルしたため、取得も諦める
                 }
                 itemToAcquireAfterDiscard = null; // 使用済みなのでクリア
@@ -612,7 +614,7 @@ function openDiscardItemModal() {
         if (player.item_slot.length === 0) {
             discardItemList.innerHTML = '<p>所持アイテムがありません。</p>';
             // アイテムがない場合は破棄できないので、自動的にキャンセル扱い
-            displayMessage("破棄できるアイテムがありません。アイテムの取得を諦めます。");
+            addMessage("破棄できるアイテムがありません。アイテムの取得を諦めます。");
             discardItemModal.classList.add("hidden");
             resolve(false);
             return;
@@ -658,7 +660,7 @@ function openDiscardItemModal() {
         const discardHandler = () => {
             if (selectedItemToDiscardIndex !== -1) {
                 const discardedItem = player.item_slot.splice(selectedItemToDiscardIndex, 1)[0];
-                displayMessage(`${discardedItem.name} を捨てました。`);
+                addMessage(`${discardedItem.name} を捨てました。`);
                 discardItemModal.classList.add("hidden");
                 document.body.style.overflow = "auto";
                 saveGame(player);
@@ -680,24 +682,23 @@ function openDiscardItemModal() {
  * @param {string} message - 表示するメッセージ
  * @param {boolean} append - trueの場合、既存のメッセージに追加する
  */
-function displayMessage(message, append = true) {
-    let targetArea = null;
-    if (gameState.currentScreen === 'battle-screen') {
-        targetArea = battleMessage;
-    } else {
-        targetArea = gameMessage;
+function addMessage(message, append = true) {
+    // ログを退避する
+    if (!append) {
+        gameState.backLog.push(
+            ...(gameState.exploreLog.map(text => ({type: "explore", text}))),
+            ...(gameState.combatLog.map(text => ({type: "explore", text})))
+        );
+        gameState.exploreLog = [];
+        gameState.combatLog = [];
     }
 
-
-    const p = document.createElement("p");
-    p.textContent = message;
-    if (append) {
-        targetArea.appendChild(p);
-    } else {
-        targetArea.innerHTML = "";
-        targetArea.appendChild(p);
+    if (gameState.currentScreen === 'main-game-screen') {
+        gameState.exploreLog.push(message);
+    } else if (gameState.currentScreen === 'battle-screen') {
+        gameState.combatLog.push(message);
     }
-    targetArea.scrollTop = targetArea.scrollHeight; // スクロールを一番下へ\
+    gameState.dirty = true;
 }
 
 /**
@@ -736,7 +737,7 @@ function renderChoices(choices, event) {
             }
 
             // 1. そのchoiceのeffectを適用する
-            displayMessage(choice.outcomeText);
+            addMessage(choice.outcomeText);
             if (choice.effects) {
                 for (const ef of choice.effects) {
                     await applyEffect(ef);
@@ -794,8 +795,8 @@ function resolveNext(next, currentEvent) {
  * @param {Object} event - 現在のEventCellオブジェクト
  */
 function displayCurrentEvent(event) {
-    displayMessage(`--- ${event.title} ---`, false); // 既存メッセージをクリアして表示
-    displayMessage(event.text);
+    addMessage(`--- ${event.title} ---`, false); // 既存メッセージをクリアして表示
+    addMessage(event.text);
 
     gameState.explorePhase = "event_resolve";
     player.currentEventCompleted = false; // イベント処理開始時に未完了にリセット
@@ -917,11 +918,11 @@ function populateDebugEventSelects() {
  */
 function debugStartCombat(enemyName) {
     if (!enemyName) {
-        displayMessage("敵が選択されていません。", false);
+        addMessage("敵が選択されていません。", false);
         return;
     }
     if (gameState.currentScreen === 'battle-screen') {
-        displayMessage("すでに戦闘中です。", false);
+        addMessage("すでに戦闘中です。", false);
         return;
     }
 
@@ -956,14 +957,15 @@ function debugStartCombat(enemyName) {
 
     if (enemyToFight) {
         showBattleScreen({ ...enemyToFight, currentHp: enemyToFight.hp });
-        displayMessage(`デバッグ: ${gameState.currentEnemy.name} との戦闘を開始します！`, false);
+        addMessage(`デバッグ: ${gameState.currentEnemy.name} との戦闘を開始します！`, false);
     } else {
-        displayMessage(`デバッグ: 敵「${enemyName}」が見つかりませんでした。`, false);
+        addMessage(`デバッグ: 敵「${enemyName}」が見つかりませんでした。`, false);
     }
 }
 
 /**
  * クリックで消せるトースト通知を表示する
+ * TODO: いずれrenderに持ってって
  * @param {string} message
  * @param {number} duration - 自動消去までのms (デフォルト3000)
  */
@@ -1012,11 +1014,11 @@ export async function useItem(_) {
     if (this.item.uses <= 0) {
         player.item_slot = player.item_slot.filter(i => i !== this.item);
         const msg = `${this.item.name} を使い切った！`;
-        displayMessage(msg);
+        addMessage(msg);
         showToast(msg);
     } else {
         const msg = `${this.item.name} を使用した！`;
-        displayMessage(msg);
+        addMessage(msg);
         showToast(msg);
     }
 
@@ -1052,7 +1054,7 @@ export function equip(_) {
     player.item_slot = player.item_slot.filter(i => i !== this.item);
 
     const equipMsg = `${this.item.name}を装備した`;
-    displayMessage(equipMsg);
+    addMessage(equipMsg);
     showToast(equipMsg);
     gameState.dirty = true;
     saveGame(player);
@@ -1064,7 +1066,7 @@ export function equip(_) {
 export function unequip(_) {
     // 1. アイテム枠チェック
     if (player.item_slot.length >= 20) {
-        // displayMessage("アイテム枠が一杯で外せません");
+        // addMessage("アイテム枠が一杯で外せません");
         showToast("アイテム枠が一杯で外せません");
         return;
     }
@@ -1080,7 +1082,7 @@ export function unequip(_) {
     player.equipment_slot = player.equipment_slot.filter(i => i !== this.item);
 
     const unequipMsg = `${this.item.name}を外した`;
-    displayMessage(unequipMsg);
+    addMessage(unequipMsg);
     showToast(unequipMsg);
     gameState.dirty = true;
     saveGame(player);
@@ -1093,7 +1095,7 @@ async function advance() {
 
     // 現在のマスでのイベントが未完了の場合、先に進めない
     if (player.position > 0 && !player.currentEventCompleted) {
-        displayMessage("現在のイベントを完了するまで先に進めません！", false);
+        addMessage("現在のイベントを完了するまで先に進めません！", false);
         return;
     }
 
@@ -1101,7 +1103,7 @@ async function advance() {
 
     // 1. ダイスロール
     const roll = Math.ceil(Math.random() * 6);
-    displayMessage(`🎲 ${roll}が出た！`, false); // 既存メッセージをクリアしてダイス結果を表示
+    addMessage(`🎲 ${roll}が出た！`, false); // 既存メッセージをクリアしてダイス結果を表示
 
     // 2. プレイヤー位置更新
     const oldPosition = player.position;
@@ -1120,7 +1122,7 @@ async function advance() {
 
     // 3. ダイス演出テキスト表示
     await new Promise(resolve => setTimeout(() => {
-        displayMessage(`${roll}マス進む（現在: ${player.position}マス）`);
+        addMessage(`${roll}マス進む（現在: ${player.position}マス）`);
         resolve();
     }, 1500)); // 1.5秒後にイベントテキストを追記
 
@@ -1155,38 +1157,38 @@ async function applyEffect(effect) {
         case "heal":
             value = resolveValue(effect, player);
             player.hp = Math.min(player.hp + value, player.maxHp);
-            displayMessage(`${value} HP回復した！`);
+            addMessage(`${value} HP回復した！`);
             break;
         case "damage":
             value = resolveValue(effect, player);
             const actualDamage = calculateDamage(value, player.armor);
             player.hp -= actualDamage;
-            displayMessage(`${actualDamage} ダメージを受けた！ (元ダメージ: ${value}, あなたのアーマー: ${player.armor})`);
+            addMessage(`${actualDamage} ダメージを受けた！ (元ダメージ: ${value}, あなたのアーマー: ${player.armor})`);
             break;
         case "stat_change":
             value = resolveValue(effect, player);
             player[effect.stat] = Math.max(0, player[effect.stat] + value);
             if (value > 0) {
-                displayMessage(`${effect.stat} が ${value} 上がった！`);// TODO: effect.statに応じたラベル表示
+                addMessage(`${effect.stat} が ${value} 上がった！`);// TODO: effect.statに応じたラベル表示
             } else {
-                displayMessage(`${effect.stat} が ${Math.abs(value)} 下がった！`);// TODO: effect.statに応じたラベル表示
+                addMessage(`${effect.stat} が ${Math.abs(value)} 下がった！`);// TODO: effect.statに応じたラベル表示
             }
             break;
         case "dice_check":
             const roll = Math.ceil(Math.random() * 6);
-            displayMessage(`🎲 ダイスロール！ ${roll} が出た！ (成功閾値: ${effect.success_threshold})`);
+            addMessage(`🎲 ダイスロール！ ${roll} が出た！ (成功閾値: ${effect.success_threshold})`);
 
             if (roll >= effect.success_threshold) {
-                displayMessage("ダイスロール成功！");
+                addMessage("ダイスロール成功！");
                 if (effect.success_effect) {
                     // TODO: effectsにするか決断
-                    displayMessage(effect.success_effect.text);
+                    addMessage(effect.success_effect.text);
                     await applyEffect(effect.success_effect); // 成功時の効果を適用
                 }
             } else {
-                displayMessage("ダイスロール失敗...");
+                addMessage("ダイスロール失敗...");
                 if (effect.fail_effect) {
-                    displayMessage(effect.fail_effect.text);
+                    addMessage(effect.fail_effect.text);
                     await applyEffect(effect.fail_effect); // 失敗時の効果を適用
                 }
             }
@@ -1198,9 +1200,9 @@ async function applyEffect(effect) {
         case "money_change":
             player.money = Math.max(0, player.money + effect.value);
             if (effect.value >= 0) {
-                displayMessage(`${effect.value}G を得た！`);
+                addMessage(`${effect.value}G を得た！`);
             } else {
-                displayMessage(`${Math.abs(effect.value)}G 支払った。`);
+                addMessage(`${Math.abs(effect.value)}G 支払った。`);
             }
             break;
         case "random_item": {
@@ -1316,12 +1318,12 @@ async function attack() {
             const playerRawDmg = Math.ceil(Math.random() * player.attack);
             const actualDamageToEnemy = calculateDamage(playerRawDmg, gameState.currentEnemy.armor);
             gameState.currentEnemy.currentHp -= actualDamageToEnemy;
-            displayMessage(`あなたの攻撃！ ${gameState.currentEnemy.name} に ${actualDamageToEnemy} のダメージ！ (元ダメージ: ${playerRawDmg}, 敵アーマー: ${gameState.currentEnemy.armor})`);
+            addMessage(`あなたの攻撃！ ${gameState.currentEnemy.name} に ${actualDamageToEnemy} のダメージ！ (元ダメージ: ${playerRawDmg}, 敵アーマー: ${gameState.currentEnemy.armor})`);
 
             if (gameState.currentEnemy.currentHp <= 0) {
-                displayMessage(`${gameState.currentEnemy.name}を倒した！`);
+                addMessage(`${gameState.currentEnemy.name}を倒した！`);
                 player.money += gameState.currentEnemy.money; // お金の加算
-                displayMessage(`${gameState.currentEnemy.money}Gを手に入れた！`); // 獲得メッセージ
+                addMessage(`${gameState.currentEnemy.money}Gを手に入れた！`); // 獲得メッセージ
                 gameState.combatPhase = "result";
                 return;
             }
@@ -1330,7 +1332,7 @@ async function attack() {
             const enemyRawDmg = Math.ceil(Math.random() * gameState.currentEnemy.attack);
             const actualDamageToPlayer = calculateDamage(enemyRawDmg, player.armor);
             player.hp -= actualDamageToPlayer;
-            displayMessage(`${gameState.currentEnemy.name} の攻撃！ ${actualDamageToPlayer} のダメージを受けた！ (元ダメージ: ${enemyRawDmg}, あなたのアーマー: ${player.armor})`);
+            addMessage(`${gameState.currentEnemy.name} の攻撃！ ${actualDamageToPlayer} のダメージを受けた！ (元ダメージ: ${enemyRawDmg}, あなたのアーマー: ${player.armor})`);
 
             if (player.hp <= 0) {
                 checkGameEnd();
@@ -1347,8 +1349,8 @@ function battleEnd() {
     gameState.currentScreen = 'main-game-screen';
     gameState.explorePhase = "idle";
     // これはサービス精神
-    displayMessage(`${gameState.currentEnemy.name}を倒した！`);
-    displayMessage(`${gameState.currentEnemy.money}Gを手に入れた！`);
+    addMessage(`${gameState.currentEnemy.name}を倒した！`);
+    addMessage(`${gameState.currentEnemy.money}Gを手に入れた！`);
     gameState.currentEnemy = null; // 敵をクリア
     player.currentEventCompleted = true; // 戦闘イベント完了
 
@@ -1366,14 +1368,14 @@ function battleEnd() {
 function checkGameEnd() {
     if (player.hp <= 0 && !player.isGameOver) {
         player.isGameOver = true;
-        displayMessage("HPが0になった... あなたの冒険はここで終わった...");
+        addMessage("HPが0になった... あなたの冒険はここで終わった...");
         saveGame(player);
         setTimeout(showGameOverScreen, 3000); // 3秒後にゲームオーバー画面へ
         return true;
     }
 
     if (player.isCleared) {
-        displayMessage("暁の番人を打ち破り、あなたは新たな夜明けを迎えた！");
+        addMessage("暁の番人を打ち破り、あなたは新たな夜明けを迎えた！");
         saveGame(player);
         setTimeout(showClearScreen, 3000); // 3秒後にクリア画面へ
         return true;
@@ -1387,7 +1389,7 @@ function checkGameEnd() {
 function surrender() {
     closeMenuModal();
     player.isGameOver = true;
-    displayMessage("あなたは降参した... 冒険はここで終わった...");
+    addMessage("あなたは降参した... 冒険はここで終わった...");
     saveGame(player);
     setTimeout(showGameOverScreen, 3000); // 3秒後にゲームオーバー画面へ
 }
@@ -1408,9 +1410,9 @@ loadGameButton.addEventListener("click", () => {
         });
         player.name = player.name;//再描画用のムダ代入
         showMainGameScreen();
-        displayMessage("セーブデータをロードしました。冒険を再開します.");
+        addMessage("セーブデータをロードしました。冒険を再開します.");
     } else {
-        displayMessage("セーブデータが見つかりませんでした。", false);
+        addMessage("セーブデータが見つかりませんでした。", false);
         loadGameButton.classList.add("hidden"); // ボタンを非表示にする
     }
 });
@@ -1439,7 +1441,7 @@ startAdventureButton.addEventListener("click", () => {
 
     initializePlayer(isStrong, inheritedMaxHp, inheritedAttack, inheritedArmor, inheritedSpeed, inheritedIntel, inheritedDex, inheritedSize);
     showMainGameScreen();
-    displayMessage("新たな冒険が始まります！");
+    addMessage("新たな冒険が始まります！");
 });
 
 advanceButton.addEventListener("click", advance);
@@ -1463,7 +1465,7 @@ debugTriggerEventButton.addEventListener("click", () => {
     if (eventCategory && !isNaN(eventIndex)) {
         debugTriggerEvent(eventCategory, eventIndex);
     } else {
-        displayMessage("デバッグ: イベントカテゴリとインデックスを選択してください。", false);
+        addMessage("デバッグ: イベントカテゴリとインデックスを選択してください。", false);
     }
 });
 
@@ -1473,6 +1475,8 @@ debugStartCombatButton.addEventListener("click", () => {
 });
 
 debugAcquireItemButton.addEventListener("click", debugAcquireItem);
+
+debugBackLog.addEventListener("click", () => {console.log(gameState.backLog)});
 
 // デバッグパネルの切り替え
 debugPanelToggle.addEventListener("click", () => {

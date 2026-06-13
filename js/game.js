@@ -2,6 +2,7 @@
 
 import { saveGame, loadGame, deleteSaveData } from './save.js';
 import { ITEMS } from './data/items.js';
+import { ENEMIES } from './data/enemies.js';
 import { NORMAL_EVENTS, BENEFIT_EVENTS, DANGER_EVENTS, MILESTONE_EVENTS_DATA, EVENTS, generateRandomEvent } from './data/events.js';
 import { scheduleRender } from './render.js';
 import { DEBUFF_STATUS_MODIFIERS, SELECT_TARGET_TYPE, TARGET_TYPE_EXTRACTOR } from './const.js';
@@ -32,6 +33,8 @@ import { DEBUFF_STATUS_MODIFIERS, SELECT_TARGET_TYPE, TARGET_TYPE_EXTRACTOR } fr
  * @property {number} price - 価格
  * @property {Effect[] | null} effects - 使用効果配列（消費アイテム用）
  * @property {number} uses - 使用可能回数（消費アイテム。装備は0）
+ * @property {string} use_type - 使用種別
+ * @property {string} use_target_type - 使用対象種別
  * @property {object | null} stat_modifier - 増減ステータス（例: { attack: +5, armor: +2 }）
  * @property {"weapon" | "armor" | "shield" | "accessory" | null} equip_type - 装備種別
  */
@@ -66,6 +69,13 @@ export let player = new Proxy({
             dex: 0,
             size: 0,
             equipment_slot: [], // 最大5
+            skill_list: [], // スキル
+            battle_status: [ // 状態異常
+                // {// 例
+                //     id: "weakness",
+                //     turn: 3
+                // },
+            ],
         }, {set: setAndRender})],
     },
     {
@@ -240,7 +250,7 @@ function debugTriggerEvent(eventCategory, eventIndex) {
             title: eventData.title,
             text: eventData.text,
             effects: eventData.effects || null,
-            enemy: eventData.enemy ? JSON.parse(JSON.stringify(eventData.enemy)) : null,
+            enemyIds: eventData.enemyIds,
             isMilestone: eventData.type === "milestone",
             choices: eventData.choices || null
         };
@@ -453,7 +463,7 @@ function getEventFromSavedData(category, index) {
             title: eventData.title,
             text: eventData.text,
             effects: eventData.effects || null,
-            enemy: eventData.enemy ? JSON.parse(JSON.stringify(eventData.enemy)) : null,
+            enemyIds: eventData.enemyIds,
             isMilestone: category === "MILESTONE",
             choices: eventData.choices || null,
             eventCategory: category, // 保存用にカテゴリとインデックスをEventCell自体にも含める
@@ -559,7 +569,9 @@ function initializePlayer(isStrongNewGame = false, inheritedMaxHp = 0, inherited
     }
     unit.hp = unit.maxHp;
     unit.mp = unit.maxMp;
-    unit.equipment_slot = [],
+    unit.equipment_slot = [];
+    unit.skill_list = [];
+    unit.battle_status = [];
     player.party[0] = unit;
     gameState.dirty = true;
 
@@ -858,9 +870,9 @@ function displayCurrentEvent(event) {
         gameState.explorePhase = "choice_waiting";
         renderChoices(event.choices, event);
         // player.currentEventCompleted は false のまま
-    } else if (event.enemy) {
+    } else if (event.enemyIds) {
         setTimeout(
-            battleInit.bind(null, [event.enemy])
+            battleInit.bind(null, event.enemyIds.map(id => getEnemyById(id)))
         , 100);
         // player.currentEventCompleted は false のまま
     } else if (event.effects) {
@@ -888,22 +900,15 @@ function displayCurrentEvent(event) {
  */
 function populateDebugEnemySelect() {
     debugEnemySelect.innerHTML = '';
-    const uniqueEnemies = new Map();
-
-    EVENTS.forEach(event => {
-        if (event.enemy && !uniqueEnemies.has(event.enemy.name)) {
-            uniqueEnemies.set(event.enemy.name, event.enemy);
-        }
-    });
 
     const defaultOption = document.createElement("option");
     defaultOption.value = "";
     defaultOption.textContent = "-- 敵を選択 --";
     debugEnemySelect.appendChild(defaultOption);
 
-    uniqueEnemies.forEach(enemy => {
+    ENEMIES.forEach(enemy => {
         const option = document.createElement("option");
-        option.value = enemy.name;
+        option.value = enemy.id;
         option.textContent = `${enemy.name} (HP:${enemy.maxHp} (MP:${enemy.maxMp} ATK:${enemy.attack} ARM:${enemy.armor} SPD:${enemy.speed})`;
         debugEnemySelect.appendChild(option);
     });
@@ -964,10 +969,10 @@ function populateDebugEventSelects() {
 
 /**
  * デバッグ: 指定した敵と戦闘を開始する
- * @param {string} enemyName
+ * @param {string} enemyId
  */
-function debugStartCombat(enemyName) {
-    if (!enemyName) {
+function debugStartCombat(enemyId) {
+    if (!enemyId) {
         addMessage("敵が選択されていません。", false);
         return;
     }
@@ -976,34 +981,7 @@ function debugStartCombat(enemyName) {
         return;
     }
 
-    let enemyToFight = null;
-    // EVENTS配列から敵データを探す
-    for (const event of EVENTS) {
-        if (event.enemy && event.enemy.name === enemyName) {
-            enemyToFight = event.enemy;
-            break;
-        }
-    }
-    // DANGER_EVENTSからも探す (generateRandomEventで使われるため)
-    if (!enemyToFight) {
-        for (const eventData of DANGER_EVENTS) {
-            if (eventData.enemy && eventData.enemy.name === enemyName) {
-                enemyToFight = eventData.enemy;
-                break;
-            }
-        }
-    }
-    // MILESTONE_EVENTS_DATAからも探す
-    if (!enemyToFight) {
-        for (const key in MILESTONE_EVENTS_DATA) {
-            const milestoneEvent = MILESTONE_EVENTS_DATA[key];
-            if (milestoneEvent.enemy && milestoneEvent.enemy.name === enemyName) {
-                enemyToFight = milestoneEvent.enemy;
-                break;
-            }
-        }
-    }
-
+    const enemyToFight = getEnemyById(enemyId);
     if (enemyToFight) {
         addMessage(`デバッグ: ${enemyToFight.name} との戦闘を開始します！`, false);
         setTimeout(
@@ -1305,6 +1283,20 @@ function getItemById(id) {
         return null;
     }
     return structuredClone(item);
+}
+
+/**
+ * IDをキーにエネミーデータをマスタから取得してクローンを返す
+ * @param id
+ * @returns {Enemy}
+ */
+function getEnemyById(id) {
+    const enemy = ENEMIES.find(i => i.id === id);
+    if (!enemy) {
+        console.warn(`Enemy not found: ${id}`);
+        return null;
+    }
+    return structuredClone(enemy);
 }
 
 /**
@@ -1871,8 +1863,8 @@ debugTriggerEventButton.addEventListener("click", () => {
 });
 
 debugStartCombatButton.addEventListener("click", () => {
-    const enemyName = debugEnemySelect.value;
-    debugStartCombat(enemyName);
+    const enemyId = debugEnemySelect.value;
+    debugStartCombat(enemyId);
 });
 
 debugAcquireItemButton.addEventListener("click", debugAcquireItem);

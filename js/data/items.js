@@ -10,6 +10,7 @@
  * @property {number} [rate] - 割合（rate_referenceと併用）
  * @property {string} [rate_reference] - 割合の参照元ステータス（rateと併用）
  * @property {string} [text] - 効果メッセージ（個別のメッセージが必要な場合）
+ * @property {string} [itemId] - 取得するアイテムのID（acquire_itemの場合）
  */
 
 /**
@@ -21,7 +22,8 @@
  * @property {number} price - 価格
  * @property {Effect[] | null} effects - 使用効果配列（消費アイテム用）
  * @property {number} uses - 使用可能回数（消費アイテム。装備は0）
- * @property {number} use_type - 消費アイテム種別（装備はnull）
+ * @property {string} use_type - 使用種別
+ * @property {string} use_target_type - 使用対象種別
  * @property {object | null} stat_modifier - 増減ステータス（例: { attack: +5, armor: +2 }）
  * @property {"weapon" | "armor" | "shield" | "accessory" | null} equip_type - 装備種別
  */

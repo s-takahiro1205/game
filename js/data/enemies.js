@@ -1,0 +1,165 @@
+//  エネミーデータ定義
+
+/**
+ * @typedef {object} Enemy
+ * @property {string} id // 識別子UUID
+ * @property {string} name
+ * @property {number} hp
+ * @property {number} maxHp
+ * @property {number} mp
+ * @property {number} maxMp
+ * @property {number} attack
+ * @property {string} description
+ * @property {boolean} isBoss
+ * @property {number} armor
+ * @property {number} speed
+ * @property {number} intel
+ * @property {number} dex
+ * @property {number} size
+ * @property {array} skill_list
+ * @property {array} battle_status
+ * @property {number} money // 撃破時にプレイヤーが獲得するお金
+ */
+
+/**
+ * @type {Enemy[]}
+ */
+export const ENEMIES = [
+    // 一般エネミー
+    {
+        id: "starving-dog",
+        name: "飢えた野獣",
+        hp: 15,
+        maxHp: 15,
+        mp: 15,
+        maxMp: 15,
+        attack: 3,
+        description: "鋭い爪と牙を持つ、獰猛な獣だ。",
+        isBoss: false,
+        armor: 0,
+        speed: 4,
+        intel: 2,
+        dex: 3,
+        size: 3,
+        skill_list: [],
+        battle_status: [],
+        money: 10,
+    },
+    {
+        id: "rogue-bandit",
+        name: "ならず者の盗賊",
+        hp: 20,
+        maxHp: 20,
+        mp: 20,
+        maxMp: 20,
+        attack: 4,
+        description: "数の利を活かそうとする、卑劣な盗賊だ。",
+        isBoss: false,
+        armor: 1,
+        speed: 6,
+        intel: 1,
+        dex: 11,
+        size: 6,
+        skill_list: [],
+        battle_status: [],
+        money: 20,
+    },
+    {
+        id: "wandering-ghost",
+        name: "彷徨う亡霊",
+        hp: 25,
+        maxHp: 25,
+        mp: 25,
+        maxMp: 25,
+        attack: 5,
+        description: "実体のない、怨念の塊だ。",
+        isBoss: false,
+        armor: 0,
+        speed: 2,
+        intel: 11,
+        dex: 6,
+        size: 1,
+        skill_list: [],
+        battle_status: [],
+        money: 30,
+    },
+
+    // ボス
+    {
+        id: "guardian-of-the-ruins",
+        name: "廃墟の番人",
+        hp: 20,
+        maxHp: 20,
+        mp: 20,
+        maxMp: 20,
+        attack: 5,
+        description: "守るものを失った悲しき守護者だ。",
+        isBoss: true,
+        armor: 2,
+        speed: 4,
+        intel: 1,
+        dex: 1,
+        size: 20,
+        skill_list: [],
+        battle_status: [],
+        money: 50,
+    },
+    {
+        id: "guardian-of-the-forest",
+        name: "森の守護者",
+        hp: 35,
+        maxHp: 35,
+        mp: 20,
+        maxMp: 20,
+        attack: 7,
+        description: "住処を荒らすものを容赦なく排除する、森の均衡を守る存在だ。",
+        isBoss: true,
+        armor: 3,
+        speed: 6,
+        intel: 1,
+        dex: 12,
+        size: 5,
+        skill_list: [],
+        battle_status: [],
+        money: 100,
+    },
+    {
+        id: "messenger-of-Shadows",
+        name: "影の使者",
+        hp: 50,
+        maxHp: 50,
+        mp: 20,
+        maxMp: 20,
+        attack: 18,
+        description: "闇の力を纏う魔族だ。",
+        isBoss: true,
+        armor: 5,
+        speed: 8,
+        intel: 18,
+        dex: 10,
+        size: 8,
+        skill_list: [],
+        battle_status: [],
+        money: 200,
+    },
+    {
+        id: "guardian-of-the-dawn",
+        name: "暁の番人",
+        hp: 80,
+        maxHp: 80,
+        mp: 100,
+        maxMp: 100,
+        attack: 25,
+        description:
+        "暁の祠を守っていた静かなる武人。加護は切れてもその繋がりは消えず。",
+        isBoss: true,
+        armor: 7,
+        speed: 10,
+        intel: 1,
+        dex: 1,
+        size: 20,
+        skill_list: [],
+        battle_status: [],
+        money: 500,
+    },
+];

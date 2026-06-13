@@ -2,6 +2,7 @@
 
 /**
  * @typedef {object} Enemy
+ * @property {string} id // 識別子UUID
  * @property {string} name
  * @property {number} hp
  * @property {number} maxHp
@@ -15,6 +16,8 @@
  * @property {number} intel
  * @property {number} dex
  * @property {number} size
+ * @property {array} skill_list
+ * @property {array} battle_state
  * @property {number} money // 撃破時にプレイヤーが獲得するお金
  */
 
@@ -40,7 +43,7 @@
  * @property {string} title
  * @property {string} text
  * @property {array<Effect> | null} effects
- * @property {Enemy | null} enemy
+ * @property {array<String> | null} enemyIds
  * @property {boolean} isMilestone
  * @property {Array<Choice> | null} choices // 選択肢
  */
@@ -50,7 +53,7 @@
  * @property {string} text
  * @property {string} outcomeText
  * @property {array<Effect> | null} effects
- * @property {Enemy | null} enemy
+ * @property {array<String> | null} enemyIds
  * @property {next | null} next
  */
 
@@ -63,7 +66,7 @@ export const NORMAL_EVENTS = [
                 text: "森の奥を探索する",
                 outcomeText: "森の奥深くへと足を踏み入れた。小さな薬草を見つけ、体力が少し回復した。",
                 effects: [{ type: "heal", value: 5 }],
-                enemy: null,
+                enemyIds: null,
                 next: null
             },
             {
@@ -71,14 +74,14 @@ export const NORMAL_EVENTS = [
                 outcomeText: "巨体を生かして力いっぱい大地を踏みしめた。周囲の木から見慣れない果実が落ちてきた。あなたはそれを口にした。",
                 condition: { stat: "size", operator: "gte", value: 6 },
                 effects: [{ type: "stat_change", value: 1, stat: "armor", text: "あなたの体は硬くなった。" }],
-                enemy: null,
+                enemyIds: null,
                 next: null
             },
             {
                 text: "来た道を戻る",
                 outcomeText: "来た道を慎重に戻った。特に何も起こらなかった。",
                 effects: null,
-                enemy: null,
+                enemyIds: null,
                 next: null
             }
         ]
@@ -170,8 +173,8 @@ export const BENEFIT_EVENTS = [
 ];
 
 export const DANGER_EVENTS = [
-    { title: "野獣の襲撃", text: "茂みから飢えた野獣が飛び出してきた！警戒を怠った代償を払う時だ。", enemy: { name: "飢えた野獣", hp: 15, maxHp: 15, mp: 15, maxMp: 15, attack: 3, description: "鋭い爪と牙を持つ、獰猛な獣だ。", isBoss: false, armor: 0, speed: 5, intel: 1 , dex: 1 , size: 1, money: 10 } },
-    { title: "盗賊の待ち伏せ", text: "人気のない道で、盗賊の一団が待ち伏せていた。彼らはあなたの持ち物を狙っている。", enemy: { name: "ならず者の盗賊", hp: 20, maxHp: 20, mp: 20, maxMp: 20, attack: 4, description: "数の利を活かそうとする、卑劣な盗賊だ。", isBoss: false, armor: 1, speed: 6, intel: 1 , dex: 1 , size: 1, money: 20 } },
+    { title: "野獣の襲撃", text: "茂みから飢えた野獣が飛び出してきた！警戒を怠った代償を払う時だ。", enemyIds: ["starving-dog"]},
+    { title: "盗賊の待ち伏せ", text: "人気のない道で、盗賊の一団が待ち伏せていた。彼らはあなたの持ち物を狙っている。", enemyIds: ["rogue-bandit"]},
     { title: "毒沼", text: "足を踏み入れた場所は、毒々しい沼地だった。体に痺れが走り、体力が奪われる。", effects: [{ type: "damage", value: 5 }] },
     {
         title: "底なし沼",
@@ -193,32 +196,32 @@ export const DANGER_EVENTS = [
     },
     { title: "落石", text: "頭上から突然、大きな岩が落ちてきた！間一髪で避けたが、かすり傷を負ってしまった。", effects: [{ type: "damage", min: 3, max: 8 }] },
     { title: "呪われた像", text: "不気味な像に近づくと、邪悪なオーラに包まれた。体が重くなり、力が抜けていく。", effects: [{ type: "damage", value: 10 }] },
-    { title: "彷徨う亡霊", text: "夜の帳が下りる頃、彷徨う亡霊と遭遇した。その冷たい視線があなたを貫く。", enemy: { name: "彷徨う亡霊", hp: 25, maxHp: 25, mp: 25, maxMp: 25, attack: 5, description: "実体のない、怨念の塊だ。", isBoss: false, armor: 0, speed: 7, intel: 1 , dex: 1 , size: 1, money: 30 } }
+    { title: "彷徨う亡霊", text: "夜の帳が下りる頃、彷徨う亡霊と遭遇した。その冷たい視線があなたを貫く。", enemyIds: ["wandering-ghost"] }
 ];
 
 export const MILESTONE_EVENTS_DATA = {
     20: {
         title: "廃墟の番人",
-        text: "荒れ果てた廃墟の奥深く、巨大な番人が立ちはだかる。その目は、侵入者を決して許さないと告げている。",
-        enemy: { name: "廃墟の番人", hp: 20, maxHp: 20, mp: 20, maxMp: 20, attack: 5, description: "第一章の終幕を告げる、古の守護者だ。", isBoss: true, armor: 2, speed: 4, intel: 1 , dex: 1 , size: 1, money: 50 },
+        text: "森の奥にある荒れ果てた廃墟にて、巨大な番人が立ちはだかる。その目は、侵入者を決して許さないと告げている。",
+        enemyIds: ["guardian-of-the-ruins"],
         type: "milestone"
     },
     50: {
         title: "森の守護者",
         text: "鬱蒼とした森の中心で、自然の怒りを体現する守護者が現れた。その威圧感は、大地を震わせる。",
-        enemy: { name: "森の守護者", hp: 35, maxHp: 35, mp: 20, maxMp: 20, attack: 7, description: "中盤の山場、森の均衡を守る存在だ。", isBoss: true, armor: 3, speed: 6, intel: 1 , dex: 1 , size: 1, money: 100 },
+        enemyIds: ["guardian-of-the-forest"],
         type: "milestone"
     },
     80: {
         title: "影の使者",
-        text: "闇が深まる洞窟の最深部、影から現れた使者があなたを待ち受ける。その存在は、世界の終焉を予感させる。",
-        enemy: { name: "影の使者", hp: 50, maxHp: 50, mp: 20, maxMp: 20, attack: 10, description: "終盤への入り口、闇の力を操る者だ。", isBoss: true, armor: 5, speed: 8, intel: 1 , dex: 1 , size: 1, money: 200 },
+        text: "闇が深まる森の深部、影から現れた使者があなたを待ち受ける。その存在は、この世界の者ではないかのような尋常ならざる気配だ。",
+        enemyIds: ["messenger-of-Shadows"],
         type: "milestone"
     },
     100: {
         title: "暁の番人",
-        text: "旅の終着点、世界の夜明けを司る番人が、その巨大な姿を現した。全ての運命が、この一戦に懸かっている。",
-        enemy: { name: "暁の番人", hp: 80, maxHp: 80, mp: 100, maxMp: 100, attack: 14, description: "最終ボス、世界の運命を握る存在だ。", isBoss: true, armor: 7, speed: 10, intel: 1 , dex: 1 , size: 1, money: 500 },
+        text: "森の最深部、異界の気配を纏った祠が鎮座していた。祠へと近づいたその瞬間、同じ気配を纏う武人が襲い掛かってきた。",
+        enemyIds: ["guardian-of-the-dawn"],
         type: "boss"
     }
 };
@@ -254,7 +257,7 @@ export function generateRandomEvent(id) {
         title: eventData.title,
         text: eventData.text,
         effects: eventData.effects || null,
-        enemy: eventData.enemy ? JSON.parse(JSON.stringify(eventData.enemy)) : null, // 敵データはディープコピー
+        enemyIds: eventData.enemyIds,
         isMilestone: false,
         choices: eventData.choices || null,
         // セーブ用にカテゴリとインデックスをEventCell自体にも含める
@@ -275,7 +278,7 @@ for (let i = 0; i <= 100; i++) {
             title: milestone.title,
             text: milestone.text,
             effects: null, // マイルストーンは効果なし、戦闘のみ
-            enemy: JSON.parse(JSON.stringify(milestone.enemy)), // 敵データはディープコピー
+            enemyIds: milestone.enemyIds,
             isMilestone: true,
             choices: milestone.choices || null, // 現状ないけど一応
             eventCategory: "MILESTONE", // マイルストーンイベントのカテゴリ
@@ -294,7 +297,7 @@ EVENTS[0] = {
     title: "旅の始まり",
     text: "あなたは暁の探訪者として、未知の世界へと足を踏み入れた。ここから、あなたの壮大な物語が始まる。",
     effects: null,
-    enemy: null,
+    enemyIds: null,
     isMilestone: false,
     choices: null,
     eventCategory: "NORMAL", // スタートイベントのカテゴリ

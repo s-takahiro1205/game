@@ -4,6 +4,7 @@ import { saveGame, loadGame, deleteSaveData } from './save.js';
 import { ITEMS } from './data/items.js';
 import { NORMAL_EVENTS, BENEFIT_EVENTS, DANGER_EVENTS, MILESTONE_EVENTS_DATA, EVENTS, generateRandomEvent } from './data/events.js';
 import { scheduleRender } from './render.js';
+import { DEBUFF_STATUS_MODIFIERS, SELECT_TARGET_TYPE, TARGET_TYPE_EXTRACTOR } from './const.js';
 
 // ============================================================================
 // 1. グローバル変数とDOM要素
@@ -87,7 +88,6 @@ export const gameState = new Proxy({
         // // データ
         // currentEvent: null,
         // currentChoices: null,
-        currentEnemy: null,
 
         // 戦闘系
         battle: new Proxy({
@@ -164,6 +164,7 @@ const menuButton = document.getElementById("menu-button");
 
 const battleMessage = document.getElementById("battle-message");
 const commandPanel = document.getElementById("command-panel");
+const itemPanel = document.getElementById("item-panel");
 
 // アイテム破棄モーダル用DOM要素
 const discardItemModal = document.getElementById("discard-item-modal");
@@ -1003,7 +1004,7 @@ function debugStartCombat(enemyName) {
     }
 
     if (enemyToFight) {
-        addMessage(`デバッグ: ${gameState.currentEnemy.name} との戦闘を開始します！`, false);
+        addMessage(`デバッグ: ${enemyToFight.name} との戦闘を開始します！`, false);
         setTimeout(
             battleInit.bind(null, [enemyToFight])
         , 100);
@@ -1428,7 +1429,7 @@ function battleExecOrder() {
         gameState.battle.phase = "command_waiting";// コマンドパネル描画
     } else {
         // TODO ランダムに敵の行動を決定。取り急ぎパーティー先頭に攻撃
-        gameState.battle.pendingCommand = new Proxy({act: "attack", actDetail: null, targetId: gameState.battle.party[0].id}, {set: setAndRender});
+        gameState.battle.pendingCommand = new Proxy({act: "attack", actDetail: null, targets: [gameState.battle.party[0].id]}, {set: setAndRender});
         battleExecCommand();
     }
 }
@@ -1441,21 +1442,20 @@ function battleExecCommand() {
     addMessage("　");
     gameState.battle.phase = "exec";// ログや演出のパネル描画
     const cmd = gameState.battle.pendingCommand;
+    const targets = cmd.targets.map(id => getUnitById(id));
     const actor = gameState.battle.actor;
     advanceTimeline(actor.id);
-
-    // 対象 all|random|enemy_all|enemy_random|ally_all|ally_random|id
-    // target = []に格納
 
     if (cmd.act === "attack") {
         console.log("攻撃コマンドが実行されました")
         addMessage(`${actor.name}のこうげき！`);
-        //TODO: 攻撃処理
-        const target = getUnitById(cmd.targetId);
+        // TODO: cmd.targetから対象を取り出す仕組み
         const rawDmg = Math.ceil(Math.random() * actor.attack);
-        const actualDamage = calculateDamage(rawDmg, target.armor);
-        target.hp = Math.max(0, target.hp - actualDamage);
-        addMessage(`${target.name} に ${actualDamage} のダメージ！ (元ダメージ: ${rawDmg}, 敵アーマー: ${target.armor})`);
+        for (const target of targets) {
+            const actualDamage = calculateDamage(rawDmg, target.armor);
+            target.hp = Math.max(0, target.hp - actualDamage);
+            addMessage(`${target.name} に ${actualDamage} のダメージ！ (元ダメージ: ${rawDmg}, 敵アーマー: ${target.armor})`);
+        }
     } else if (cmd.act === "guard") {
         console.log("防御コマンドが実行されました")
         //TODO: 防御処理
@@ -1465,9 +1465,33 @@ function battleExecCommand() {
         //TODO: スキル発動処理
 
     } else if (cmd.act === "item") {
-        console.log("アイテムコマンドが実行されました")
-        //TODO: アイテム使用処理
+        console.log("アイテムコマンドが実行されました");
+        const item = player.item_slot[cmd.actDetail];
+        addMessage(`${actor.name}は${item.name}を使用した！`);
 
+        // TODO: healとdamage以外の処理
+        for (const effect of item.effects) {
+            if (effect.type === "damage") {
+                for (const target of targets) {
+                    for (const target of targets) {
+                        target.hp = Math.max(0, target.hp - effect.value);
+                        addMessage(`${target.name} に ${effect.value} のダメージ！`);
+                    }
+                }
+            } else if (effect.type === "heal") {
+                for (const target of targets) {
+                    for (const target of targets) {
+                        target.hp = Math.min(target.maxHp, target.hp + effect.value);
+                        addMessage(`${target.name} は ${effect.value} 回復した！`);
+                    }
+                }
+            }
+        }
+        item.uses -= 1;
+        if (item.uses <= 0) {
+            player.item_slot = player.item_slot.filter(i => i !== item);
+            addMessage(`${actor.name} は ${item.name} を使い切った！`);
+        }
     } else {
         throw new Error(`存在しないアクションです[${cmd.act}]`);
     }
@@ -1530,6 +1554,7 @@ function onActSelect(e) {
 
     const act = choice.dataset.act;
     gameState.battle.pendingCommand.act = act;
+    console.log(act)
     if (act === "attack") {
         const aliveEnemies = getAliveUnits(gameState.battle.enemies);
         // こうげき選択かつ敵が1体のとき、対象を自動選択して行動
@@ -1537,7 +1562,7 @@ function onActSelect(e) {
             console.log("aaa");
             console.log(aliveEnemies);
             gameState.battle.pendingCommand.actDetail = null;
-            gameState.battle.pendingCommand.targetId = aliveEnemies[0].id;
+            gameState.battle.pendingCommand.targets = [aliveEnemies[0].id];
             battleExecCommand();
             return;
         }
@@ -1545,13 +1570,57 @@ function onActSelect(e) {
     } else if (act === "guard") {
         // 防御なら自身を対象に行動
         gameState.battle.pendingCommand.actDetail = null;
-        gameState.battle.pendingCommand.targetId = gameState.battle.actor.id;
+        gameState.battle.pendingCommand.targets = [gameState.battle.actor.id];
+        battleExecCommand();
+        return;
+    } else if (act === "skill" && gameState.battle.actor.skill_list.length === 0) {
+        // TODO: 戦闘中に表示できるトーストパネル
+        console.log("使用できるスキルがありません");
+        gameState.battle.pendingCommand.act = null;
+    } else if (act === "item" && player.item_slot.length === 0) {
+        // TODO: 戦闘中に表示できるトーストパネル
+        console.log("使用できるアイテムがありません");
+        gameState.battle.pendingCommand.act = null;
+    }
+}
+
+/**
+ * コマンド[アイテム選択]押下イベント
+ * @param {*} e 
+ * @returns 
+ */
+function onActDetailItemSelect(e) {
+    const choice = e.target.closest('.cmd');
+    if (!choice) return;
+
+    const actDetail = choice.dataset.actDetail;
+    console.log(actDetail);
+    if (actDetail === "back") {
+        gameState.battle.pendingCommand.act = null;
+        return;
+    }
+
+    const item =  player.item_slot[actDetail];
+    const units = TARGET_TYPE_EXTRACTOR[item.use_target_type](gameState.battle.party, gameState.battle.enemies);
+    if (units.length === 0) {
+        // TODO: 戦闘中に表示できるトーストパネル
+        console.log("対象が存在しないため使用できません")
+        return;
+    }
+    gameState.battle.pendingCommand.actDetail = actDetail;
+
+    // 選択が必要な種別でないなら対象を格納して実行
+    // 選択が必要であっても対象が1体なら自動選択
+    if (!SELECT_TARGET_TYPE.includes(item.use_target_type)
+        || units.length === 1) {
+        gameState.battle.pendingCommand.targets = units.map(unit => unit.id);
         battleExecCommand();
         return;
     }
 }
 
 commandPanel.addEventListener("click", onActSelect);
+itemPanel.addEventListener("click", onActDetailItemSelect);
 
 /**
  * 描画：行動後にタイムライン更新

@@ -257,6 +257,15 @@ body{
 .guard{background:#27ae60;}
 .item{background:#f39c12;}
 
+
+.item-panel{
+    margin-top: 1em;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+.item-panel > .heal {background:#27ae60;}
+
 </style>
 </head>
 <body>
@@ -351,7 +360,7 @@ body{
     <div id="battle-screen" class="game-screen hidden">
         <!-- パーティ1~4 -->
         <section id="party-panel">
-            <div class="actor-card">
+            <!-- 例 <div class="actor-card">
                 <div class="actor-name">
                     アレス
                     <span class="job warrior">戦</span>
@@ -361,92 +370,20 @@ body{
                     <div class="portrait"></div>
                     <div class="actor-status">
                         <div class="status-row">
-                            <label>HP 132/160</label>
+                            <label class="hp-label">HP 132/160</label>
                             <div class="bar">
                                 <div class="hp-bar-fill"></div>
                             </div>
                         </div>
                         <div class="status-row">
-                            <label>MP 12/20</label>
+                            <label class="mp-label">MP 12/20</label>
                             <div class="bar">
                                 <div class="mp-bar-fill"></div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="actor-card hidden">
-                <div class="actor-name">
-                    ハデス
-                    <span class="job warrior">戦</span>
-                    <span class="level">Lv1</span>
-                </div>
-                <div class="actor-info">
-                    <div class="portrait"></div>
-                    <div class="actor-status">
-                        <div class="status-row">
-                            <label>HP 132/160</label>
-                            <div class="bar hp">
-                                <div class="fill"></div>
-                            </div>
-                        </div>
-                        <div class="status-row">
-                            <label>MP 12/20</label>
-                            <div class="bar mp">
-                                <div class="fill"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="actor-card hidden">
-                <div class="actor-name">
-                    アテナ
-                    <span class="job warrior">戦</span>
-                    <span class="level">Lv1</span>
-                </div>
-                <div class="actor-info">
-                    <div class="portrait"></div>
-                    <div class="actor-status">
-                        <div class="status-row">
-                            <label>HP 132/160</label>
-                            <div class="bar hp">
-                                <div class="fill"></div>
-                            </div>
-                        </div>
-                        <div class="status-row">
-                            <label>MP 12/20</label>
-                            <div class="bar mp">
-                                <div class="fill"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="actor-card hidden">
-                <div class="actor-name">
-                    スレン
-                    <span class="job warrior">戦</span>
-                    <span class="level">Lv1</span>
-                </div>
-                <div class="actor-info">
-                    <div class="portrait"></div>
-                    <div class="actor-status">
-                        <div class="status-row">
-                            <label>HP 132/160</label>
-                            <div class="bar hp">
-                                <div class="fill"></div>
-                            </div>
-                        </div>
-                        <div class="status-row">
-                            <label>MP 12/20</label>
-                            <div class="bar mp">
-                                <div class="fill"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            </div> -->
         </section>
 
         <!-- 敵1~8 -->
@@ -464,14 +401,14 @@ body{
         <!-- タイムライン キャラの総数で割ってleft設定 -->
         <section id="timeline-panel">
             <div class="timeline-line"></div>
-            <div class="timeline-unit enemy" style="left:15%;">
+            <!-- 例 <div class="timeline-unit enemy" style="left:15%;">
                 <div class="timeline-icon"></div>
                 <div class="timeline-name">敵1</div>
             </div>
             <div class="timeline-unit ally" style="left: 35%;">
                 <div class="timeline-icon"></div>
                 <div class="timeline-name">戦</div>
-            </div>
+            </div> -->
         </section>
 
         <!-- ログ -->
@@ -483,6 +420,18 @@ body{
             <button class="cmd skill" data-act="skill">スキル</button>
             <button class="cmd guard" data-act="guard">防御</button>
             <button class="cmd item" data-act="item">アイテム</button>
+        </section>
+        <!-- アイテム -->
+        <section id="item-panel" class="item-panel">
+            <!-- 例 <button class="cmd attack" data-act-detail="1">朽ちた回復薬</button> -->
+        </section>
+        <!-- スキル -->
+        <section id="skill-panel" class="skill-panel">
+            <!-- 例 <button class="cmd attack" data-act-detail="fire">ファイア</button> -->
+        </section>
+        <!-- ターゲット -->
+        <section id="target-panel" class="target-panel">
+            <!-- 例 <button class="cmd ally enemy" data-target="asd35a1d">ネズミ</button> -->
         </section>
     </div>
 

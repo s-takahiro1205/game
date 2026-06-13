@@ -21,6 +21,7 @@
  * @property {number} price - 価格
  * @property {Effect[] | null} effects - 使用効果配列（消費アイテム用）
  * @property {number} uses - 使用可能回数（消費アイテム。装備は0）
+ * @property {number} use_type - 消費アイテム種別（装備はnull）
  * @property {object | null} stat_modifier - 増減ステータス（例: { attack: +5, armor: +2 }）
  * @property {"weapon" | "armor" | "shield" | "accessory" | null} equip_type - 装備種別
  */
@@ -40,6 +41,8 @@ export const ITEMS = [
             { type: "heal", value: 10, text: "朽ちた回復薬を飲んだ。10 HP回復した！" }
         ],
         uses: 2,
+        use_type: "heal",
+        use_target_type: "alive_ally_one",
         stat_modifier: null,
         equip_type: null
     },
@@ -56,6 +59,8 @@ export const ITEMS = [
             { type: "stat_change", stat: "size", value: 1, text: "体格が1上昇した！" }
         ],
         uses: 1,
+        use_type: "mod_status",
+        use_target_type: "alive_ally_one",
         stat_modifier: null,
         equip_type: null
     },
@@ -69,6 +74,23 @@ export const ITEMS = [
             { type: "stat_change", stat: "intel", value: 2, text: "忘却の巻物を使った。知能が2上昇した！" },
         ],
         uses: 1,
+        use_type: "mod_status",
+        use_target_type: "alive_ally_one",
+        stat_modifier: null,
+        equip_type: null
+    },
+    {
+        id: "scroll_of_sand_storm",
+        name: "砂嵐の巻物",
+        description: "古の呪文が記された巻物。使用すると、激しい砂嵐が身を切り裂く。",
+        category: "consumable",
+        price: 300,
+        effects: [
+            { type: "damage", value: 10},
+        ],
+        uses: 1,
+        use_type: "attack",
+        use_target_type: "alive_enemy_all",
         stat_modifier: null,
         equip_type: null
     },
@@ -81,6 +103,8 @@ export const ITEMS = [
         price: 150,
         effects: null,
         uses: 0,
+        use_type: null,
+        use_target_type: null,
         stat_modifier: { attack: 5 },
         equip_type: "weapon"
     },
@@ -92,6 +116,8 @@ export const ITEMS = [
         price: 200,
         effects: null,
         uses: 0,
+        use_type: null,
+        use_target_type: null,
         stat_modifier: { armor: 3, speed: -1 }, // 防御力+3、速度-1
         equip_type: "armor"
     },
@@ -103,6 +129,8 @@ export const ITEMS = [
         price: 120,
         effects: null,
         uses: 0,
+        use_type: null,
+        use_target_type: null,
         stat_modifier: { intel: 2 },
         equip_type: "accessory"
     }

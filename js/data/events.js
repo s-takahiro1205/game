@@ -209,13 +209,13 @@ export const MILESTONE_EVENTS_DATA = {
     50: {
         title: "森の守護者",
         text: "鬱蒼とした森の中心で、自然の怒りを体現する守護者が現れた。その威圧感は、大地を震わせる。",
-        enemyIds: ["guardian-of-the-forest"],
+        enemyIds: ["guardian-of-the-forest", "starving-dog", "starving-dog"],
         type: "milestone"
     },
     80: {
         title: "影の使者",
         text: "闇が深まる森の深部、影から現れた使者があなたを待ち受ける。その存在は、この世界の者ではないかのような尋常ならざる気配だ。",
-        enemyIds: ["messenger-of-Shadows"],
+        enemyIds: ["messenger-of-Shadows", "wandering-ghost", "wandering-ghost"],
         type: "milestone"
     },
     100: {

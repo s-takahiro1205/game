@@ -1,5 +1,17 @@
 
 /**
+ * 状態異常の一覧
+ */
+export const BATTLE_STATUSES = [
+    {
+        id: "guard",
+        sub_timing: "act_before",
+        sub_finish_text: "",
+        exec_timing: "always",
+    },
+]
+
+/**
  * ステータス変動デバフの効果
  */
 export const DEBUFF_STATUS_MODIFIERS = {

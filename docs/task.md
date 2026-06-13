@@ -66,30 +66,30 @@
 > 既存の「攻撃ボタン」を新しいコマンド体系に置き換える。
 > この段階では「攻撃」「防御」の2コマンドだけ動けば十分。
 
-- [ ] `#combat-commands` コンテナをHTMLに追加
-- [ ] 既存の `#attack-button` / `#surrender-button` を廃止
-- [ ] `renderCombatCommands(character)` 関数を新設し、攻撃・防御ボタンを動的生成
-- [ ] 攻撃コマンドで現状と同じダメージ処理が走ることを確認
-- [ ] 防御コマンドのフラグ（`isGuarding: boolean`）をキャラクターに追加（効果は次タスクで）
+- [x] `#combat-commands` コンテナをHTMLに追加
+- [x] 既存の `#attack-button` / `#surrender-button` を廃止
+- [x] `renderCombatCommands(character)` 関数を新設し、攻撃・防御ボタンを動的生成
+- [x] 攻撃コマンドで現状と同じダメージ処理が走ることを確認
+- [x] 防御コマンドのフラグ（`isGuarding: boolean`）をキャラクターに追加（効果は次タスクで）
 
 ### 1-2. 防御コマンドの効果
 
-- [ ] `isGuarding: true` のキャラクターが受けるダメージを50%にする処理を追加
-- [ ] 自分のターン開始時に `isGuarding` をリセットする処理を追加
-- [ ] 防御 → 敵攻撃 → ダメージ半減 → 次ターンで解除、の流れを手動確認
+- [x] `isGuarding: true` のキャラクターが受けるダメージを50%にする処理を追加
+- [x] 自分のターン開始時に `isGuarding` をリセットする処理を追加
+- [x] 防御 → 敵攻撃 → ダメージ半減 → 次ターンで解除、の流れを手動確認
 
 ### 1-3. 行動順キュー（speed順）
 
 > speed順に行動順を決める。
 > この段階では1対1のまま。
 
-- [ ] `combatState` オブジェクトを新設（`isActive`, `turnOrder`, `currentIndex`, `turnCount`）
-- [ ] 戦闘開始時に `turnOrder` をspeedでソートして生成する処理を追加
-- [ ] 同値のspeedはランダムで順序を決める
-- [ ] `turnOrder` に従って行動を処理するループに書き換える
-- [ ] enemyとplayerに`multi_action: 1` を追加
-- [ ] turnOrderの生成時に`multi_action: N`の数だけそのキャラのorderを発行する（行動回数がN回になる）
-- [ ] プレイヤーspeedが敵より低い場合に敵が先攻することを手動確認
+- [x] `combatState` オブジェクトを新設（`isActive`, `turnOrder`, `currentIndex`, `turnCount`）
+- [x] 戦闘開始時に `turnOrder` をspeedでソートして生成する処理を追加
+- [x] 同値のspeedはランダムで順序を決める
+- [x] `turnOrder` に従って行動を処理するループに書き換える
+- [] enemyとplayerに`multi_action: 1` を追加
+- [] turnOrderの生成時に`multi_action: N`の数だけそのキャラのorderを発行する（行動回数がN回になる）
+- [x] プレイヤーspeedが敵より低い場合に敵が先攻することを手動確認
 
 ### 1-4. Elonaダイス式ダメージ計算
 

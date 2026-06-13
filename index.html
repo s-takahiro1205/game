@@ -276,6 +276,14 @@ body{
 .target-panel > .enemy {background:#c0392b;}
 .target-panel > .ally {background:#2980b9;}
 
+.result-panel{
+    margin-top: 1em;
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    gap: 10px;
+}
+.result-panel > .cmd {background:#888888;}
+
 </style>
 </head>
 <body>
@@ -442,6 +450,10 @@ body{
         <!-- ターゲット -->
         <section id="target-panel" class="target-panel">
             <!-- 例 <button class="cmd ally enemy" data-target="asd35a1d">ネズミ</button> -->
+        </section>
+        <!-- リザルト -->
+        <section id="result-panel" class="result-panel">
+            <button id="battle-end" class="cmd">探索に戻る</button>
         </section>
     </div>
 

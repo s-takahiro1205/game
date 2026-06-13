@@ -66,6 +66,7 @@ const commandPanel = document.getElementById("command-panel");
 const itemPanel = document.getElementById("item-panel");
 const skillPanel = document.getElementById("skill-panel");
 const targetPanel = document.getElementById("target-panel");
+const resultPanel = document.getElementById("result-panel");
 
 const menuModal = document.getElementById("menu-modal");
 const menuTabStatus = document.getElementById("status-tab");
@@ -438,6 +439,7 @@ function renderBattle() {
     skillPanel.classList.add("hidden");
     itemPanel.classList.add("hidden");
     targetPanel.classList.add("hidden");
+    resultPanel.classList.add("hidden");
 
     if (phase === "start") {
         // 初期描画
@@ -454,11 +456,13 @@ function renderBattle() {
         createTimeline();
         // ログ表示
         battleMessage.classList.remove("hidden");
-    } else if (phase === "pending"
-        || phase === "exec"
-        || phase === "result") {
+    } else if (phase === "pending" || phase === "exec") {
         // ログ表示
         battleMessage.classList.remove("hidden");
+    } else if (phase === "result") {
+        // ログ表示
+        battleMessage.classList.remove("hidden");
+        resultPanel.classList.remove("hidden");
     } else if (phase === "command_waiting") {
         // コマンドパネル表示
         if (!gameState.battle.pendingCommand.act) {

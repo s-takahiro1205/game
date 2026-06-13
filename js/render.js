@@ -292,6 +292,7 @@ function renderMenuStats() {
             <p>知能: <span>${player.party[0].intel}</span></p>
             <p>器用: <span>${player.party[0].dex}</span></p>
             <p>体格: <span>${player.party[0].size}</span></p>
+            <p>行動回数: <span>${player.party[0].multi_action}</span></p>
         </div>
     `;
 }
@@ -381,7 +382,8 @@ function renderMenuEquip() {
  */
 function formatItemEffect(item) {
     const parts = [];
-    const STAT_LABEL = { hp: "HP", attack: "攻撃力", armor: "防御力", speed: "速度", intel: "知能", dex: "器用", size: "体格" };
+    // TODO: ここに置いてんじゃねーよバカ
+    const STAT_LABEL = { maxHp: "最大HP", maxMp: "最大MP", attack: "攻撃力", armor: "防御力", speed: "速度", intel: "知能", dex: "器用", size: "体格" , multi_action: "行動回数" };
 
     if (item.effects && item.effects.length > 0) {
         item.effects.forEach(ef => {

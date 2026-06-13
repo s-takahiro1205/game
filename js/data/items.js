@@ -122,7 +122,7 @@ export const ITEMS = [
         uses: 0,
         use_type: null,
         use_target_type: null,
-        stat_modifier: { attack: 5 },
+        stat_modifier: { attack: 5, dex: -1 },
         equip_type: "weapon"
     },
     {
@@ -135,7 +135,7 @@ export const ITEMS = [
         uses: 0,
         use_type: null,
         use_target_type: null,
-        stat_modifier: { armor: 3, speed: -1 }, // 防御力+3、速度-1
+        stat_modifier: { maxHp: 15, armor: 3, speed: -1 }, // 防御力+3、速度-1
         equip_type: "armor"
     },
     {
@@ -148,7 +148,20 @@ export const ITEMS = [
         uses: 0,
         use_type: null,
         use_target_type: null,
-        stat_modifier: { intel: 2 },
+        stat_modifier: { intel: 2, maxMp: 10 },
         equip_type: "accessory"
-    }
+    },
+    {
+        id: "the_emblem_of_windia",
+        name: "ウィンディアの紋章",
+        description: "風の大精霊によって紋章を授けられているネックレス。身に着けるだけで普段の倍の速さで動けるという。",
+        category: "equipment",
+        price: 1000000,
+        effects: null,
+        uses: 0,
+        use_type: null,
+        use_target_type: null,
+        stat_modifier: { speed: 15, multi_action: 1 },
+        equip_type: "accessory"
+    },
 ];

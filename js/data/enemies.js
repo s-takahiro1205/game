@@ -16,6 +16,7 @@
  * @property {number} intel
  * @property {number} dex
  * @property {number} size
+ * @property {number} multi_action
  * @property {array} skill_list
  * @property {array} battle_status
  * @property {number} money // 撃破時にプレイヤーが獲得するお金
@@ -41,6 +42,7 @@ export const ENEMIES = [
         intel: 2,
         dex: 3,
         size: 3,
+        multi_action: 1,
         skill_list: [],
         battle_status: [],
         money: 10,
@@ -60,6 +62,7 @@ export const ENEMIES = [
         intel: 1,
         dex: 11,
         size: 6,
+        multi_action: 1,
         skill_list: [],
         battle_status: [],
         money: 20,
@@ -79,6 +82,7 @@ export const ENEMIES = [
         intel: 11,
         dex: 6,
         size: 1,
+        multi_action: 1,
         skill_list: [],
         battle_status: [],
         money: 30,
@@ -100,6 +104,7 @@ export const ENEMIES = [
         intel: 1,
         dex: 1,
         size: 20,
+        multi_action: 1,
         skill_list: [],
         battle_status: [],
         money: 50,
@@ -119,6 +124,7 @@ export const ENEMIES = [
         intel: 1,
         dex: 12,
         size: 5,
+        multi_action: 1,
         skill_list: [],
         battle_status: [],
         money: 100,
@@ -138,6 +144,7 @@ export const ENEMIES = [
         intel: 18,
         dex: 10,
         size: 8,
+        multi_action: 1,
         skill_list: [],
         battle_status: [],
         money: 200,
@@ -158,6 +165,7 @@ export const ENEMIES = [
         intel: 1,
         dex: 1,
         size: 20,
+        multi_action: 2,
         skill_list: [],
         battle_status: [],
         money: 500,

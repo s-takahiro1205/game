@@ -16,6 +16,7 @@
  * @property {number} intel
  * @property {number} dex
  * @property {number} size
+ * @property {number} multi_action
  * @property {array} skill_list
  * @property {array} battle_state
  * @property {number} money // 撃破時にプレイヤーが獲得するお金

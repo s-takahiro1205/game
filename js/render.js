@@ -122,6 +122,7 @@ function render() {
     if (gameState.currentScreen === 'battle-screen') {
         renderBattle();
         updateEnemyStatus();
+        updatePartyStatus();
     }
 }
 
@@ -155,7 +156,8 @@ function showScreen() {
     screens[gameState.currentScreen].classList.add("active");
 
     // デバッグパネルの表示/非表示
-    if (player.name === "デバッグ" && gameState.currentScreen === 'main-game-screen') {
+    // TODO: この処理危うい
+    if (player.party[0].name === "デバッグ" && gameState.currentScreen === 'main-game-screen') {
         debugPanel.classList.remove("hidden");
     } else {
         debugPanel.classList.add("hidden");
@@ -189,9 +191,10 @@ function updateLog() {
  * プレイヤーデータを描画する
  * 現状名前とHPだけ
  * 探索と戦闘
+ * TODO: 再定義
  */
 function updatePlayerStatus() {
-    const hpPercentage = Math.max((player.hp / player.maxHp) * 100);
+    const hpPercentage = Math.max((player.party[0].hp / player.party[0].maxHp) * 100);
 
     if (gameState.currentScreen === 'battle-screen') {
         // battlePlayerDisplayName.textContent = player.name;
@@ -203,8 +206,8 @@ function updatePlayerStatus() {
             gameHpBarFill.classList.remove("low-hp");
         }
     } else {
-        playerDisplayName.textContent = player.name;
-        playerHpText.textContent = `${player.hp}/${player.maxHp}`;
+        playerDisplayName.textContent = player.party[0].name;
+        playerHpText.textContent = `${player.party[0].hp}/${player.party[0].maxHp}`;
         gameHpBarFill.style.width = `${hpPercentage}%`;
         if (hpPercentage <= 25) {
             gameHpBarFill.classList.add("low-hp");
@@ -274,21 +277,23 @@ function updateTab() {
 
 /**
  * メニューモーダルのステータスタブを更新する
+ * TODO: 再定義
  */
 function renderMenuStats() {
     const statusTab = document.getElementById("status-tab");
     statusTab.innerHTML = `
         <div class="player-stats-display">
-            <p>名前: <span>${player.name}</span></p>
             <p>現在地: <span>${player.position}</span></p>
-            <p>HP: <span>${player.hp}</span>/<span>${player.maxHp}</span></p>
-            <p>攻撃力: <span>${player.attack}</span></p>
-            <p>防御力: <span>${player.armor}</span></p>
-            <p>速度: <span>${player.speed}</span></p>
-            <p>知能: <span>${player.intel}</span></p>
-            <p>器用: <span>${player.dex}</span></p>
-            <p>体格: <span>${player.size}</span></p>
             <p>所持金: <span>${player.money}</span>G</p>
+            <p>名前: <span>${player.party[0].name}</span></p>
+            <p>HP: <span>${player.party[0].hp}</span>/<span>${player.party[0].maxHp}</span></p>
+            <p>MP: <span>${player.party[0].mp}</span>/<span>${player.party[0].maxMp}</span></p>
+            <p>攻撃力: <span>${player.party[0].attack}</span></p>
+            <p>防御力: <span>${player.party[0].armor}</span></p>
+            <p>速度: <span>${player.party[0].speed}</span></p>
+            <p>知能: <span>${player.party[0].intel}</span></p>
+            <p>器用: <span>${player.party[0].dex}</span></p>
+            <p>体格: <span>${player.party[0].size}</span></p>
         </div>
     `;
 }
@@ -340,18 +345,19 @@ function renderMenuItems() {
 
 /**
  * メニューモーダルの装備タブを更新する
+ * 再定義
  */
 function renderMenuEquip() {
     const equipmentTab = document.getElementById("equipment-tab");
     const equipmentSlots = equipmentTab.querySelector(".equipment-slots");
     equipmentSlots.innerHTML = ''; // クリア
 
-    if (player.equipment_slot.length === 0) {
+    if (player.party[0].equipment_slot.length === 0) {
         equipmentSlots.innerHTML = "<p>装備中のアイテムはありません。</p>";
         return;
     }
 
-    player.equipment_slot.forEach((item, index) => {
+    player.party[0].equipment_slot.forEach((item, index) => {
         const equipmentSlot = document.createElement("div");
         equipmentSlot.classList.add("equipment-slot");
         const effectText = formatItemEffect(item);
@@ -433,29 +439,9 @@ function renderBattle() {
     if (phase === "start") {
         // 初期描画
         // パーティーカード生成
+        createPartyPanel();
         // エネミーカード生成
-        enemyPanel.innerHTML = "";
-        for (const enemy of gameState.battle.enemies) {
-            const enemyCard = document.createElement('div');
-            enemyCard.classList.add("enemy-card");
-            enemyCard.dataset.id = enemy.id;
-            const hpPercentage = Math.max((enemy.hp / enemy.maxHp) * 100);
-            // HP初期設定が出れば有効化
-            // let addClass = "";
-            // if (hpPercentage <= 25) {
-            //     let addClass = "low-hp";
-            // }
-            enemyCard.innerHTML = `
-                <div class="enemy-name">${enemy.name}</div>
-                <div class="enemy-image"></div>
-                <div class="hp-label"">HP ${enemy.hp}/${enemy.maxHp}</div>
-                <div class="bar">
-                    <div class="hp-bar-fill" style="width: ${hpPercentage}%"></div>
-                </div>
-            `;
-
-            enemyPanel.appendChild(enemyCard);
-        }
+        createEnemyPanel();
         // タイムライン初期化
         document.querySelectorAll('#timeline-panel > .timeline-unit').forEach(el => el.remove());
         // ログ表示
@@ -517,23 +503,140 @@ function renderBattle() {
 }
 
 /**
+ * 味方のステータス表示を更新する
+ */
+function updatePartyStatus() {
+    gameState.battle.party.forEach(unit => {
+        const card = document.querySelector(
+            `.actor-card[data-id="${unit.id}"]`
+        );
+        if (!card) return;
+        const hpPercentage = Math.max(
+            (unit.hp / unit.maxHp) * 100,
+            0
+        );
+        card.querySelector('.hp-label').textContent =`HP ${unit.hp}/${unit.maxHp}`;
+        const hpFill = card.querySelector('.hp-bar-fill');
+        hpFill.style.width = `${hpPercentage}%`;
+        hpFill.classList.toggle('low-hp', hpPercentage <= 25);
+
+        const mpPercentage = Math.max(
+            (unit.mp / unit.maxMp) * 100,
+            0
+        );
+        card.querySelector('.mp-label').textContent = `MP ${unit.mp}/${unit.maxMp}`;
+        const mpFill = card.querySelector('.mp-bar-fill');
+        mpFill.style.width = `${mpPercentage}%`;
+    });
+}
+
+/**
  * 敵のステータス表示を更新する
  */
 function updateEnemyStatus() {
-    gameState.battle.enemies.forEach(enemy => {
-        const enemyCard = document.querySelector(
-            `.enemy-card[data-id="${enemy.id}"]`
+    gameState.battle.enemies.forEach(unit => {
+        const card = document.querySelector(
+            `.enemy-card[data-id="${unit.id}"]`
         );
-        if (!enemyCard) return;
+        if (!card) return;
         const hpPercentage = Math.max(
-            (enemy.hp / enemy.maxHp) * 100,
+            (unit.hp / unit.maxHp) * 100,
             0
         );
-        enemyCard.querySelector('.hp-label').textContent =`HP ${enemy.hp}/${enemy.maxHp}`;
-        const hpFill = enemyCard.querySelector('.hp-bar-fill');
+        card.querySelector('.hp-label').textContent =`HP ${unit.hp}/${unit.maxHp}`;
+        const hpFill = card.querySelector('.hp-bar-fill');
         hpFill.style.width = `${hpPercentage}%`;
         hpFill.classList.toggle('low-hp', hpPercentage <= 25);
     });
+}
+
+/**
+ * パーティーパネル作成
+ */
+function createPartyPanel() {
+    // 念のためクリア
+    partyPanel.innerHTML = "";
+
+    gameState.battle.party.slice(0, 4).forEach(actor => {
+        const hpPercent = (actor.hp / actor.maxHp) * 100;
+        const mpPercent = (actor.mp / actor.maxMp) * 100;
+
+        const card = document.createElement("div");
+        card.className = "actor-card";
+        card.dataset.id = actor.id;
+
+        card.innerHTML = `
+            <div class="actor-name">
+                ${actor.name}
+                <!-- <span class="job ${actor.jobClass}">
+                    ${actor.jobShort}
+                </span>
+                <span class="level">
+                    Lv${actor.level}
+                </span> -->
+            </div>
+
+            <div class="actor-info">
+                <div class="portrait"></div>
+
+                <div class="actor-status">
+
+                    <div class="status-row hp-row">
+                        <label class="hp-label">
+                            HP ${actor.hp}/${actor.maxHp}
+                        </label>
+                        <div class="bar">
+                            <div class="hp-bar-fill"
+                                style="width:${hpPercent}%">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="status-row mp-row">
+                        <label class="mp-label">
+                            MP ${actor.mp}/${actor.maxMp}
+                        </label>
+                        <div class="bar">
+                            <div class="mp-bar-fill"
+                                style="width:${mpPercent}%">
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        `;
+
+        partyPanel.appendChild(card);
+    });
+}
+
+/**
+ * エネミーパネル作成
+ */
+function createEnemyPanel() {
+    enemyPanel.innerHTML = "";
+    for (const enemy of gameState.battle.enemies) {
+        const enemyCard = document.createElement('div');
+        enemyCard.classList.add("enemy-card");
+        enemyCard.dataset.id = enemy.id;
+        const hpPercentage = Math.max((enemy.hp / enemy.maxHp) * 100);
+        // HP初期設定が出れば有効化
+        // let addClass = "";
+        // if (hpPercentage <= 25) {
+        //     let addClass = "low-hp";
+        // }
+        enemyCard.innerHTML = `
+            <div class="enemy-name">${enemy.name}</div>
+            <div class="enemy-image"></div>
+            <div class="hp-label"">HP ${enemy.hp}/${enemy.maxHp}</div>
+            <div class="bar">
+                <div class="hp-bar-fill" style="width: ${hpPercentage}%"></div>
+            </div>
+        `;
+
+        enemyPanel.appendChild(enemyCard);
+    }
 }
 
 /**

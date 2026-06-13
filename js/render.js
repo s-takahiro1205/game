@@ -2,6 +2,7 @@
 
 import { player, gameState, useItem, equip, unequip } from './game.js';
 import { loadGame } from './save.js';
+import { TARGET_TYPE_EXTRACTOR } from './const.js';
 
 // DOM Elements
 // TODO:精査してね
@@ -64,7 +65,7 @@ const battleMessage = document.getElementById("battle-message");
 const commandPanel = document.getElementById("command-panel");
 const itemPanel = document.getElementById("item-panel");
 const skillPanel = document.getElementById("skill-panel");
-const targetPanel = document.getElementById("command-panel");
+const targetPanel = document.getElementById("target-panel");
 
 const menuModal = document.getElementById("menu-modal");
 const menuTabStatus = document.getElementById("status-tab");
@@ -484,9 +485,9 @@ function renderBattle() {
         } else if (gameState.battle.pendingCommand.act) {
             // 対象選択
             if (gameState.battle.pendingCommand.act === "attack") {
-                // 健康な敵を抽出
-                // イベントハンドラ登録
-                // 対象を表示
+                const candidates = TARGET_TYPE_EXTRACTOR["alive_enemy_one"]([], gameState.battle.enemies);
+                renderTargetPanel(candidates);
+                targetPanel.classList.remove("hidden");
             } else if (gameState.battle.pendingCommand.act === "skill" && gameState.battle.pendingCommand.actDetail) {
                 // スキル一覧からスキル取得
                 // スキルの対象抽出タイプからメソッドを呼び出して対象を抽出
@@ -494,10 +495,9 @@ function renderBattle() {
                 // 対象を表示
             } else if (gameState.battle.pendingCommand.act === "item" && gameState.battle.pendingCommand.actDetail) {
                 const item = player.item_slot[gameState.battle.pendingCommand.actDetail];
-                // アイテム一覧からアイテム取得
-                // アイテムの対象抽出タイプからメソッドを呼び出して対象を抽出
-                // イベントハンドラ登なのでハンドラ不要 ⇒ targetブロックに付与
-                // 対象を表示
+                const candidates = TARGET_TYPE_EXTRACTOR[item.use_target_type](gameState.battle.party, gameState.battle.enemies);
+                renderTargetPanel(candidates);
+                targetPanel.classList.remove("hidden");
             }
         }
     }
@@ -708,7 +708,7 @@ function createTimeline() {
 function renderItemPanel() {
     itemPanel.innerHTML = '';
     const backButton = document.createElement('button');
-    backButton.classList.add('cmd');
+    backButton.classList.add('cmd', 'back');
     backButton.dataset.actDetail = "back";
     backButton.textContent = "戻る";
     itemPanel.appendChild(backButton);
@@ -726,6 +726,27 @@ function renderItemPanel() {
         button.dataset.actDetail = index; // item_slot のインデックス
         button.textContent = item.name;
         itemPanel.appendChild(button);
+    });
+}
+
+/**
+ * 対象選択生成
+ * @param {*} candidates 
+ */
+function renderTargetPanel(candidates) {
+    targetPanel.innerHTML = '';
+    const backButton = document.createElement('button');
+    backButton.classList.add('cmd', 'back');
+    backButton.dataset.targets = "back";
+    backButton.textContent = "戻る";
+    targetPanel.appendChild(backButton);
+
+    candidates.forEach((candidate, index) => {
+        const button = document.createElement('button');
+        button.classList.add('cmd', gameState.battle.party.includes(candidate) ? "ally" : "enemy");
+        button.dataset.targets = candidate.id;
+        button.textContent = candidate.name;
+        targetPanel.appendChild(button);
     });
 }
 

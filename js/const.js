@@ -40,4 +40,7 @@ export const TARGET_TYPE_EXTRACTOR = {
     alive_ally_one: (allies, enemies = []) => {
         return allies.filter(unit => unit.hp > 0);
     },
+    alive_all: (allies, enemies = []) => {
+        return [...allies, ...enemies].filter(unit => unit.hp > 0);
+    },
 };

@@ -165,6 +165,7 @@ const menuButton = document.getElementById("menu-button");
 const battleMessage = document.getElementById("battle-message");
 const commandPanel = document.getElementById("command-panel");
 const itemPanel = document.getElementById("item-panel");
+const targetPanel = document.getElementById("target-panel");
 
 // アイテム破棄モーダル用DOM要素
 const discardItemModal = document.getElementById("discard-item-modal");
@@ -1006,7 +1007,8 @@ function debugStartCombat(enemyName) {
     if (enemyToFight) {
         addMessage(`デバッグ: ${enemyToFight.name} との戦闘を開始します！`, false);
         setTimeout(
-            battleInit.bind(null, [enemyToFight])
+            // TODO: 正式な複数体デバッグ
+            battleInit.bind(null, [enemyToFight, structuredClone(enemyToFight)])
         , 100);
     } else {
         addMessage(`デバッグ: 敵「${enemyName}」が見つかりませんでした。`, false);
@@ -1393,7 +1395,7 @@ function battleTurnStart() {
     addMessage("");
     console.log(1);
     // ランダム順にしてからソートする。速度同値がランダムになるように
-    gameState.battle.turnOrder = [...gameState.battle.party, ...gameState.battle.enemies]
+    gameState.battle.turnOrder = TARGET_TYPE_EXTRACTOR["alive_all"](gameState.battle.party, gameState.battle.enemies)
         .sort(() => Math.random() - 0.5)
         .sort((a, b) => getStatus(b, "speed") - getStatus(a, "speed"));
     //TODO: このへんで拡張予定：その他ターン開始時処理
@@ -1473,17 +1475,13 @@ function battleExecCommand() {
         for (const effect of item.effects) {
             if (effect.type === "damage") {
                 for (const target of targets) {
-                    for (const target of targets) {
-                        target.hp = Math.max(0, target.hp - effect.value);
-                        addMessage(`${target.name} に ${effect.value} のダメージ！`);
-                    }
+                    target.hp = Math.max(0, target.hp - effect.value);
+                    addMessage(`${target.name} に ${effect.value} のダメージ！`);
                 }
             } else if (effect.type === "heal") {
                 for (const target of targets) {
-                    for (const target of targets) {
-                        target.hp = Math.min(target.maxHp, target.hp + effect.value);
-                        addMessage(`${target.name} は ${effect.value} 回復した！`);
-                    }
+                    target.hp = Math.min(target.maxHp, target.hp + effect.value);
+                    addMessage(`${target.name} は ${effect.value} 回復した！`);
                 }
             }
         }
@@ -1502,6 +1500,7 @@ function battleExecCommand() {
     gameState.battle.turnOrder = gameState.battle.turnOrder.filter(order =>
         !down_chara_list.some(unit => unit.id === order.id)
     );
+    down_chara_list.forEach(unit => advanceTimeline(unit.id));
 
     gameState.battle.pendingCommand = new Proxy({}, {set: setAndRender});
     setTimeout(() => {
@@ -1557,10 +1556,9 @@ function onActSelect(e) {
     console.log(act)
     if (act === "attack") {
         const aliveEnemies = getAliveUnits(gameState.battle.enemies);
+        // TODO: 攻撃タイプが単体=1なら、全体なら、ランダムなら
         // こうげき選択かつ敵が1体のとき、対象を自動選択して行動
         if (aliveEnemies.length === 1) {
-            console.log("aaa");
-            console.log(aliveEnemies);
             gameState.battle.pendingCommand.actDetail = null;
             gameState.battle.pendingCommand.targets = [aliveEnemies[0].id];
             battleExecCommand();
@@ -1619,8 +1617,32 @@ function onActDetailItemSelect(e) {
     }
 }
 
+/**
+ * コマンド[対象選択]押下イベント
+ * @param {*} e 
+ * @returns 
+ */
+function onTargetSelect(e) {
+    const choice = e.target.closest('.cmd');
+    if (!choice) return;
+
+    const targets = choice.dataset.targets;
+    if (targets === "back") {
+        if (gameState.battle.pendingCommand.actDetail) {
+            gameState.battle.pendingCommand.actDetail = null;
+            return;
+        } else {
+            gameState.battle.pendingCommand.act = null;
+            return;
+        }
+    }
+    gameState.battle.pendingCommand.targets = [targets];
+    battleExecCommand();
+}
+
 commandPanel.addEventListener("click", onActSelect);
 itemPanel.addEventListener("click", onActDetailItemSelect);
+targetPanel.addEventListener("click", onTargetSelect);
 
 /**
  * 描画：行動後にタイムライン更新

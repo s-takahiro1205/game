@@ -94,6 +94,21 @@ export const ITEMS = [
         stat_modifier: null,
         equip_type: null
     },
+    {
+        id: "scroll_of_fire_bullet",
+        name: "火弾の巻物",
+        description: "古の呪文が記された巻物。使用すると、激しい砂嵐が身を切り裂く。",
+        category: "consumable",
+        price: 100,
+        effects: [
+            { type: "damage", value: 20},
+        ],
+        uses: 1,
+        use_type: "attack",
+        use_target_type: "alive_enemy_one",
+        stat_modifier: null,
+        equip_type: null
+    },
     // 装備アイテム
     {
         id: "cursed_dagger",

@@ -4,6 +4,7 @@
  * @typedef {object} Enemy
  * @property {string} name
  * @property {number} hp
+ * @property {number} maxHp
  * @property {number} attack
  * @property {string} description
  * @property {boolean} isBoss
@@ -167,8 +168,8 @@ export const BENEFIT_EVENTS = [
 ];
 
 export const DANGER_EVENTS = [
-    { title: "野獣の襲撃", text: "茂みから飢えた野獣が飛び出してきた！警戒を怠った代償を払う時だ。", enemy: { name: "飢えた野獣", hp: 15, attack: 3, description: "鋭い爪と牙を持つ、獰猛な獣だ。", isBoss: false, armor: 0, speed: 5, intel: 1 , dex: 1 , size: 1, money: 10 } },
-    { title: "盗賊の待ち伏せ", text: "人気のない道で、盗賊の一団が待ち伏せていた。彼らはあなたの持ち物を狙っている。", enemy: { name: "ならず者の盗賊", hp: 20, attack: 4, description: "数の利を活かそうとする、卑劣な盗賊だ。", isBoss: false, armor: 1, speed: 6, intel: 1 , dex: 1 , size: 1, money: 20 } },
+    { title: "野獣の襲撃", text: "茂みから飢えた野獣が飛び出してきた！警戒を怠った代償を払う時だ。", enemy: { name: "飢えた野獣", hp: 15, maxHp: 15, attack: 3, description: "鋭い爪と牙を持つ、獰猛な獣だ。", isBoss: false, armor: 0, speed: 5, intel: 1 , dex: 1 , size: 1, money: 10 } },
+    { title: "盗賊の待ち伏せ", text: "人気のない道で、盗賊の一団が待ち伏せていた。彼らはあなたの持ち物を狙っている。", enemy: { name: "ならず者の盗賊", hp: 20, maxHp: 20, attack: 4, description: "数の利を活かそうとする、卑劣な盗賊だ。", isBoss: false, armor: 1, speed: 6, intel: 1 , dex: 1 , size: 1, money: 20 } },
     { title: "毒沼", text: "足を踏み入れた場所は、毒々しい沼地だった。体に痺れが走り、体力が奪われる。", effects: [{ type: "damage", value: 5 }] },
     {
         title: "底なし沼",
@@ -190,32 +191,32 @@ export const DANGER_EVENTS = [
     },
     { title: "落石", text: "頭上から突然、大きな岩が落ちてきた！間一髪で避けたが、かすり傷を負ってしまった。", effects: [{ type: "damage", min: 3, max: 8 }] },
     { title: "呪われた像", text: "不気味な像に近づくと、邪悪なオーラに包まれた。体が重くなり、力が抜けていく。", effects: [{ type: "damage", value: 10 }] },
-    { title: "彷徨う亡霊", text: "夜の帳が下りる頃、彷徨う亡霊と遭遇した。その冷たい視線があなたを貫く。", enemy: { name: "彷徨う亡霊", hp: 25, attack: 5, description: "実体のない、怨念の塊だ。", isBoss: false, armor: 0, speed: 7, intel: 1 , dex: 1 , size: 1, money: 30 } }
+    { title: "彷徨う亡霊", text: "夜の帳が下りる頃、彷徨う亡霊と遭遇した。その冷たい視線があなたを貫く。", enemy: { name: "彷徨う亡霊", hp: 25, maxHp: 25, attack: 5, description: "実体のない、怨念の塊だ。", isBoss: false, armor: 0, speed: 7, intel: 1 , dex: 1 , size: 1, money: 30 } }
 ];
 
 export const MILESTONE_EVENTS_DATA = {
     20: {
         title: "廃墟の番人",
         text: "荒れ果てた廃墟の奥深く、巨大な番人が立ちはだかる。その目は、侵入者を決して許さないと告げている。",
-        enemy: { name: "廃墟の番人", hp: 20, attack: 5, description: "第一章の終幕を告げる、古の守護者だ。", isBoss: true, armor: 2, speed: 4, intel: 1 , dex: 1 , size: 1, money: 50 },
+        enemy: { name: "廃墟の番人", hp: 20, maxHp: 20, attack: 5, description: "第一章の終幕を告げる、古の守護者だ。", isBoss: true, armor: 2, speed: 4, intel: 1 , dex: 1 , size: 1, money: 50 },
         type: "milestone"
     },
     50: {
         title: "森の守護者",
         text: "鬱蒼とした森の中心で、自然の怒りを体現する守護者が現れた。その威圧感は、大地を震わせる。",
-        enemy: { name: "森の守護者", hp: 35, attack: 7, description: "中盤の山場、森の均衡を守る存在だ。", isBoss: true, armor: 3, speed: 6, intel: 1 , dex: 1 , size: 1, money: 100 },
+        enemy: { name: "森の守護者", hp: 35, maxHp: 35, attack: 7, description: "中盤の山場、森の均衡を守る存在だ。", isBoss: true, armor: 3, speed: 6, intel: 1 , dex: 1 , size: 1, money: 100 },
         type: "milestone"
     },
     80: {
         title: "影の使者",
         text: "闇が深まる洞窟の最深部、影から現れた使者があなたを待ち受ける。その存在は、世界の終焉を予感させる。",
-        enemy: { name: "影の使者", hp: 50, attack: 10, description: "終盤への入り口、闇の力を操る者だ。", isBoss: true, armor: 5, speed: 8, intel: 1 , dex: 1 , size: 1, money: 200 },
+        enemy: { name: "影の使者", hp: 50, maxHp: 50, attack: 10, description: "終盤への入り口、闇の力を操る者だ。", isBoss: true, armor: 5, speed: 8, intel: 1 , dex: 1 , size: 1, money: 200 },
         type: "milestone"
     },
     100: {
         title: "暁の番人",
         text: "旅の終着点、世界の夜明けを司る番人が、その巨大な姿を現した。全ての運命が、この一戦に懸かっている。",
-        enemy: { name: "暁の番人", hp: 80, attack: 14, description: "最終ボス、世界の運命を握る存在だ。", isBoss: true, armor: 7, speed: 10, intel: 1 , dex: 1 , size: 1, money: 500 },
+        enemy: { name: "暁の番人", hp: 80, maxHp: 80, attack: 14, description: "最終ボス、世界の運命を握る存在だ。", isBoss: true, armor: 7, speed: 10, intel: 1 , dex: 1 , size: 1, money: 500 },
         type: "boss"
     }
 };

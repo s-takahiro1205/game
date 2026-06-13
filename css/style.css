@@ -89,6 +89,10 @@ input[type="number"] {
     display: none !important;
 }
 
+.soft-hidden {
+    visibility: hidden !important;
+}
+
 .game-screen {
     animation: fadeIn 1s ease-in-out;
 }

@@ -43,24 +43,27 @@ const setAndRender = (target, prop, value) => {
 };
 
 export let player = new Proxy({
+        id: self.crypto.randomUUID(),
         name: "",
         hp: 0,
         maxHp: 0,
         attack: 0,
+        armor: 0,
+        speed: 0,
+        intel: 0,
+        dex: 0,
+        size: 0,
+        equipment_slot: [], // 最大5
+
         position: 0,
         isGameOver: false,
         isCleared: false,
         currentEventCompleted: false, // 現在のマスでのイベントが完了したか
         savedEventCategory: null, // セーブされたイベントのカテゴリ
         savedEventIndex: null,    // セーブされたイベントのインデックス
-        armor: 0,
-        speed: 0,
-        intel: 0,
-        dex: 0,
-        size: 0,
         money: 0,
         item_slot: [],       // 最大20
-        equipment_slot: []  // 最大5
+        party: [],       // 最大4
     },
     {
         set: setAndRender
@@ -83,6 +86,19 @@ export const gameState = new Proxy({
         // currentEvent: null,
         // currentChoices: null,
         currentEnemy: null,
+
+        // 戦闘系
+        battle: new Proxy({
+            party: [],// 味方キャラProxy配列
+            enemies: [],// 敵キャラProxy配列
+            turnOrder: [],// 行動順のparty+enemies
+            turn: 0,// ターン数
+            phase: null,// string画面制御用フラグ[start|turn_start|pending|command_waiting|exec|result]
+            actor: null,// コマンド表示や行動実行用のキャラ保管
+            pendingCommand: null// ターゲット選択や行動実行用のコマンドオブジェクト
+        }, {set: setAndRender}),
+
+        // ログ系
         exploreLog: [],
         combatLog: [],
         backLog: [],// {type, text}
@@ -139,10 +155,10 @@ const choicesContainer = document.getElementById("choices-container");
 const advanceButton = document.getElementById("advance-button");
 const attackButton = document.getElementById("attack-button");
 const battleEndButton = document.getElementById("battle-end");
-const surrenderButton = document.getElementById("surrender-button");
 const menuButton = document.getElementById("menu-button");
 
 const battleMessage = document.getElementById("battle-message");
+const commandPanel = document.getElementById("command-panel");
 
 // アイテム破棄モーダル用DOM要素
 const discardItemModal = document.getElementById("discard-item-modal");
@@ -170,7 +186,8 @@ const debugTriggerEventButton = document.getElementById("debug-trigger-event");
 const debugEnemySelect = document.getElementById("debug-enemy-select");
 const debugItemSelect = document.getElementById("debug-item-select");
 const debugAcquireItemButton = document.getElementById("debug-acquire-item-button");
-const debugBackLog = document.getElementById("debug-back-log-button");
+const debugBackLogButton = document.getElementById("debug-back-log-button");
+const debugGameStateButton = document.getElementById("debug-game-state-button");
 
 /**
  * デバッグ: 指定したイベントを強制的に発生させる
@@ -437,22 +454,6 @@ function getEventFromSavedData(category, index) {
 }
 
 /**
- * 戦闘画面を表示する
- * enemyは生オブジェクト
- */
-function showBattleScreen(enemy) {
-    gameState.currentScreen = 'battle-screen';
-    gameState.combatPhase = "start";
-    gameState.currentEnemy = new Proxy(enemy,
-        {
-            set: setAndRender
-        });
-    addMessage(`\n${gameState.currentEnemy.description}`, false);
-    addMessage(`${gameState.currentEnemy.name}が現れた！戦闘開始！`);
-    gameState.combatPhase = "command_waiting";
-}
-
-/**
  * ゲームオーバー画面を表示する
  */
 function showGameOverScreen() {
@@ -542,6 +543,31 @@ function initializePlayer(isStrongNewGame = false, inheritedMaxHp = 0, inherited
 
     console.log("Player initialized:", player);
     saveGame(player); // 初期化時にセーブ
+}
+
+/**
+ * キャラのステータスを計算して返す。getter代替
+ * @param {Object} chara 
+ * @param {string} property 
+ * @returns 
+ */
+function getStatus(chara, property) {
+    const base = chara[property];
+    if (!chara.statusEffects || chara.statusEffects.length === 0) {
+        return base
+    };
+
+    let multiplier = 1.0;
+    let flat = 0;
+
+    for (const effect of chara.statusEffects) {
+        const mod = DEBUFF_STATUS_MODIFIERS[effect.type]?.[property];
+        if (!mod) continue;
+        if (mod.rate)  multiplier += mod.rate; // 例: -0.2で20%減
+        if (mod.flat)  flat += mod.flat;
+    }
+
+    return Math.max(0, Math.floor(base * multiplier) + flat);
 }
 
 /**
@@ -811,7 +837,9 @@ function displayCurrentEvent(event) {
         renderChoices(event.choices, event);
         // player.currentEventCompleted は false のまま
     } else if (event.enemy) {
-        showBattleScreen({ ...event.enemy, currentHp: event.enemy.hp });
+        setTimeout(
+            battleInit.bind(null, [event.enemy])
+        , 100);
         // player.currentEventCompleted は false のまま
     } else if (event.effects) {
         for (const ef of event.effects) {
@@ -954,10 +982,11 @@ function debugStartCombat(enemyName) {
         }
     }
 
-
     if (enemyToFight) {
-        showBattleScreen({ ...enemyToFight, currentHp: enemyToFight.hp });
         addMessage(`デバッグ: ${gameState.currentEnemy.name} との戦闘を開始します！`, false);
+        setTimeout(
+            battleInit.bind(null, [enemyToFight])
+        , 100);
     } else {
         addMessage(`デバッグ: 敵「${enemyName}」が見つかりませんでした。`, false);
     }
@@ -1294,73 +1323,340 @@ function checkCondition(condition) {
 }
 
 // ============================================================================
-// 6. 戦闘ロジック
+// 6. 戦闘
+// battleInit ⇒ loop[battleTurnStart ⇒ battleExecOrder ⇒ battleExecCommand ⇒ battleFinishCommand ⇒ battleTurnEnd] ⇒ battleResult
 // ============================================================================
-async function attack() {
-    if (player.isGameOver || player.isCleared) return;
+/**
+ * 戦闘開始前の準備
+ * @param {Array} enemies 
+ */
+function battleInit(enemies) {
+    gameState.battle = new Proxy({
+        party: [player],// TODO: 取り急ぎ。playerにmemberを持たせるならそれになる
+        enemies: enemies.map(enemy => 
+            new Proxy({
+                ...enemy,
+                id: self.crypto.randomUUID()
+            }, {set: setAndRender})
+        ),
+        turnOrder: [],
+        turn: 0,
+        phase: null,
+        actor: null,
+        pendingCommand: new Proxy({}, {set: setAndRender}),
+    }, {set: setAndRender});
+    gameState.currentScreen = 'battle-screen';
+    gameState.battle.phase = "start";
 
-    gameState.combatPhase = 'exec';
+    for (const enemy of gameState.battle.enemies) {
+        setTimeout(() => {
+            addMessage(`${enemy.name}が現れた！`);
+        }, 100);
+    }
 
-    let turnOrder = [];
-    if (player.speed >= gameState.currentEnemy.speed) {
-        turnOrder = ['player', 'enemy'];
+    setTimeout(() => {
+        battleTurnStart();// ターン開始処理実行
+    }, 1000);
+}
+
+/**
+ * ターン開始
+ */
+function battleTurnStart() {
+    gameState.battle.turn++;
+    gameState.battle.phase = "turn_start";
+    addMessage(`第${gameState.battle.turn}ターン`);
+    addMessage("");
+    console.log(1);
+    // ランダム順にしてからソートする。速度同値がランダムになるように
+    gameState.battle.turnOrder = [...gameState.battle.party, ...gameState.battle.enemies]
+        .sort(() => Math.random() - 0.5)
+        .sort((a, b) => getStatus(b, "speed") - getStatus(a, "speed"));
+    //TODO: このへんで拡張予定：その他ターン開始時処理
+    setTimeout(() => {
+        battleExecOrder();// 行動決定処理実行
+    }, 1000);
+}
+
+/**
+ * 次のオーダーキャラを処理
+ */
+function battleExecOrder() {
+    console.log(2);
+    // 勝敗判定
+    // TODO: 戦闘不能判定をメソッド化したほうがいい ダメージ処理でマイナスにならないように
+    if (gameState.battle.party.every(chara => chara.hp === 0)) {
+        battleResult(false); //敗北。相打ちでも敗北が優先
+        return;
+    } else if (gameState.battle.enemies.every(chara => chara.hp === 0)) {
+        battleResult(true); //勝利
+        return;
+    }
+
+    // 全員行動済みならターン終了処理
+    if (gameState.battle.turnOrder.length === 0) {
+        battleTurnEnd();
+        return;
+    }
+
+    // 味方ならコマンド選択を表示｜敵ならランダムに決定してコマンド実行処理
+    gameState.battle.actor = gameState.battle.turnOrder.shift();
+    if (gameState.battle.party.includes(gameState.battle.actor)) {
+        gameState.battle.phase = "command_waiting";// コマンドパネル描画
     } else {
-        turnOrder = ['enemy', 'player'];
+        // TODO ランダムに敵の行動を決定。取り急ぎパーティー先頭に攻撃
+        gameState.battle.pendingCommand = new Proxy({act: "attack", actDetail: null, targetId: gameState.battle.party[0].id}, {set: setAndRender});
+        battleExecCommand();
+    }
+}
+
+/**
+ * コマンド効果処理
+ */
+function battleExecCommand() {
+    console.log(3);
+    gameState.battle.phase = "exec";// ログや演出のパネル描画
+    const cmd = gameState.battle.pendingCommand;
+    const actor = gameState.battle.actor;
+    advanceTimeline(actor.id);
+
+    // 対象 all|random|enemy_all|enemy_random|ally_all|ally_random|id
+    // target = []に格納
+
+    if (cmd.act === "attack") {
+        console.log("攻撃コマンドが実行されました")
+        addMessage(`${actor.name}のこうげき！`);
+        //TODO: 攻撃処理
+        const target = getCharacterById(cmd.targetId);
+        const rawDmg = Math.ceil(Math.random() * actor.attack);
+        const actualDamage = calculateDamage(rawDmg, target.armor);
+        target.hp = Math.max(0, target.hp - actualDamage);
+        addMessage(`${target.name} に ${actualDamage} のダメージ！ (元ダメージ: ${rawDmg}, 敵アーマー: ${target.armor})`);
+    } else if (cmd.act === "guard") {
+        console.log("防御コマンドが実行されました")
+        //TODO: 防御処理
+
+    } else if (cmd.act === "skill") {
+        console.log("スキルコマンドが実行されました")
+        //TODO: スキル発動処理
+
+    } else if (cmd.act === "item") {
+        console.log("アイテムコマンドが実行されました")
+        //TODO: アイテム使用処理
+
+    } else {
+        throw new Error(`存在しないアクションです[${cmd.act}]`);
     }
 
-    for (const attacker of turnOrder) {
-        if (player.isGameOver || player.isCleared) break; // 途中で戦闘終了した場合
+    // 戦闘不能キャラを全取得してタイムラインから除く
+    const down_chara_list = [...gameState.battle.party, ...gameState.battle.enemies]
+        .filter((chara) => chara.hp === 0);
+    gameState.battle.turnOrder = gameState.battle.turnOrder.filter(order =>
+        !down_chara_list.some(chara => chara.id === order.id)
+    );
 
-        await new Promise(resolve => setTimeout(resolve, 1000)); // 1秒待機
+    gameState.battle.pendingCommand = new Proxy({}, {set: setAndRender});
+    setTimeout(() => {
+        battleFinishCommand();// 行動終了処理実行
+    }, 100);
+}
 
-        if (attacker === 'player') {
-            // プレイヤー攻撃
-            const playerRawDmg = Math.ceil(Math.random() * player.attack);
-            const actualDamageToEnemy = calculateDamage(playerRawDmg, gameState.currentEnemy.armor);
-            gameState.currentEnemy.currentHp -= actualDamageToEnemy;
-            addMessage(`あなたの攻撃！ ${gameState.currentEnemy.name} に ${actualDamageToEnemy} のダメージ！ (元ダメージ: ${playerRawDmg}, 敵アーマー: ${gameState.currentEnemy.armor})`);
+/**
+ * コマンド効果終了処理
+ */
+function battleFinishCommand() {
+    console.log(4);
+    gameState.battle.actor = null;
+    // TODO: 状態異常処理実行
+    // 次の行動につなぐ
+    setTimeout(battleExecOrder, 1000);
+}
 
-            if (gameState.currentEnemy.currentHp <= 0) {
-                addMessage(`${gameState.currentEnemy.name}を倒した！`);
-                player.money += gameState.currentEnemy.money; // お金の加算
-                addMessage(`${gameState.currentEnemy.money}Gを手に入れた！`); // 獲得メッセージ
-                gameState.combatPhase = "result";
-                return;
-            }
-        } else {
-            // 敵攻撃
-            const enemyRawDmg = Math.ceil(Math.random() * gameState.currentEnemy.attack);
-            const actualDamageToPlayer = calculateDamage(enemyRawDmg, player.armor);
-            player.hp -= actualDamageToPlayer;
-            addMessage(`${gameState.currentEnemy.name} の攻撃！ ${actualDamageToPlayer} のダメージを受けた！ (元ダメージ: ${enemyRawDmg}, あなたのアーマー: ${player.armor})`);
+/**
+ * ターン終了処理
+ */
+function battleTurnEnd() {
+    console.log(5);
+    gameState.battle.phase = "pending";// ログパネル描画
+    // TODO: ターン終了時処理
+    setTimeout(battleTurnStart, 1000);
+}
 
-            if (player.hp <= 0) {
-                checkGameEnd();
-                saveGame(player); // ゲームオーバー時にセーブ
-                return; // 戦闘終了
-            }
+/**
+ * 戦闘終了処理
+ * @param {boolean} is_victory 
+ */
+function battleResult(is_victory) {
+    gameState.battle.phase = "result";// ログパネル描画
+    if (is_victory) {
+        // TODO: 勝利。探索に戻る
+    } else {
+        // TODO: 敗北。タイトル|探索終了して拠点に戻る
+    }
+}
+
+/**
+ * コマンド[こうげき|ぼうぎょ|スキル|アイテム]押下イベント
+ * @param {*} e 
+ * @returns 
+ */
+function onActSelect(e) {
+    const choice = e.target.closest('.cmd');
+    if (!choice) return;
+
+    const act = choice.dataset.act;
+    gameState.battle.pendingCommand.act = act;
+    if (act === "attack") {
+        const aliveEnemies = getAliveCharacters(gameState.battle.enemies);
+        // こうげき選択かつ敵が1体のとき、対象を自動選択して行動
+        if (aliveEnemies.length === 1) {
+            console.log("aaa");
+            console.log(aliveEnemies);
+            gameState.battle.pendingCommand.actDetail = null;
+            gameState.battle.pendingCommand.targetId = aliveEnemies[0].id;
+            battleExecCommand();
+            return;
         }
+        // TODO:こうげき選択かつactorの攻撃タイプが全体かランダムのとき
+    } else if (act === "guard") {
+        // 防御なら自身を対象に行動
+        gameState.battle.pendingCommand.actDetail = null;
+        gameState.battle.pendingCommand.targetId = gameState.battle.actor.id;
+        battleExecCommand();
+        return;
     }
-
-    gameState.combatPhase = "command_waiting";
 }
 
-function battleEnd() {
-    gameState.currentScreen = 'main-game-screen';
-    gameState.explorePhase = "idle";
-    // これはサービス精神
-    addMessage(`${gameState.currentEnemy.name}を倒した！`);
-    addMessage(`${gameState.currentEnemy.money}Gを手に入れた！`);
-    gameState.currentEnemy = null; // 敵をクリア
-    player.currentEventCompleted = true; // 戦闘イベント完了
+commandPanel.addEventListener("click", onActSelect);
 
-    // 最終ボス撃破判定
-    if (player.position === 100 && EVENTS[100].enemy.isBoss) {
-        player.isCleared = true;
+/**
+ * 描画：行動者を削除します
+ * @param {string} unitId 
+ * @returns 
+ */
+async function advanceTimeline(unitId) {
+    const el = document.querySelector(
+        `.timeline-unit[data-id="${unitId}"]`
+    );
+    if (!el) {
+        return;
     }
-    checkGameEnd();
-    saveGame(player); // 戦闘勝利後にセーブ
+
+    el.classList.add("removing");
+    await new Promise(resolve =>
+        setTimeout(resolve, 300)
+    );
+    el.remove();
+
+    const units = document.querySelectorAll(
+        "#timeline-panel .timeline-unit"
+    );
+    const step = 100 / units.length;
+    units.forEach((unit, index) => {
+        unit.style.left = `${index * step}%`;
+    });
 }
+
+/**
+ * 生存している対象を抽出
+ * @param {Array} list 
+ * @returns {Array}
+ */
+function getAliveCharacters(list) {
+    return list.filter(chara => chara.hp > 0);
+}
+
+/**
+ * IDから対象キャラを取得
+ * @param {string} id 
+ * @returns {Proxy}
+ */
+function getCharacterById(id) {
+    return gameState.battle.party.find(chara => chara.id === id) ||
+        gameState.battle.enemies.find(chara => chara.id === id);
+}
+
+// /**
+//  * 戦闘画面を表示する
+//  * enemyは生オブジェクト
+//  */
+// function showBattleScreen(enemy) {
+//     gameState.currentScreen = 'battle-screen';
+//     gameState.combatPhase = "start";
+//     gameState.currentEnemy = new Proxy(enemy,
+//         {
+//             set: setAndRender
+//         });
+//     addMessage(`\n${gameState.currentEnemy.description}`, false);
+//     addMessage(`${gameState.currentEnemy.name}が現れた！戦闘開始！`);
+//     gameState.combatPhase = "command_waiting";
+// }
+
+// async function attack() {
+//     if (player.isGameOver || player.isCleared) return;
+
+//     gameState.combatPhase = 'exec';
+
+//     let turnOrder = [];
+//     if (player.speed >= gameState.currentEnemy.speed) {
+//         turnOrder = ['player', 'enemy'];
+//     } else {
+//         turnOrder = ['enemy', 'player'];
+//     }
+
+//     for (const attacker of turnOrder) {
+//         if (player.isGameOver || player.isCleared) break; // 途中で戦闘終了した場合
+
+//         await new Promise(resolve => setTimeout(resolve, 1000)); // 1秒待機
+
+//         if (attacker === 'player') {
+//             // プレイヤー攻撃
+//             const playerRawDmg = Math.ceil(Math.random() * player.attack);
+//             const actualDamageToEnemy = calculateDamage(playerRawDmg, gameState.currentEnemy.armor);
+//             gameState.currentEnemy.currentHp -= actualDamageToEnemy;
+//             addMessage(`あなたの攻撃！ ${gameState.currentEnemy.name} に ${actualDamageToEnemy} のダメージ！ (元ダメージ: ${playerRawDmg}, 敵アーマー: ${gameState.currentEnemy.armor})`);
+
+//             if (gameState.currentEnemy.currentHp <= 0) {
+//                 addMessage(`${gameState.currentEnemy.name}を倒した！`);
+//                 player.money += gameState.currentEnemy.money; // お金の加算
+//                 addMessage(`${gameState.currentEnemy.money}Gを手に入れた！`); // 獲得メッセージ
+//                 gameState.combatPhase = "result";
+//                 return;
+//             }
+//         } else {
+//             // 敵攻撃
+//             const enemyRawDmg = Math.ceil(Math.random() * gameState.currentEnemy.attack);
+//             const actualDamageToPlayer = calculateDamage(enemyRawDmg, player.armor);
+//             player.hp -= actualDamageToPlayer;
+//             addMessage(`${gameState.currentEnemy.name} の攻撃！ ${actualDamageToPlayer} のダメージを受けた！ (元ダメージ: ${enemyRawDmg}, あなたのアーマー: ${player.armor})`);
+
+//             if (player.hp <= 0) {
+//                 checkGameEnd();
+//                 saveGame(player); // ゲームオーバー時にセーブ
+//                 return; // 戦闘終了
+//             }
+//         }
+//     }
+
+//     gameState.combatPhase = "command_waiting";
+// }
+
+// function battleEnd() {
+//     gameState.currentScreen = 'main-game-screen';
+//     gameState.explorePhase = "idle";
+//     // これはサービス精神
+//     addMessage(`${gameState.currentEnemy.name}を倒した！`);
+//     addMessage(`${gameState.currentEnemy.money}Gを手に入れた！`);
+//     gameState.currentEnemy = null; // 敵をクリア
+//     player.currentEventCompleted = true; // 戦闘イベント完了
+
+//     // 最終ボス撃破判定
+//     if (player.position === 100 && EVENTS[100].enemy.isBoss) {
+//         player.isCleared = true;
+//     }
+//     checkGameEnd();
+//     saveGame(player); // 戦闘勝利後にセーブ
+// }
 
 // ============================================================================
 // 7. ゲーム終了判定
@@ -1381,17 +1677,6 @@ function checkGameEnd() {
         return true;
     }
     return false;
-}
-
-/**
- * プレイヤーが降参する
- */
-function surrender() {
-    closeMenuModal();
-    player.isGameOver = true;
-    addMessage("あなたは降参した... 冒険はここで終わった...");
-    saveGame(player);
-    setTimeout(showGameOverScreen, 3000); // 3秒後にゲームオーバー画面へ
 }
 
 // ============================================================================
@@ -1445,9 +1730,8 @@ startAdventureButton.addEventListener("click", () => {
 });
 
 advanceButton.addEventListener("click", advance);
-attackButton.addEventListener("click", attack);
-battleEndButton.addEventListener("click", battleEnd);
-surrenderButton.addEventListener("click", surrender);
+// attackButton.addEventListener("click", attack);
+// battleEndButton.addEventListener("click", battleEnd);
 
 backToTitleFromGameOverButton.addEventListener("click", () => {
     // ゲームオーバー時はセーブデータを削除しないが、タイトルに戻る
@@ -1476,7 +1760,8 @@ debugStartCombatButton.addEventListener("click", () => {
 
 debugAcquireItemButton.addEventListener("click", debugAcquireItem);
 
-debugBackLog.addEventListener("click", () => {console.log(gameState.backLog)});
+debugBackLogButton.addEventListener("click", () => {console.log(gameState.backLog)});
+debugBackLogButton.addEventListener("click", () => {console.log(gameState)});
 
 // デバッグパネルの切り替え
 debugPanelToggle.addEventListener("click", () => {

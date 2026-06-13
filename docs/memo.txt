@@ -1,82 +1,404 @@
-https://zenn.dev/yend724/articles/20220915-t0ws2v8agxiaa8gi
- 
-### 0-3. ロジック・描画の分離とrender()への統合
- 
-> 0-3aを終えてから0-3b以降に進む。
-> 新機能は追加しない。画面の見た目・挙動は変えない。
- 
-- [ ] 0-3-1: `gameState` proxyオブジェクトを定義し、setメソッドとdirtyプロパティ追加
-- [ ] 0-3-2: `gameState` の初期化処理を追加し、ゲーム開始時に呼び出し（初期化メソッドを作ればよろし）
-- [ ] 0-3-3: `gameState` に現状の散在した状態変数を移植する(currentEnemy, isCombatActive)
-  currentEnemyは戦闘開始時に敵情報をディープコピーしたもの。gameStatusに入れるならコピー時に再起proxyか描画呼び出し付きのヘルパー関数が必要かも。状態異常とか入りだしたら必須。
-  isCombatActiveは現在戦闘中かを示す。
-  参考 うえから置換していく 仕様書書き直したほうがよろし
-const gameState = {
-  // ページ制御（排他的で同時表示がありえないもの）
-  currentPage: "title" | "register" | "explore" | "combat" | "gameclear" | "gameover",
-  // 探索内サブ状態
-  explorePhase: "is_idle" | "is_rolling" | "is_event" | "is_event_choice",
-  // 戦闘内サブ状態
-  combatPhase: "start" | "command_waiting" | "enemy_act" | "result",
-  // モーダル（currentPageと独立して重なる）
-  openModal: null | "menu" | "item_discard",
-  menuTab: "status" | "items" | "equipment",
-  // データ
-  currentEvent: null,
-  currentChoices: null,
-  currentEnemy: null,
-  exploreLog: [],
-  combatLog: []
+戦闘処理の設計をしています。
+抜けている視点や拡張性などの懸念がないか、改修案をレビューしてください。
+
+・現在の流れ
+battle-scene切り替え
+-gameState.combatPhase=command_waitingで攻撃ボタン表示
+攻撃ボタン押下
+-gameState.combatPhase=attackで攻撃ボタン非表示
+-内部:turnOrder確定['player', 'enemy']
+-forでturnOrder回す
+--playerなら
+---攻撃値生成
+---アーマー減算してダメージ値生成
+---hp減算
+---ログ処理
+---撃破判定
+----お金加算
+----gameState.combatPhase=resultで結果表示
+--敵なら
+---攻撃値生成
+---アーマー減算してダメージ値生成
+---hp減算
+---ログ処理
+---敗北判定
+----敗北処理?覚えてないわ?
+-ループ終了
+-gameState.combatPhase=command_waitingで攻撃ボタン表示
+
+
+改変案
+各キャラに内部IDが必要。加入時にcrypto.randomUUIDでいいかも。
+-playerは初期定義で生成（後々は加入処理時も生成）
+-enemyは戦闘開始時のディープコピー時に生成して追加
+
+getStatusも必要。状態異常の影響を受けたステータスの取り出し。
+getStat(chara, property)
+STATUS_MODIFIER = {weakness: { attack: { rate: -0.2 } }}みたいな
+
+戦闘管理オブジェクトを作成し、攻撃ボタンによる進行ではなくターンシーケンス形式に変える。
+要は攻撃ボタンで戦闘のすべてを進行するのではなく、裏側でターンシーケンスを回して操作キャラの番が来たらコマンド表示、っていう形にしたい。
+-gameState.battle = null, を追加
+
+戦闘開始処理実行battleInit
+-gameState.battle=new Proxy({});で初期化
+-gameState.battle.party=[proxy(player)];//取り急ぎ。playerにmemberを持たせるならそれになる
+-gameState.battle.enemies=[proxy({
+  ...event.enemy,//...enemyでデバッグのほうも
+  currentHp: event.enemy.hp,//これ使ってないで
+  id: crypto.randomUUID()
+})];
+-gameState.battle.turnOrder=[];中身は[...party, ...enemies].sort(() => Math.random() - 0.5).sort((a, b) => b.speed - a.speed);
+-gameState.battle.currentChara=null;
+-gameState.battle.turn=0;
+-gameState.battle.phase=pending;でログパネル描画
+-battleTurnStart();ターン開始処理実行
+ターン開始処理
+-gameState.battle.turn++;ターン加算
+-gameState.battle.turnOrder=[]行動順決定
+-（拡張予定：その他ターン開始時処理）
+-行動処理開始
+行動処理
+-勝敗判定
+--gameState.battle.partyが全員戦闘不能判定なら
+---戦闘終了処理(win)実行
+--gameState.battle.enemiesが全員戦闘不能判定なら
+---戦闘終了処理(loose)実行
+-行動順が残っていなければターン終了処理実行
+-行動順を1つ取り出す=Actor
+--gameState.battle.currentChara=Actor
+--Actorが味方ならコマンド待機に移行
+---gameState.battle.phase=command_waitingでコマンドパネル描画
+----コマンド選択で行動実行処理実行
+--Actorが敵ならランダムで行動を確定
+---行動実行処理実行
+行動実行処理（コマンド選択か敵の自動選択により発火）
+-gameState.battle.phase=execでログや演出のパネル描画
+-行動の効果を処理する（ここの処理は未確定、charaはgameStateからとれるがコマンド選択はどうとるか、コマンドデータの形式による）
+--戦闘不能になったキャラをturnOrderから除去する
+-gameState.battle.currentChara=null
+-行動実行終了処理実行
+行動実行終了処理
+-状態異常処理実行（効果発揮や経過ターン減算）
+-行動処理実行
+ターン終了処理
+-（拡張予定：その他ターン終了時処理）
+-ターン開始処理実行
+戦闘終了処理(win|loose)
+-gameState.battle.phase=result(false=loose表示?)で結果パネル描画
+-画面全体に透明当たり判定を設置
+--押下イベントでgameState.battle初期化
+--押下イベントでexplore-scene切り替え
+
+gameState.battleの中身
+{
+  party: [],// 味方キャラProxy配列
+  enemies: [],// 敵キャラProxy配列
+  turnOrder: [],// 行動順のparty+enemies
+  turn: 0,// ターン数
+  phase: "",// string画面制御用フラグ[pending|command_waiting|exec|result]
+  actor: null,// コマンド表示や行動実行用のキャラ保管
+  pendingCommand: null// ターゲット選択や行動実行用のコマンドオブジェクト
+}
+
+
+コマンド設計
+gameState.battle.pendingCommandを追加
+pendingCommand{
+  act:基本行動
+  actDetail:アイテムやスキルの指定
+  target:対象の指定。全体/ランダムの場合はnull
+}
+
+整理してみると対象選択ボタンの押下でコマンド処理開始でよさそう。
+基本行動（⇒スキルかアイテムなら詳細行動）⇒対象
+-コマンド？⇒こうげき⇒スライム：実行
+-コマンド？⇒ぼうぎょ⇒じぶん：実行
+-コマンド？⇒スキル⇒ヒール⇒味方2：実行
+-コマンド？⇒アイテム(act=item&#26684;納)⇒爆弾(actDetail=3&#26684;納)⇒敵全体(target=null&#26684;納)：実行
+
+選択しなおしはこう。
+-戻るイベント：actDetailがあるならそれを削除、ないならactを削除
+-コマンド？⇒アイテム(act=item&#26684;納)⇒爆弾(actDetail=3&#26684;納)⇒戻る(actDetail削除)⇒戻る(act削除)⇒アイテム⇒ポーション⇒味方1：実行
+
+描画処理は？
+-pendingCommand.actがない：基本行動4つ描画、イベントはdata-act="attack"の値をe.dataset.actで取得してpendingCommand.actに&#26684;納
+-pendingCommand.actがskill：スキル選択を描画、イベントはdata-act-detail="heal"の値をe.dataset.actDetailで取得してpendingCommand.actDetailに&#26684;納
+-pendingCommand.actがitem：アイテム選択を描画、イベントはdata-act-detail="1"の値をe.dataset.actDetailで取得してpendingCommand.actDetailに&#26684;納
+-pendingCommand.actがattackまたはguard、もしくはpendingCommand.actDetailがある：対象選択を表示
+--こうげきの場合、キャラが全体攻撃フラグを持っているなら全体選択肢のみdataなしで表示、普通は戦闘不能でないenemiesを表示
+--ぼうぎょの場合、イベントハンドラ内でtarget=自身のidを設定、そのままコマンド処理実行
+--スキルの場合、スキル一覧を表示
+---そのスキルに設定された対象抽出タイプにて抽出メソッドを実行し対象を表示する。スキルの対象タイプがランダム/全体ならtarget=nullでコマンド処理実行、自身が対象ならtarget=自身のidでコマンド処理実行
+--アイテムの場合、スキルと同様
+-選択肢の選択イベント
+--data-target="chara.id"の値をe.dataset.targetで取得してpendingCommand.targetに&#26684;納。またはe.dataset.targetがないならpendingCommand.targetをnullとする
+--コマンド処理実行
+
+イメージ
+gameState.battle.pendingCommand = {type: "attack",targetId: "enemy_0"};
+{ type: "skill", skillId: "power_strike", targetId: "enemy_0" }
+{ type: "item",  itemId: "potion", targetId: "player_0" }
+{ type: "guard" }
+
+
+その他
+・gameState.necessasryRender必要じゃね？proxyってない要素の更新時とか。
+・画面設計しろ、サンプルDOMつくらせてもいいかもね
+
+
+const gameState = {};
+
+// ここから実装
+const DEBUFF_STATUS_MODIFIERS = {
+  weakness: { attack: { rate: -0.2 } },
+  haste:    { speed:  { rate:  0.5 } },
+  //poison:   {}, // ダメージ系はターン処理で扱うのでここには書かない
 };
-  メモ：async/await全部に必須かも
-- [ ] 0-3-4: ダメージ計算・効果適用など純粋計算の関数を `game.js` 上部にまとめる
-- [ ] 0-3-5: `render()` を新設し内部でrequestAnimationFrameにて再起呼び出しする。gameStateの初期化時にrequestAnimationFrame()で呼び出す
-- [ ] 0-3-6: タイトル画面系のrender関数を `gameState` 参照に書き換えてrender()に集約する
-- [ ] 0-3-7: 探索画面系のrender関数を `gameState` 参照に書き換えて集約する
-- [ ] 0-3-8: 探索・イベント・ダイスロールが正常に動くことを確認
-- [ ] 0-3-9: 戦闘画面系のrender関数を同様に書き換えて集約する
-- [ ] 0-3-10: 戦闘・勝敗判定が正常に動くことを確認
-- [ ] 0-3-11: メニュー系のrender関数を同様に書き換えて集約する
-- [ ] 0-3-12: アイテム使用・装備変更が正常に動くことを確認
-- [ ] 0-3-13: 既存の `renderXxx()` の存在チェック
-- [ ] 0-3-14: render.jsの分離
-- [ ] 0-3-15: 全画面・全機能を通しで手動確認する
- 
-ループなら 不採用
-function renderLoop() {
-    updateAnimations(); //なんだこれ
- 
-    if (dirty) {
-        render();
-        dirty = false;
-    }
- 
-    requestAnimationFrame(renderLoop);
+
+function getStatus(chara, property) {
+  const base = chara[property];
+  if (!chara.statusEffects || chara.statusEffects.length === 0) return base;
+
+  let multiplier = 1.0;
+  let flat = 0;
+
+  for (const effect of chara.statusEffects) {
+    const mod = DEBUFF_STATUS_MODIFIERS[effect.type]?.[property];
+    if (!mod) continue;
+    if (mod.rate)  multiplier += mod.rate; // 例: -0.2で20%減
+    if (mod.flat)  flat += mod.flat;
+  }
+
+  return Math.max(0, Math.floor(base * multiplier) + flat);
 }
-//ループでないなら playerとgameStateをproxy化 
-let renderReserved = false;
- 
-function scheduleRender() {
-    if (renderReserved) return;
- 
-    renderReserved = true;
- 
-    requestAnimationFrame(() => {
-        renderReserved = false;
-        render();
-    });
+
+//======================
+
+function battleInit(enemies) {
+  gameState.currentScene = 'battle_scene'; //TODO:正確でない
+  gameState.battle = new Proxy({
+    party: [player],// TODO: 取り急ぎ。playerにmemberを持たせるならそれになる
+    enemies: [
+      new Proxy({
+        ...event.enemy,//...enemyでデバッグのほうも
+        currentHp: event.enemy.hp,//これ使ってないで
+        id: self.crypto.randomUUID()
+      }, 例のアレ)],
+    turnOrder: [],
+    turn: 0,
+    phase: "pending",//でログパネル描画
+    actor: null,
+    pendingCommand: new Proxy({}, 例のアレ),
+  }, 例のアレ);
+  battleTurnStart();//ターン開始処理実行
+}
+
+function battleTurnStart() {
+  gameState.battle.turn++;
+  // ランダム順にしてからソートする。速度同値がランダムになるように
+  gameState.battle.turnOrder = [...gameState.battle.party, ...gameState.battle.enemies]
+    .sort(() => Math.random() - 0.5)
+    .sort((a, b) => getStatus(b, "speed") - getStatus(a, "speed"));
+  //TODO: このへんで拡張予定：その他ターン開始時処理
+  battleExecOrder();
+}
+
+function battleExecOrder() {
+  // 勝敗判定
+  // TODO: 戦闘不能判定をメソッド化したほうがいい ダメージ処理でマイナスにならないように
+  if (gameState.battle.party.every(chara => chara.hp === 0)) {
+    battleResult(false); //敗北。相打ちでも敗北が優先
+    return;
+  } else if (gameState.battle.enemies.every(chara => chara.hp === 0)) {
+    battleResult(true); //勝利
+    return;
+  }
+
+  // 全員行動済みならターン終了処理
+  if (gameState.battle.turnOrder.length === 0) {
+    battleTurnEnd();
+    return;
+  }
+
+  // 味方ならコマンド選択を表示｜敵ならランダムに決定してコマンド実行処理
+  gameState.battle.actor = gameState.battle.turnOrder.shift();
+  if (gameState.battle.party.includes(gameState.battle.actor)) {
+    gameState.battle.phase = "command_waiting";// コマンドパネル描画
+  } else {
+    // TODO ランダムに敵の行動を決定。取り急ぎパーティー先頭に攻撃
+    gameState.battle.pendingCommand = {act: "attack", actDetail: null, targetId: gameState.battle.party[0].id};
+    battleExecCommand();
+  }
+}
+
+function battleExecCommand() {
+  gameState.battle.phase = "exec";// ログや演出のパネル描画
+  const cmd = gameState.battle.pendingCommand;
+  gameState.battle.pendingCommand = new Proxy({}, 例のアレ);
+
+  // 対象 all|random|enemy_all|enemy_random|ally_all|ally_random|id
+  // targets = []に&#26684;納
+
+  if (cmd.type === "attack") {
+    //TODO: 攻撃処理
+  } else if (cmd.type === "guard") {
+
+  } else if (cmd.type === "skill") {
+
+  } else if (cmd.type === "item") {
+
+  } else {
+    throw new Error('存在しないアクションです');
+  }
+
+  // 戦闘不能キャラを全取得してタイムラインから除く
+  const down_chara_list = [...gameState.battle.party, ...gameState.battle.enemies]
+    .filter((chara) => chara.hp === 0);
+  gameState.battle.turnOrder = gameState.battle.turnOrder.filter(order =>
+    !down_chara_list.some(chara => chara.id === order.id)
+  );
+
+  battleFinishCommand();
+}
+
+function battleFinishCommand() {
+  gameState.battle.actor = null;
+  // TODO: 状態異常処理実行
+  // 次の行動につなぐ
+  setTimeout(battleExecOrder, 1000);
+}
+
+function battleTurnEnd() {
+  gameState.battle.phase = "pending";// ログパネル描画
+  // TODO: ターン終了時処理
+  setTimeout(battleTurnStart, 1000);
+}
+
+function battleResult(is_victory) {
+  gameState.battle.phase = "result";// ログパネル描画
+  if (is_victory) {
+    // TODO: 勝利。探索に戻る
+  } else {
+    // TODO: 敗北。タイトル|探索終了して拠点に戻る
+  }
+  /*
+-画面全体に透明当たり判定を設置
+--押下イベントでgameState.battle初期化
+--押下イベントでexplore-scene切り替え
+  */
+}
+
+
+// ==========render
+
+function renderBattle() {
+  // pending | command_waiting | exec | result
+  const phase = gameState.battle.phase;
+
+  // 全非表示
+
+  if (phase === "pending"
+      || phase === "exec"
+      || phase === "result") {
+    // ログ表示
+  } else if (phase === "command_waiting") {
+    // コマンドパネル表示
+    if (!gameState.battle.pendingCommand.act) {
+      // 基本行動4つのパネル表示
+    } else if (gameState.battle.pendingCommand.act === "skill" && !gameState.battle.pendingCommand.actDetail) {
+      // スキル一覧を生成
+      // TODO: イベントデリゲーションを調べて。親に代わりに登録しておく形。これでええやん
+      /*こんな感じ
+      const parent = document.getElementById('parent');
+
+      parent.addEventListener('click', (e) => {
+        const choice = e.target.closest('.clickable');
+        if (!choice) return;
+
+        const id = choice.dataset.id;
+        call(id);
+      });
+      */
+    } else if (gameState.battle.pendingCommand.act === "item" && !gameState.battle.pendingCommand.actDetail) {
+      // アイテム一覧を生成
+    } else if (gameState.battle.pendingCommand.act) {
+      // 対象選択
+      if (gameState.battle.pendingCommand.act === "attack") {
+        // 健康な敵を抽出
+        // イベントハンドラ登録
+        // 対象を表示
+      } else if (gameState.battle.pendingCommand.act === "skill" && gameState.battle.pendingCommand.actDetail) {
+        // スキル一覧からスキル取得
+        // スキルの対象抽出タイプからメソッドを呼び出して対象を抽出
+        // イベントデリゲーションなのでハンドラ不要 ⇒ targetブロックに付与
+        // 対象を表示
+      } else if (gameState.battle.pendingCommand.act === "item" && gameState.battle.pendingCommand.actDetail) {
+        // アイテム一覧からアイテム取得
+        // アイテムの対象抽出タイプからメソッドを呼び出して対象を抽出
+        // イベントハンドラ登なのでハンドラ不要 ⇒ targetブロックに付与
+        // 対象を表示
+      }
+    }
+  }
 }
  
-const gameState = new Proxy(
-    {},
-    {
-        set(target, key, value) {
-            target[key] = value;
-            scheduleRender(); //連続render対策
-            return true;
-        }
-    }
-);
+
+例えば、
+主人公にのみ「捕縛スキル」を追加して、体力が残り20％(切り捨て,下限1)を切った相手に使用可能。
+命中したら相手を「捕縛：1」の状態異常にする。捕縛状態はターン経過で減少しない。
+「捕縛」使用後に3以上蓄積したら捕縛成功で戦闘からそのキャラを離脱させる。
+捕縛状態のキャラは捕縛状態を1減らす「もがく」コマンドが利用可能になる。
+（状態異常にターン減衰なしが必要）
+ 
+こういった形なら、
+主人公は「捕縛」を使い続けないといけない（ハンデを背負う）、
+捕縛状態のキャラは「もがく」かHPを回復することで逃れられる、
+「もがく」の無効化のためには睡眠や麻痺などの状態異常にして弱らせるのが有効である、
+捕縛したい敵がいるならその敵以外はあらかじめ倒す、
+弱い敵を捕縛したい場合は全体攻撃を控える、
+といった形で戦略性が生まれそう。
+
+
+
+あらすじ
+帝国：戦の精霊信仰、王国：実りの精霊信仰、魔族：破壊の精霊（魔王）信仰
+魔物使いもいる世界。
+帝国民生まれ、王国との戦争の余波で故郷を追われる
+数年後街で暮らして家を借りた、依頼で森へ、精霊の紋章を得る
+紋章は生物を支配する力あり、敵を使役できるかもねってなる
+依頼をこなしつつ仲間を増やす、ギルドから平原いってみたらって提案
+平原へ、冒険者ランクアップで丘陵許可
+丘陵クリアで山許可、山でやたら強い魔族と遭遇、敗北ですが見逃してもらう
+報告、破壊の精霊復活の兆しかも、もっと鍛えろってことで海岸/森2/平原2/洞窟/洞窟2許可
+ここからしばらく冒険タイム
+・ランク上がった、お金あるなら屋敷買わない？⇒待機上限の拡大/庭機能解放
+・闘技場とか出てみない？
+・イベント：帝国貴族か王族との接触、王国内の腐敗の噂、帝国と王国の小競り合いの噂
+ランクが2～3上がったら帝国と王国の紛争勃発
+期間限定マップ：小戦場1⇒小戦場2⇒小戦場3と解放
+小戦場3で敵主力を撃破し王国軍を撤退させる
+何回か冒険後にイベント、帝国が電撃戦で土地を奪った
+開拓地解放、危険の確認で向かう
+開拓地で魔族と遭遇、撃破するも加減されていたと判明、逃げられる
+力をつけるフェーズ
+冒険者ランクを一定まで上げる、街に戻ると騒めき、王国の王都が占領され魔王が出現
+魔王軍襲来
+期間限定マップ：要塞防衛戦1⇒要塞防衛戦2⇒要塞防衛戦3と解放
+要塞防衛戦3で勝利して魔族を撃滅
+街へ戻ると逃げ延びた王国騎士から依頼、王女の救出
+単発マップ：電撃戦で王女を王国のはずれから救出
+帝国による攻撃が開始
+王国：平原/火山/古戦場/森深層が解放
+すべてクリア
+王国軍残党が反攻、帝国と組んで魔族を攻撃
+期間限定マップ：王都攻略戦1⇒王都攻略戦2⇒王都攻略戦3⇒王都攻略戦4と解放
+決戦解放、魔王を使役/封印して終了
+帝国と王国は和平を結んで大陸が平和になる
+クリア
+クリア後：新諸島発見、魔の次元発見、パンドラの洞窟発見
+
+
  
 セーブ関連処理の見直し(Step4書き換え もっと手前でやっちゃってもいいかも）
 サーバーやめて拠点でセーブダウンロードと読み込みをできるようにする。改造へのお気持ち抵抗として一応暗号化する。

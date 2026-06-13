@@ -53,18 +53,22 @@ const choicesContainer = document.getElementById("choices-container");
 const advanceButton = document.getElementById("advance-button");
 const attackButton = document.getElementById("attack-button");
 const battleEndButton = document.getElementById("battle-end");
-const surrenderButton = document.getElementById("surrender-button");
 const menuButton = document.getElementById("menu-button");
 
+// 戦闘画面
 const battleScreen = document.getElementById("battle-screen");
-const battlePlayerDisplayName = document.getElementById("battle-player-display-name");
-const battlePlayerHpText = document.getElementById("battle-player-hp-text");
-const battleHpBarFill = document.getElementById("battle-hp-bar-fill");
+// const battlePlayerDisplayName = document.getElementById("battle-player-display-name");
+// const battlePlayerHpText = document.getElementById("battle-player-hp-text");
+// const battleHpBarFill = document.getElementById("battle-hp-bar-fill");
+const partyPanel = document.getElementById("party-panel");
+const enemyPanel = document.getElementById("enemy-panel");
+const timelinePanel = document.getElementById("timeline-panel");
 const battleMessage = document.getElementById("battle-message");
-const enemyStatusArea = document.getElementById("enemy-status-area");
-const enemyDisplayName = document.getElementById("enemy-display-name");
-const enemyHpBarFill = document.getElementById("enemy-hp-bar-fill");
-const enemyHpText = document.getElementById("enemy-hp-text");
+const commandPanel = document.getElementById("command-panel");
+// const enemyStatusArea = document.getElementById("enemy-status-area");
+// const enemyDisplayName = document.getElementById("enemy-display-name");
+// const enemyHpBarFill = document.getElementById("enemy-hp-bar-fill");
+// const enemyHpText = document.getElementById("enemy-hp-text");
 
 const menuModal = document.getElementById("menu-modal");
 const menuTabStatus = document.getElementById("status-tab");
@@ -116,8 +120,8 @@ function render() {
         updateModal();
     }
     if (gameState.currentScreen === 'battle-screen') {
+        renderBattle();
         updateEnemyStatus();
-        updateCombatCommand();
     }
 }
 
@@ -190,9 +194,9 @@ function updatePlayerStatus() {
     const hpPercentage = Math.max((player.hp / player.maxHp) * 100);
 
     if (gameState.currentScreen === 'battle-screen') {
-        battlePlayerDisplayName.textContent = player.name;
-        battlePlayerHpText.textContent = `${player.hp}/${player.maxHp}`;
-        battleHpBarFill.style.width = `${hpPercentage}%`;
+        // battlePlayerDisplayName.textContent = player.name;
+        // battlePlayerHpText.textContent = `${player.hp}/${player.maxHp}`;
+        // battleHpBarFill.style.width = `${hpPercentage}%`;
         if (hpPercentage <= 25) {
             gameHpBarFill.classList.add("low-hp");
         } else {
@@ -211,22 +215,6 @@ function updatePlayerStatus() {
 }
 
 /**
- * 敵のステータス表示を更新する
- * 戦闘
- */
-function updateEnemyStatus() {
-    enemyDisplayName.textContent = gameState.currentEnemy.name;
-    const hpPercentage = Math.max((gameState.currentEnemy.currentHp / gameState.currentEnemy.hp) * 100, 0);
-    enemyHpBarFill.style.width = `${hpPercentage}%`;
-    enemyHpText.textContent = `${gameState.currentEnemy.currentHp}/${gameState.currentEnemy.hp}`;
-    if (hpPercentage <= 25) {
-        enemyHpBarFill.classList.add("low-hp");
-    } else {
-        enemyHpBarFill.classList.remove("low-hp");
-    }
-}
-
-/**
  * 探索コマンドの表示切替
  * TODO: 定数にあとで置き換え
  */
@@ -238,31 +226,6 @@ function updateExploreCommand() {
         // rolling | event_resolve | choice_waiting
         advanceButton.disabled = true;
         advanceButton.classList.add("hidden");        
-    }
-}
-
-
-/**
- * 戦闘コマンドの表示切替
- * TODO: 定数にあとで置き換え
- */
-function updateCombatCommand() {
-    if (gameState.combatPhase === "command_waiting") {
-        attackButton.disabled = false;
-        attackButton.classList.remove("hidden");
-    } else {
-        // start | exec | enemy_act | result
-        attackButton.disabled = true;
-        attackButton.classList.add("hidden");
-    }
-
-    if (gameState.combatPhase === "result") {
-        battleEndButton.disabled = false;
-        battleEndButton.classList.remove("hidden");
-    } else {
-        // start | exec | enemy_act | command_waiting
-        battleEndButton.disabled = true;
-        battleEndButton.classList.add("hidden");
     }
 }
 
@@ -455,3 +418,170 @@ function formatItemEffect(item) {
 
     return parts.length > 0 ? parts.join(" / ") : null;
 }
+
+
+/* ======================
+    戦闘
+====================== */
+function renderBattle() {
+    // pending | command_waiting | exec | result
+    const phase = gameState.battle.phase;
+    if (phase === null) {
+        return;
+    }
+
+    if (phase === "start") {
+        // 初期描画
+        // パーティーカード生成
+        // エネミーカード生成
+        enemyPanel.innerHTML = "";
+        for (const enemy of gameState.battle.enemies) {
+            const enemyCard = document.createElement('div');
+            enemyCard.classList.add("enemy-card");
+            enemyCard.dataset.id = enemy.id;
+            const hpPercentage = Math.max((enemy.hp / enemy.maxHp) * 100);
+            // HP初期設定が出れば有効化
+            // let addClass = "";
+            // if (hpPercentage <= 25) {
+            //     let addClass = "low-hp";
+            // }
+            enemyCard.innerHTML = `
+                <div class="enemy-name">${enemy.name}</div>
+                <div class="enemy-image"></div>
+                <div class="hp-label"">HP ${enemy.hp}/${enemy.maxHp}</div>
+                <div class="bar">
+                    <div class="hp-bar-fill" style="width: ${hpPercentage}%"></div>
+                </div>
+            `;
+
+            enemyPanel.appendChild(enemyCard);
+        }
+        // タイムライン初期化
+        document.querySelectorAll('#timeline-panel > .timeline-unit').forEach(el => el.remove());
+        // ログ表示
+        battleMessage.classList.remove("hidden");
+        // コマンド非表示
+        commandPanel.classList.add("hidden");
+    } else if (phase === "turn_start") {
+        createTimeline();
+        // ログ表示
+        battleMessage.classList.remove("hidden");
+        commandPanel.classList.add("hidden");
+    } else if (phase === "pending"
+        || phase === "exec"
+        || phase === "result") {
+        // ログ表示
+        battleMessage.classList.remove("hidden");
+        commandPanel.classList.add("hidden");
+    } else if (phase === "command_waiting") {
+        battleMessage.classList.add("hidden");
+        commandPanel.classList.remove("hidden");
+        // コマンドパネル表示
+        if (!gameState.battle.pendingCommand.act) {
+        // 基本行動4つのパネル表示
+        } else if (gameState.battle.pendingCommand.act === "skill" && !gameState.battle.pendingCommand.actDetail) {
+        // スキル一覧を生成
+        // TODO: イベントデリゲーションを調べて。親に代わりに登録しておく形。これでええやん
+        /*こんな感じ
+        const parent = document.getElementById('parent');
+
+        parent.addEventListener('click', (e) => {
+            const choice = e.target.closest('.clickable');
+            if (!choice) return;
+
+            const id = choice.dataset.id;
+            call(id);
+        });
+        */
+        } else if (gameState.battle.pendingCommand.act === "item" && !gameState.battle.pendingCommand.actDetail) {
+        // アイテム一覧を生成
+        } else if (gameState.battle.pendingCommand.act) {
+        // 対象選択
+        if (gameState.battle.pendingCommand.act === "attack") {
+            // 健康な敵を抽出
+            // イベントハンドラ登録
+            // 対象を表示
+        } else if (gameState.battle.pendingCommand.act === "skill" && gameState.battle.pendingCommand.actDetail) {
+            // スキル一覧からスキル取得
+            // スキルの対象抽出タイプからメソッドを呼び出して対象を抽出
+            // イベントデリゲーションなのでハンドラ不要 ⇒ targetブロックに付与
+            // 対象を表示
+        } else if (gameState.battle.pendingCommand.act === "item" && gameState.battle.pendingCommand.actDetail) {
+            // アイテム一覧からアイテム取得
+            // アイテムの対象抽出タイプからメソッドを呼び出して対象を抽出
+            // イベントハンドラ登なのでハンドラ不要 ⇒ targetブロックに付与
+            // 対象を表示
+        }
+        }
+    }
+}
+
+/**
+ * 敵のステータス表示を更新する
+ */
+function updateEnemyStatus() {
+    gameState.battle.enemies.forEach(enemy => {
+        const enemyCard = document.querySelector(
+            `.enemy-card[data-id="${enemy.id}"]`
+        );
+        if (!enemyCard) return;
+        const hpPercentage = Math.max(
+            (enemy.hp / enemy.maxHp) * 100,
+            0
+        );
+        enemyCard.querySelector('.hp-label').textContent =`HP ${enemy.hp}/${enemy.maxHp}`;
+        const hpFill = enemyCard.querySelector('.hp-bar-fill');
+        hpFill.style.width = `${hpPercentage}%`;
+        hpFill.classList.toggle('low-hp', hpPercentage <= 25);
+    });
+}
+
+/**
+ * タイムライン作成
+ */
+function createTimeline() {
+    const timelinePanel = document.getElementById("timeline-panel");
+    const turnOrder = gameState.battle.turnOrder;
+
+    const step = 86 / turnOrder.length;
+
+    turnOrder.forEach((unit, index) => {
+        const el = document.createElement("div");
+        const type = gameState.battle.party.includes(unit) ? "ally" : "enemy";
+
+        el.className = `timeline-unit ${type}`;
+        el.dataset.id = unit.id;
+        el.style.left = `${index * step + 7}%`;
+
+        el.innerHTML = `
+            <div class="timeline-icon"></div>
+            <div class="timeline-name">${unit.name.substr(0,2)}</div>
+        `;
+
+        timelinePanel.appendChild(el);
+    });
+}
+
+// /**
+//  * 戦闘コマンドの表示切替
+//  * TODO: 定数にあとで置き換え
+//  */
+// function updateCombatCommand() {
+//     if (gameState.combatPhase === "command_waiting") {
+//         attackButton.disabled = false;
+//         attackButton.classList.remove("hidden");
+//     } else {
+//         // start | exec | enemy_act | result
+//         attackButton.disabled = true;
+//         attackButton.classList.add("hidden");
+//     }
+
+//     if (gameState.combatPhase === "result") {
+//         battleEndButton.disabled = false;
+//         battleEndButton.classList.remove("hidden");
+//     } else {
+//         // start | exec | enemy_act | command_waiting
+//         battleEndButton.disabled = true;
+//         battleEndButton.classList.add("hidden");
+//     }
+// }

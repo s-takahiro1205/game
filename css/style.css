@@ -629,8 +629,9 @@ input[type="number"] {
         max-width: 100%; /* 小画面では1列 */
     }
 
+    /* 小画面では1列 */
     /* .player-stats-display {
-        grid-template-columns: 1fr; /* 小画面では1列 */
+        grid-template-columns: 1fr; 
     } */
 
     .item-grid, .equipment-slots {

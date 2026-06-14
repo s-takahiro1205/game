@@ -1051,9 +1051,89 @@ function closeMenuModal() {
  * 使用ボタンのイベント
  */
 export async function useItem(_) {
-    for (const ef of this.item.effects) {
-        await applyEffect(ef);
-    }
+        // TODO: 戦闘中と共通化したいね。。無理か
+        const targets = [player.party[0]]; 
+        const actor = player.party[0]; 
+        for (const effect of item.effects) {
+            if (effect.type === "damage") {
+                for (const target of targets) {
+                    const damage = calculateDiceDamage(
+                        actor, target,
+                        effect.dice, effect.sides, effect.flat,
+                        false,
+                        effect.fix ?? 0, effect.armor_pierce ?? 0
+                    );
+                    applyDamage(target, damage, false)
+                }
+            } else if (effect.type === "heal") {
+                for (const target of targets) {
+                    const heal = calculateDiceHeal(
+                        actor, target,
+                        effect.dice, effect.sides, effect.flat,
+                        false,
+                        effect.fix ?? 0
+                    );
+                    target.hp = Math.min(target.maxHp, target.hp + heal);
+                    addMessage(`${target.name} は ${heal} 回復した！`);
+                }
+            } else if (effect.type === "add_state") {
+                for (const target of targets) {
+                    const is_success = calculateDiceChance(
+                        actor, target, effect.stateId,
+                        effect.dice, effect.sides, effect.flat,
+                        false,
+                        effect.fix ?? 0
+                    );
+                    if (is_success) {
+                        const turn = effect.turn;
+                        addBattleStatus(effect.stateId, target, turn);
+                    }
+                }
+            } else if (effect.type === "recover_state") {
+                for (const target of targets) {
+                    // その状態異常になっているか
+                    if (!target.battle_status.some(s => s.type === effect.stateId)) {
+                        continue;
+                    }
+                    const is_success = calculateDiceChance(
+                        actor, target, effect.stateId,
+                        effect.dice, effect.sides, effect.flat,
+                        false,
+                        effect.fix ?? 0
+                    );
+                    if (is_success) {
+                        recoverBattleStatus(effect.stateId, target)
+                    }
+                }
+            } else if (effect.type === "revive") {
+                for (const target of targets) {
+                    // その状態異常になっているか
+                    if (!target.battle_status.some(s => s.type === "dead")) {
+                        continue;
+                    }
+                    const is_success = calculateDiceChance(
+                        actor, target, "dead",
+                        effect.dice, effect.sides, effect.flat,
+                        false,
+                        effect.fix ?? 0
+                    );
+                    if (is_success) {
+                        revive(target, effect.heal)
+                    }
+                }
+            } else if (effect.type === "stat_change") {
+                for (const target of targets) {
+                    const mod = calculateDiceHeal(
+                        actor, target,
+                        effect.dice, effect.sides, effect.flat,
+                        false,
+                        effect.fix ?? 0
+                    );
+                    target[effect.stat] += mod;
+                    addMessage(`${target.name} の ${effect.stat} が ${mod} ` + (mod > 0 ? "上がった！" : "下がった！"));
+                }
+            }
+        }
 
     // 無制限でないものは使用回数を減らす
     if (this.item.uses) {
@@ -1740,12 +1820,24 @@ function battleExecCommand() {
         for (const effect of item.effects) {
             if (effect.type === "damage") {
                 for (const target of targets) {
-                    applyDamage(target, effect.value, false)
+                    const damage = calculateDiceDamage(
+                        actor, target,
+                        effect.dice, effect.sides, effect.flat,
+                        false,
+                        effect.fix ?? 0, effect.armor_pierce ?? 0
+                    );
+                    applyDamage(target, damage, false)
                 }
             } else if (effect.type === "heal") {
                 for (const target of targets) {
-                    target.hp = Math.min(target.maxHp, target.hp + effect.value);
-                    addMessage(`${target.name} は ${effect.value} 回復した！`);
+                    const heal = calculateDiceHeal(
+                        actor, target,
+                        effect.dice, effect.sides, effect.flat,
+                        false,
+                        effect.fix ?? 0
+                    );
+                    target.hp = Math.min(target.maxHp, target.hp + heal);
+                    addMessage(`${target.name} は ${heal} 回復した！`);
                 }
             } else if (effect.type === "add_state") {
                 for (const target of targets) {

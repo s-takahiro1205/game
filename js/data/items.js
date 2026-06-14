@@ -5,9 +5,6 @@
  * @property {string} type - 効果のタイプ (例: "heal", "stat_change")
  * @property {number} [value] - 効果量（固定値の場合）
  * @property {string} [stat] - 変更するステータス名（stat_changeの場合）
- * @property {number} [min] - 効果量の最小値（ランダム値の場合）
- * @property {number} [max] - 効果量の最大値（ランダム値の場合）
- * @property {number} [rate] - 割合（rate_referenceと併用）
  * @property {string} [rate_reference] - 割合の参照元ステータス（rateと併用）
  * @property {string} [text] - 効果メッセージ（個別のメッセージが必要な場合）
  * @property {string} [itemId] - 取得するアイテムのID（acquire_itemの場合）
@@ -41,7 +38,14 @@ export const ITEMS = [
         category: "consumable",
         price: 50,
         effects: [
-            { type: "heal", value: 10, text: "朽ちた回復薬を飲んだ。10 HP回復した！" }
+            {
+                type: "heal",
+                dice: 0,
+                sides: 0,
+                flat: 0,
+                fix: 10,
+                text: "朽ちた回復薬を飲んだ。10 HP回復した！"
+            }
         ],
         usableIn: {
             home: false,
@@ -61,10 +65,40 @@ export const ITEMS = [
         category: "consumable",
         price: 200,
         effects: [
-            { type: "stat_change", stat: "attack", value: 1, text: "影の秘薬を飲んだ。攻撃力が1上昇した！" },
-            { type: "stat_change", stat: "maxHp", value: 3, text: "最大HPが3上昇した！" },
-            { type: "heal", value: 3 },
-            { type: "stat_change", stat: "size", value: 1, text: "体格が1上昇した！" }
+            {
+                type: "stat_change",
+                stat: "attack",
+                dice: 0,
+                sides: 0,
+                flat: 0,
+                fix: 1,
+                text: "影の秘薬を飲んだ。攻撃力が1上昇した！"
+            },
+            {
+                type: "stat_change",
+                stat: "size",
+                dice: 0,
+                sides: 0,
+                flat: 0,
+                fix: 1,
+                text: "体格が1上昇した！"
+            },
+            {
+                type: "stat_change",
+                stat: "maxHp",
+                dice: 0,
+                sides: 0,
+                flat: 0,
+                fix: 3,
+                text: "最大HPが3上昇した！"
+            },
+            { 
+                type: "heal", 
+                dice: 0,
+                sides: 0,
+                flat: 0,
+                fix: 3,
+            },
         ],
         usableIn: {
             home: true,
@@ -84,7 +118,15 @@ export const ITEMS = [
         category: "consumable",
         price: 150,
         effects: [
-            { type: "stat_change", stat: "intel", value: 2, text: "忘却の巻物を使った。知能が2上昇した！" },
+            {
+                type: "stat_change",
+                stat: "intel",
+                dice: 0,
+                sides: 0,
+                flat: 0,
+                fix: 1,
+                text: "忘却の巻物を使った。知能が2上昇した！"
+            },
         ],
         usableIn: {
             home: true,
@@ -104,7 +146,13 @@ export const ITEMS = [
         category: "consumable",
         price: 300,
         effects: [
-            { type: "damage", value: 10},
+            {
+                type: "damage",
+                dice: 3,
+                sides: 3,
+                flat: 6,
+                fix: 0,
+            },
         ],
         usableIn: {
             home: false,
@@ -124,7 +172,13 @@ export const ITEMS = [
         category: "consumable",
         price: 100,
         effects: [
-            { type: "damage", value: 20},
+            {
+                type: "damage",
+                dice: 4,
+                sides: 3,
+                flat: 10,
+                fix: 0,
+            },
         ],
         usableIn: {
             home: false,
@@ -295,7 +349,7 @@ export const ITEMS = [
         },
         uses: 1,
         use_type: "heal",
-        use_target_type: "dead_enemy_one",
+        use_target_type: "dead_ally_one",
         stat_modifier: null,
         equip_type: null
     },

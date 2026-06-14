@@ -389,29 +389,44 @@ function renderMenuEquip() {
 function formatItemEffect(item) {
     const parts = [];
     // TODO: ここに置いてんじゃねーよバカ
-    const STAT_LABEL = {
+    const LABEL = {
         maxHp: "最大HP", maxMp: "最大MP", attack: "攻撃力", armor: "防御力", speed: "速度", intel: "知能", dex: "器用", size: "体格" , multi_action: "行動回数",
-        poizon: "毒", paralyze: "麻痺", sleep: "眠り", stan: "スタン", blind: "盲目", seal: "魔封じ", bind: "捕縛"
+        poizon: "毒", paralyze: "麻痺", sleep: "眠り", stan: "スタン", blind: "盲目", seal: "魔封じ", bind: "捕縛",
+        alive_enemy_all: "敵全員", alive_enemy_random: "ランダムな敵1体", alive_enemy_one: "敵1体", dead_enemy_all: "戦闘不能中の敵全員", dead_enemy_random: "戦闘不能中のランダムな敵1体", dead_enemy_one: "戦闘不能中の敵1体",
+        alive_ally_all: "味方全員", alive_ally_random: "ランダムな味方1体", alive_ally_one: "味方1体", dead_ally_all: "戦闘不能中の味方全員", dead_ally_random: "戦闘不能中のランダムな味方1体", dead_ally_one: "戦闘不能中の味方1体",
+        alive_all: "全員", alive_random: "ランダムな1体", alive_one: "1体", dead_all: "戦闘不能中の全員", dead_random: "戦闘不能中のランダムな1体", dead_one: "戦闘不能中の1体",
     };
 
     if (item.effects && item.effects.length > 0) {
+        parts.push(`対象 ${LABEL[item.use_target_type]}`)
+        const diceLabelFun = (ef) => {return ef.fix ? ef.fix : ef.dice + "D" + ef.sides + "+" + ef.flat};
         item.effects.forEach(ef => {
             switch (ef.type) {
                 case "heal":
-                    parts.push(`HP +${ef.value}`);
+                    parts.push(`HP +` + diceLabelFun(ef));
                     break;
                 case "damage":
-                    parts.push(`ダメージ ${ef.value}`);
+                    parts.push(`ダメージ ` + diceLabelFun(ef));
                     break;
                 case "stat_change": {
-                    const label = STAT_LABEL[ef.stat] || ef.stat;
+                    const label = LABEL[ef.stat] || ef.stat;
                     const sign = ef.value >= 0 ? "+" : "";
-                    parts.push(`${label} ${sign}${ef.value}`);
+                    parts.push(`${label} ${sign}` + diceLabelFun(ef));
                     break;
                 }
                 case "add_state": {
-                    const label = STAT_LABEL[ef.stateId] || ef.stateId;
-                    parts.push(`${label} 付与(${ef.turn}ターン)`);
+                    const label = LABEL[ef.stateId] || ef.stateId;
+                    parts.push(`${label} 付与(約${ef.turn}ターン)`);
+                    break;
+                }
+                case "recover_state": {
+                    const label = LABEL[ef.stateId] || ef.stateId;
+                    parts.push(`${label} 解除`);
+                    break;
+                }
+                case "revive": {
+                    const label = LABEL[ef.stateId] || ef.stateId;
+                    parts.push(`蘇生`);
                     break;
                 }
                 case "dice_check":
@@ -566,6 +581,9 @@ function updatePartyStatus() {
                 card.querySelector('.hp-label').textContent += status_def.icon;
             }
         }
+        // 戦闘不能ならクラスを追加
+        card.classList.toggle("dead", unit.battle_status.some(s => s.type === "dead"));
+
         const hpFill = card.querySelector('.hp-bar-fill');
         hpFill.style.width = `${hpPercentage}%`;
         hpFill.classList.toggle('low-hp', hpPercentage <= 25);

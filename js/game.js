@@ -33,7 +33,8 @@ import { BATTLE_STATUSES, DEBUFF_STATUS_MODIFIERS, SELECT_TARGET_TYPE, TARGET_TY
  * @property {"consumable" | "equipment"} category - アイテムカテゴリ
  * @property {number} price - 価格
  * @property {Effect[] | null} effects - 使用効果配列（消費アイテム用）
- * @property {number} uses - 使用可能回数（消費アイテム。装備は0）
+ * @property {Object} usableIn - どの場面で使用可能か home|explore|battle
+ * @property {number} uses - 使用回数制限（無制限ならnull）
  * @property {string} use_type - 使用種別
  * @property {string} use_target_type - 使用対象種別
  * @property {object | null} stat_modifier - 増減ステータス（例: { attack: +5, armor: +2 }）
@@ -580,10 +581,10 @@ function initializePlayer(isStrongNewGame = false, inheritedMaxHp = 0, inherited
     unit.multi_action = 1;
     unit.equipment_slot = [];
     unit.skill_list = [
-        // TODO: デバッグ用
-        getSkillById("thunder"),
-        getSkillById("full-thunder"),
-        getSkillById("heal")
+        // デバッグ用
+        // getSkillById("thunder"),
+        // getSkillById("full-thunder"),
+        // getSkillById("heal")
     ];
     unit.battle_status = [];
     player.party[0] = unit;
@@ -1054,8 +1055,11 @@ export async function useItem(_) {
         await applyEffect(ef);
     }
 
-    this.item.uses -= 1;
-    if (this.item.uses <= 0) {
+    // 無制限でないものは使用回数を減らす
+    if (this.item.uses) {
+        this.item.uses -= 1;
+    }
+    if (this.item.uses && this.item.uses <= 0) {
         player.item_slot = player.item_slot.filter(i => i !== this.item);
         const msg = `${this.item.name} を使い切った！`;
         addMessage(msg);
@@ -1696,12 +1700,28 @@ function battleExecCommand() {
                     target.hp = Math.min(target.maxHp, target.hp + effect.value);
                     addMessage(`${target.name} は ${effect.value} 回復した！`);
                 }
+            } else if (effect.type === "add_state") {
+                for (const target of targets) {
+                    const is_success = calculateDiceChance(
+                        actor, target, effect.stateId,
+                        effect.dice, effect.sides, effect.flat,
+                        false,
+                        effect.fix_value ?? 0
+                    );
+                    if (is_success) {
+                        const turn = effect.turn;
+                        addBattleStatus(effect.stateId, target, turn);
+                    }
+                }
             }
         }
-        item.uses -= 1;
-        if (item.uses <= 0) {
-            player.item_slot = player.item_slot.filter(i => i !== item);
-            addMessage(`${actor.name} は ${item.name} を使い切った！`);
+        // 無制限でないものは使用回数を減らす
+        if (item.uses) {
+            item.uses -= 1;
+            if (item.uses <= 0) {
+                player.item_slot = player.item_slot.filter(i => i !== item);
+                addMessage(`${actor.name} は ${item.name} を使い切った！`);
+            }
         }
     } else {
         throw new Error(`存在しないアクションです[${cmd.act}]`);

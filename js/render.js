@@ -323,13 +323,13 @@ function renderMenuItems() {
         itemCard.innerHTML = `
             <h4>${item.name}</h4>
             <p>${item.description}</p>`;
-        if (item.uses > 0) {
+        if (item.uses) {
             itemCard.innerHTML += `<p style="margin: 0;">残り${item.uses}回</p>`;
         }
         itemCard.innerHTML += `
             ${effectText ? `<p class="item-effect-text">${effectText}</p>` : ""}
         `;
-        if (item.effects && item.effects.length > 0) {
+        if (item.usableIn.explore) {
             const useButton = document.createElement("button");
             useButton.classList.add("button");
             useButton.textContent = "使用";
@@ -715,18 +715,15 @@ function renderItemPanel() {
     backButton.textContent = "戻る";
     itemPanel.appendChild(backButton);
 
-    // TODO: ここに置くな
-    const usableTypes = ['heal', 'attack', 'battle_support'];
-
     player.item_slot.forEach((item, index) => {
-        if (!usableTypes.includes(item.use_type)) {
+        if (!item.usableIn.battle) {
             return;
         }
 
         const button = document.createElement('button');
         button.classList.add('cmd', item.use_type);
         button.dataset.actDetail = index; // item_slot のインデックス
-        button.textContent = item.name + "|" + item.uses + "回";
+        button.textContent = item.name + "|" + (item.uses ? item.uses + "回" : "無制限");
         itemPanel.appendChild(button);
     });
 }

@@ -21,7 +21,8 @@
  * @property {"consumable" | "equipment"} category - アイテムカテゴリ
  * @property {number} price - 価格
  * @property {Effect[] | null} effects - 使用効果配列（消費アイテム用）
- * @property {number} uses - 使用可能回数（消費アイテム。装備は0）
+ * @property {Object} usableIn - どの場面で使用可能か home|explore|battle
+ * @property {number} uses - 使用回数制限（無制限ならnull）
  * @property {string} use_type - 使用種別
  * @property {string} use_target_type - 使用対象種別
  * @property {object | null} stat_modifier - 増減ステータス（例: { attack: +5, armor: +2 }）
@@ -42,6 +43,11 @@ export const ITEMS = [
         effects: [
             { type: "heal", value: 10, text: "朽ちた回復薬を飲んだ。10 HP回復した！" }
         ],
+        usableIn: {
+            home: false,
+            explore: true,
+            battle: true,
+        },
         uses: 2,
         use_type: "heal",
         use_target_type: "alive_ally_one",
@@ -60,6 +66,11 @@ export const ITEMS = [
             { type: "heal", value: 3 },
             { type: "stat_change", stat: "size", value: 1, text: "体格が1上昇した！" }
         ],
+        usableIn: {
+            home: true,
+            explore: true,
+            battle: false,
+        },
         uses: 1,
         use_type: "mod_status",
         use_target_type: "alive_ally_one",
@@ -75,6 +86,11 @@ export const ITEMS = [
         effects: [
             { type: "stat_change", stat: "intel", value: 2, text: "忘却の巻物を使った。知能が2上昇した！" },
         ],
+        usableIn: {
+            home: true,
+            explore: true,
+            battle: false,
+        },
         uses: 1,
         use_type: "mod_status",
         use_target_type: "alive_ally_one",
@@ -90,7 +106,12 @@ export const ITEMS = [
         effects: [
             { type: "damage", value: 10},
         ],
-        uses: 1,
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: true,
+        },
+        uses: 3,
         use_type: "attack",
         use_target_type: "alive_enemy_all",
         stat_modifier: null,
@@ -105,7 +126,12 @@ export const ITEMS = [
         effects: [
             { type: "damage", value: 20},
         ],
-        uses: 1,
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: true,
+        },
+        uses: 3,
         use_type: "attack",
         use_target_type: "alive_enemy_one",
         stat_modifier: null,
@@ -119,7 +145,12 @@ export const ITEMS = [
         category: "equipment",
         price: 150,
         effects: null,
-        uses: 0,
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: false,
+        },
+        uses: null,
         use_type: null,
         use_target_type: null,
         stat_modifier: { attack: 5, dex: -1 },
@@ -132,7 +163,12 @@ export const ITEMS = [
         category: "equipment",
         price: 200,
         effects: null,
-        uses: 0,
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: false,
+        },
+        uses: null,
         use_type: null,
         use_target_type: null,
         stat_modifier: { maxHp: 15, armor: 3, speed: -1 }, // 防御力+3、速度-1
@@ -145,7 +181,12 @@ export const ITEMS = [
         category: "equipment",
         price: 120,
         effects: null,
-        uses: 0,
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: false,
+        },
+        uses: null,
         use_type: null,
         use_target_type: null,
         stat_modifier: { intel: 2, maxMp: 10 },
@@ -158,7 +199,12 @@ export const ITEMS = [
         category: "equipment",
         price: 1000000,
         effects: null,
-        uses: 0,
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: false,
+        },
+        uses: null,
         use_type: null,
         use_target_type: null,
         stat_modifier: { speed: 15, multi_action: 1 },

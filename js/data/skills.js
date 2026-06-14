@@ -41,7 +41,7 @@ export const SKILLS = [
             mp: 7
         },
         target_type: "alive_enemy_one",
-        usableIn: {// これいいね TODO: アイテムもこれにしちゃって
+        usableIn: {
             home: false,
             explore: false,
             battle: true,

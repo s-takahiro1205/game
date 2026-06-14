@@ -4,6 +4,8 @@
  * @typedef {object} Enemy
  * @property {string} id // 識別子UUID
  * @property {string} name
+ * @property {number} level
+ * @property {number} exp
  * @property {number} hp
  * @property {number} maxHp
  * @property {number} mp
@@ -45,6 +47,8 @@ export const ENEMIES = [
         dex: 3,
         size: 3,
         multi_action: 1,
+        currentJob: null,
+        jobs: {},
         equipment_slot: [],
         skill_list: [],
         battle_status: [],
@@ -74,6 +78,8 @@ export const ENEMIES = [
         dex: 6,
         size: 6,
         multi_action: 1,
+        currentJob: null,
+        jobs: {},
         equipment_slot: [],
         skill_list: [],
         battle_status: [],
@@ -107,6 +113,8 @@ export const ENEMIES = [
         dex: 6,
         size: 1,
         multi_action: 1,
+        currentJob: null,
+        jobs: {},
         equipment_slot: [],
         skill_list: [],
         battle_status: [],
@@ -138,6 +146,8 @@ export const ENEMIES = [
         dex: 1,
         size: 20,
         multi_action: 1,
+        currentJob: null,
+        jobs: {},
         equipment_slot: [],
         skill_list: [],
         battle_status: [],
@@ -167,6 +177,8 @@ export const ENEMIES = [
         dex: 10,
         size: 5,
         multi_action: 1,
+        currentJob: null,
+        jobs: {},
         equipment_slot: [],
         skill_list: [],
         battle_status: [],
@@ -196,6 +208,8 @@ export const ENEMIES = [
         dex: 10,
         size: 8,
         multi_action: 1,
+        currentJob: null,
+        jobs: {},
         equipment_slot: [],
         skill_list: [],
         battle_status: [],
@@ -226,6 +240,8 @@ export const ENEMIES = [
         dex: 12,
         size: 20,
         multi_action: 2,
+        currentJob: null,
+        jobs: {},
         equipment_slot: [],
         skill_list: [],
         battle_status: [],

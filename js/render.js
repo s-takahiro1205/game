@@ -1,6 +1,6 @@
 // 画面描画
 
-import { player, gameState, useItem, equip, unequip, getUsableList } from './game.js';
+import { player, gameState, useItem, equip, unequip, getUsableList, getRequiredExp, getRequiredRankExp } from './game.js';
 import { loadGame } from './save.js';
 import { BATTLE_STATUSES, TARGET_TYPE_EXTRACTOR } from './const.js';
 
@@ -290,9 +290,12 @@ function renderMenuStats() {
         <div class="player-stats-display">
             <p>現在地: <span>${player.position}</span></p>
             <p>所持金: <span>${player.money}</span>G</p>
-            <p>名前: <span>${player.party[0].name}</span></p><p></p>
+            <p>名前: <span>${player.party[0].name}</span></p>
+            <p></p>
             <p>レベル: <span>${player.party[0].level}</span></p>
-            <p>経験値: <span>${player.party[0].exp}</span></p>
+            <p>経験値: <span>${player.party[0].exp} / ${getRequiredExp(player.party[0].level)}</span></p>
+            <p>職業: <span>${player.party[0].currentJob} - ランク${player.party[0].jobs[player.party[0].currentJob].rank}</span></p>
+            <p>職業経験値: <span>${player.party[0].jobs[player.party[0].currentJob].exp} / ${getRequiredRankExp(player.party[0].currentJob, player.party[0].jobs[player.party[0].currentJob].rank)}</span></p>
             <p>HP: <span>${player.party[0].hp}</span>/<span>${player.party[0].maxHp}</span></p>
             <p>MP: <span>${player.party[0].mp}</span>/<span>${player.party[0].maxMp}</span></p>
             <p>攻撃力: <span>${player.party[0].attack}</span></p>
@@ -572,7 +575,7 @@ function renderResultPanel() {
         itemsSection.classList.remove('hidden');
         r.items.forEach(item => {
             const p = document.createElement('p');
-            p.textContent = `・${item.name}${item.isNew ? ' 【NEW】' : ''}`;
+            p.textContent = `・${item.name}`;
             itemsList.appendChild(p);
         });
     } else {
@@ -594,7 +597,7 @@ function renderResultPanel() {
             card.innerHTML = `
                 <strong>${lu.name}</strong>
                 Lv${lu.before} → <span style="color:#ffd700">Lv${lu.after}</span>
-                <br><small>${statLines}</small>
+                <br><small>ステータスアップ：${statLines}</small>
             `;
             lvList.appendChild(card);
         });
@@ -609,13 +612,22 @@ function renderResultPanel() {
     if (r.rankUps && r.rankUps.length > 0) {
         rkSection.classList.remove('hidden');
         r.rankUps.forEach(ru => {
-            const badge = document.createElement('p');
-            badge.innerHTML = `${ru.name}：
-                <span class="result-rankup-badge">${ru.oldRank}</span>
+            const card = document.createElement('div');
+            card.className = 'result-levelup-card';
+            const statLines = Object.entries(ru.statChanges || {})
+                .map(([k, v]) => `${k} +${v}`)
+                .join(' | ');
+            const skillLines = (ru.learnSkills ?? [])
+                .join(' | ');
+            card.innerHTML = `
+                <strong>${ru.name}</strong>
+                <span class="result-rankup-card">${ru.before}</span>
                 → 
-                <span class="result-rankup-badge" style="background:#e67e22">${ru.newRank}</span>
+                <span class="result-rankup-card" style="color:#ffd700">${ru.after}</span>
+                <br><small>ステータスアップ：${statLines}</small>
+                <br><small>スキル習得：${skillLines}</small>
             `;
-            rkList.appendChild(badge);
+            rkList.appendChild(card);
         });
     } else {
         rkSection.classList.add('hidden');

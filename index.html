@@ -350,20 +350,11 @@ body{
     font-size: 1.1em;
 }
 
-.result-levelup-card {
+.result-levelup-card, .result-levelup-card {
     background: #2b2b4f;
     border-radius: 8px;
     padding: 0.6em 1em;
     margin-bottom: 0.5em;
-}
-
-.result-rankup-badge {
-    display: inline-block;
-    background: #8e44ad;
-    border-radius: 6px;
-    padding: 0.2em 0.8em;
-    font-weight: bold;
-    color: #fff;
 }
 
 </style>
@@ -681,6 +672,12 @@ body{
             <div class="debug-controls">
                 <select id="debug-item-select"></select>
                 <button id="debug-acquire-item-button" class="button">アイテム取得</button>
+            </div>
+            <h3>転職</h3>
+            <div class="debug-controls">
+                <select id="debug-job-unit-select"></select>
+                <select id="debug-job-select"></select>
+                <button id="debug-change-job-button" class="button">転職</button>
             </div>
             <div class="debug-controls">
                 <button id="debug-game-state-button" class="button">ステータス出力</button>

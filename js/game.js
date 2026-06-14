@@ -4,6 +4,7 @@ import { saveGame, loadGame, deleteSaveData } from './save.js';
 import { ITEMS } from './data/items.js';
 import { ENEMIES } from './data/enemies.js';
 import { SKILLS } from './data/skills.js';
+import { JOBS } from './data/jobs.js';
 import { NORMAL_EVENTS, BENEFIT_EVENTS, DANGER_EVENTS, MILESTONE_EVENTS_DATA, EVENTS, generateRandomEvent } from './data/events.js';
 import { scheduleRender } from './render.js';
 import { BATTLE_STATUSES, DEBUFF_STATUS_MODIFIERS, SELECT_TARGET_TYPE, TARGET_TYPE_EXTRACTOR } from './const.js';
@@ -73,6 +74,13 @@ export let player = new Proxy({
             dex: 0,
             size: 0,
             multi_action: 1,
+            currentJob: "warrior",// 例
+            jobs: {
+                // warrior: {// 例
+                //     rank: 4,
+                //     exp: 150
+                // },
+            },
             equipment_slot: [], // 最大5
             skill_list: [ // スキル
                 // getSkillById("thunder"),// 例
@@ -221,6 +229,9 @@ const debugTriggerEventButton = document.getElementById("debug-trigger-event");
 const debugEnemySelect = document.getElementById("debug-enemy-select");
 const debugItemSelect = document.getElementById("debug-item-select");
 const debugAcquireItemButton = document.getElementById("debug-acquire-item-button");
+const debugJobUnitSelect = document.getElementById("debug-job-unit-select");
+const debugJobSelect = document.getElementById("debug-job-select");
+const debugChangeJobButton = document.getElementById("debug-change-job-button");
 const debugBackLogButton = document.getElementById("debug-back-log-button");
 const debugGameStateButton = document.getElementById("debug-game-state-button");
 
@@ -295,6 +306,27 @@ function populateDebugItemSelect() {
 }
 
 /**
+ * デバッグ: 職業選択ドロップダウンを初期化する
+ */
+function populateDebugJobSelect() {
+    debugJobSelect.innerHTML = ''; // Clear existing options
+    for (const job_id in JOBS) {
+        const job = JOBS[job_id];
+        const option = document.createElement("option");
+        option.value = job.id;
+        option.textContent = `${job.name} (${job.id})`;
+        debugJobSelect.appendChild(option);
+    }
+    debugJobUnitSelect.innerHTML = ''; // Clear existing options
+    player.party.forEach(unit => {
+        const option = document.createElement("option");
+        option.value = unit.id;
+        option.textContent = `${unit.name}`;
+        debugJobUnitSelect.appendChild(option);
+    });
+}
+
+/**
  * デバッグ: 選択されたアイテムをプレイヤーに付与する
  */
 async function debugAcquireItem() {
@@ -311,6 +343,29 @@ async function debugAcquireItem() {
     } else {
         addMessage("デバッグ: アイテムを選択してください。", false);
     }
+}
+
+/**
+ * デバッグ: 選択されたユニットを転職させる
+ */
+async function debugChangeJob() {
+    const job_id = debugJobSelect.value;
+    const job = JOBS[job_id];
+    if (!job_id || !job) {
+        addMessage("デバッグ: 職業を選択してください。", false);
+        return;
+    }
+    const unit_id = debugJobUnitSelect.value;
+    const unit = player.party.find(unit => unit.id === unit_id);
+    console.log(unit_id, unit)
+    if (!unit_id || !unit) {
+        addMessage("デバッグ: ユニットを選択してください。", false);
+        return;
+    }
+
+    await changeJob(unit, job_id);
+    addMessage(`デバッグ: ${unit.name} は ${job.name} に転職した！`, false);
+    saveGame(player);
 }
 
 const debugStartCombatButton = document.getElementById("debug-start-combat");
@@ -418,6 +473,7 @@ function showMainGameScreen() {
     populateDebugEnemySelect(); // デバッグ用敵選択を初期化
     populateDebugEventSelects(); // デバッグイベント選択を初期化
     populateDebugItemSelect(); // デバッグ用アイテム選択を初期化
+    populateDebugJobSelect(); // デバッグ用アイテム選択を初期化
 
     // ロード時にイベントが未完了だった場合の処理
     if (!player.currentEventCompleted && player.savedEventCategory && player.savedEventIndex !== null) {
@@ -587,11 +643,14 @@ function initializePlayer(isStrongNewGame = false, inheritedMaxHp = 0, inherited
         unit.dex = parseInt(dexAllocationInput.value);
         unit.size = parseInt(sizeAllocationInput.value);
     }
+    unit.id = self.crypto.randomUUID();
     unit.level = 1;
     unit.exp = 0;
     unit.hp = unit.maxHp;
     unit.mp = unit.maxMp;
     unit.multi_action = 1;
+    unit.currentJob = null;
+    unit.jobs = {};
     unit.equipment_slot = [];
     unit.skill_list = [
         // デバッグ用
@@ -600,7 +659,9 @@ function initializePlayer(isStrongNewGame = false, inheritedMaxHp = 0, inherited
         // getSkillById("heal")
     ];
     unit.battle_status = [];
+    changeJob(unit, "warrior")
     player.party[0] = unit;
+
     gameState.dirty = true;
 
     console.log("Player initialized:", player);
@@ -759,6 +820,60 @@ function openDiscardItemModal() {
         };
         discardSelectedItemButton.addEventListener("click", discardHandler);
     });
+}
+
+/**
+ * 転職
+ * @param {Object} unit 
+ * @param {string} job_id 
+ * @returns 
+ */
+function changeJob(unit, job_id) {
+    const jobData = JOBS[job_id];
+
+    if (!jobData) {
+        throw new Error(`Unknown job: ${job_id}`);
+    }
+
+    // 未経験職なら転職条件チェック
+    if (!unit.jobs[job_id]) {
+        for (const condition of jobData.unlockConditions) {
+            if (!checkJobCondition(unit, condition)) {
+                return {
+                    success: false,
+                    reason: "requirements",
+                };
+            }
+        }
+
+        unit.jobs[job_id] = {
+            rank: 1,
+            exp: 0,
+        };
+    }
+
+    const beforeJob = unit.currentJob;
+
+    unit.currentJob = job_id;
+
+    return {
+        success: true,
+        before: beforeJob,
+        after: job_id,
+        rank: unit.jobs[job_id].rank,
+    };
+}
+
+/**
+ * 初回転職条件をチェック
+ * @param {Object} unit 
+ * @param {Object} condition 
+ */
+function checkJobCondition(unit, condition) {
+    // TODO: その他の条件に対応
+    if (condition.type === "level") {
+        return unit.level >= condition.value 
+    }
 }
 
 // ============================================================================
@@ -1447,14 +1562,14 @@ function calculateDamage(rawDamage, targetArmor) {
  * 対象にダメージを与える
  * @param {Object} target
  * @param {number} damage
- * @param {bool} is_physics // 眠りから覚めるか
+ * @param {bool} is_phisycal // 眠りから覚めるか
  */
-function applyDamage(target, damage, is_phisycs = false) {
+function applyDamage(target, damage, is_phisycal = false) {
     target.hp = Math.max(0, target.hp - damage);
     addMessage(`${target.name} に ${damage} のダメージ！`);
     takeDead(target);
     // 眠りの解除判定 50%で眠り削除
-    if (is_phisycs && target.battle_status.some(s => s.type === "sleep") && Math.random() < 0.5) {
+    if (is_phisycal && target.battle_status.some(s => s.type === "sleep") && Math.random() < 0.5) {
         recoverBattleStatus("sleep");
     }
 }
@@ -1795,12 +1910,20 @@ function battleExecCommand() {
         // TODO: これ以外の処理
         for (const effect of skill.effects) {
             if (effect.type === "damage") {
+                const is_combat = effect.category === "combat";
+                const unit_dice = unitDiceCreate(actor);
                 for (const target of targets) {
+                    // 戦技なら通常ダイスに加算
+                    const dice = is_combat ? (unit_dice.dice ?? 0) + (effect.dice ?? 0) : (effect.dice ?? 0);
+                    const sides = is_combat ? (unit_dice.sides ?? 0) + (effect.sides ?? 0) : (effect.sides ?? 0);
+                    const flat = is_combat ? (unit_dice.flat ?? 0) + (effect.flat ?? 0) : (effect.flat ?? 0);
+                    const fix = is_combat ? (unit_dice.fix ?? 0) + (effect.fix ?? 0) : (effect.fix ?? 0);
+                    const armor_pierce = is_combat ? (unit_dice.armor_pierce ?? 0) + (effect.armor_pierce ?? 0) : (effect.armor_pierce ?? 0);
                     const damage = calculateDiceDamage(
                         actor, target,
-                        effect.dice, effect.sides, effect.flat,
+                        dice, sides, flat,
                         effect.category === "magic" ? true : false,
-                        effect.fix ?? 0, effect.armor_pierce ?? 0
+                        fix ?? 0, armor_pierce ?? 0
                     );
                     applyDamage(target, damage, effect.category !== "magic");
                 }
@@ -2001,13 +2124,19 @@ function battleResult(is_victory) {
         // 勝利時にリザルトを組み立ててセット
         const total_money = gameState.battle.enemies.reduce((acc, enemy) => acc + enemy.money, 0);
         const total_exp = gameState.battle.enemies.reduce((acc, enemy) => acc + enemy.exp, 0);
+        const total_rank_exp = gameState.battle.enemies.reduce((acc, enemy) => acc + Math.floor(enemy.exp / 100) + 1, 0);
 
         // 経験値加算処理
         const level_ups = [];
+        const rank_ups = [];
         for (const unit of player.party) {
             const mod_levels = addExp(unit, total_exp);
             if (mod_levels) {
                 level_ups.push(mod_levels)
+            }
+            const mod_ranks = addRankExp(unit, total_rank_exp+10);
+            if (mod_ranks) {
+                rank_ups.push(mod_ranks)
             }
         }
 
@@ -2016,9 +2145,9 @@ function battleResult(is_victory) {
             is_victory: true,
             exp: total_exp,
             gold: total_money,
-            items: drop_items.map(i => ({ name: i.name })),
-            levelUps: level_ups ?? null,  // [{name, oldLv, newLv, statChanges}, ...]
-            rankUps: null,    // [{name, oldRank, newRank}, ...]
+            items: drop_items ?? null,
+            levelUps: level_ups ?? null,
+            rankUps: rank_ups ?? null,
         };
         gameState.battle.phase = "result";
     } else {
@@ -2194,13 +2323,19 @@ async function battleEnd() {
  * @param {number} level 
  * @returns 
  */
-function getRequiredExp(level) {
+export function getRequiredExp(level) {
     const r = 1.07;
     return Math.floor(
         10 * (r * (r ** (level - 1) - 1)) / (r - 1)
     );
 }
 
+/**
+ * レベルアップ処理
+ * 上昇ステータスオブジェクトを返す
+ * @param {Object} unit 
+ * @returns 
+ */
 function levelUp(unit) {
     unit.level++;
 
@@ -2251,7 +2386,7 @@ function rollGrowth(rate) {
 }
 
 /**
- * 経験値を加算してレベルアップ判定を行う
+ * 経験値を加算してレベルアップを行う
  * @param {Object} unit 
  * @param {number} exp 
  * @returns 
@@ -2272,7 +2407,7 @@ function addExp(unit, exp) {
         }
     }
     if (before_level === unit.level) {
-
+        return;
     }
 
     return {
@@ -2281,6 +2416,98 @@ function addExp(unit, exp) {
         after: unit.level,
         statChanges: total_status_up,
     };
+}
+
+/**
+ * 必要ランク経験値の算出
+ * 基礎経験値 * (倍率 ** ランク) + 5 * ランク
+ * @param {text} job_id 
+ * @param {number} level 
+ * @returns 
+ */
+export function getRequiredRankExp(job_id, rank) {
+    const job = JOBS[job_id];
+    return Math.floor(
+        job.baseExp * (job.rateExp ** rank) + 5 * rank
+    );
+}
+
+/**
+ * ランク経験値を加算してランクアップを行う
+ * @param {Object} unit 
+ * @param {number} exp 
+ * @returns 
+ */
+function addRankExp(unit, exp) {
+    const job_history = unit.jobs[unit.currentJob];
+    const before_rank = job_history.rank;
+    const job = JOBS[unit.currentJob];
+    // 累積ランク経験値
+    job_history.exp += exp;
+
+    // 上昇量集計
+    const total_status_up = {};
+    const total_skills = [];
+    while (job.maxRank > job_history.rank && job_history.exp >= getRequiredRankExp(unit.currentJob, job_history.rank)) {
+        // レベルアップ
+        const [status_up, skills] = rankUp(unit, job_history);
+        // 上昇量を加算
+        for (const [key, value] of Object.entries(status_up)) {
+            total_status_up[key] = (total_status_up[key] ?? 0) + value;
+        }
+        total_skills.push(...skills);
+    }
+    if (before_rank === job_history.rank) {
+        return;
+    }
+
+    return {
+        name: unit.name,
+        before: before_rank,
+        after: job_history.rank,
+        statChanges: total_status_up,
+        learnSkills: total_skills,
+    };
+}
+
+/**
+ * ランクアップ処理
+ * [上昇ステータスオブジェクト, スキルID配列]を返す
+ * @param {Object} unit 
+ * @param {Object} unit 
+ * @returns 
+ */
+function rankUp(unit, job_history) {
+    job_history.rank++;
+
+    // 現在のランクのボーナスを取得して適用
+    const statusUp = {};
+    const skills = [];
+    const job = JOBS[unit.currentJob];
+    const bonuses = job.rankBonuses.filter((bonus) => bonus.rank === job_history.rank);
+    for (const bonus of bonuses) {
+        if (bonus.status) {
+            for (const [stat, gain] of Object.entries(bonus.status)) {
+                unit[stat] += gain;
+                if (stat === "maxHp") {
+                    unit.hp += gain;
+                } else if (stat === "maxMp") {
+                    unit.mp += gain;
+                }
+                statusUp[stat] = gain;
+            }
+        }
+        if (bonus.learnSkills) {
+            bonus.learnSkills.forEach(skill_id => {
+                if (!unit.skill_list.some((skill) => skill.id === skill_id)) {
+                    unit.skill_list.push(getSkillById(skill_id));
+                }
+            });
+            skills.push(...bonus.learnSkills);
+        }
+    }
+
+    return [statusUp, skills];
 }
 
 /**
@@ -2592,6 +2819,7 @@ debugStartCombatButton.addEventListener("click", () => {
 });
 
 debugAcquireItemButton.addEventListener("click", debugAcquireItem);
+debugChangeJobButton.addEventListener("click", debugChangeJob);
 
 debugBackLogButton.addEventListener("click", () => {console.log(gameState.backLog)});
 debugBackLogButton.addEventListener("click", () => {console.log(gameState)});

@@ -34,6 +34,33 @@ export const SKILL_ORDER = [
  * @type {Skill[]}
  */
 export const SKILLS = [
+    // 魔法
+    {
+        id: "fire",
+        name: "ファイア",
+        cost: {
+            mp: 3
+        },
+        target_type: "alive_enemy_one",
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: true,
+        },
+        category: "magic",
+        type: "attack",// ボタンの色分け専用
+        effects: [
+            {
+                type: "damage",
+                element: "flame",
+                dice: 2,
+                sides: 10,
+                flat: 5,
+                // fix: 0,// 固定ダメージ
+                // armor_pierce: 0,// 装甲貫通率
+            },
+        ]
+    },
     {
         id: "thunder",
         name: "サンダー",
@@ -54,7 +81,7 @@ export const SKILLS = [
                 element: "lightning",
                 dice: 2,
                 sides: 10,
-                flat: 10,
+                flat: 8,
                 // fix: 0,// 固定ダメージ
                 // armor_pierce: 0,// 装甲貫通率
             },
@@ -88,8 +115,8 @@ export const SKILLS = [
                 type: "damage",
                 element: "lightning",
                 dice: 2,
-                sides: 10,
-                flat: 10,
+                sides: 8,
+                flat: 6,
                 fix: 0,
                 armor_pierce: 0,
             },
@@ -127,5 +154,85 @@ export const SKILLS = [
                 fix: 0,
             }
         ]
-    }
+    },
+
+    // 戦技 戦技は通常ダイスに加算する
+    {
+        id: "slash",
+        name: "スラッシュ",
+        cost: {
+            hp: 2
+        },
+        target_type: "alive_enemy_one",
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: true,
+        },
+        category: "combat",
+        type: "attack",// ボタンの色分け専用
+        effects: [
+            {
+                type: "damage",
+                element: "physical",
+                dice: 0,
+                sides: 5,
+                flat: 5,
+                fix: 0,// 固定ダメージ
+                armor_pierce: 0,// 装甲貫通率
+            },
+        ]
+    },
+    {
+        id: "power-slash",
+        name: "パワースラッシュ",
+        cost: {
+            hp: 5
+        },
+        target_type: "alive_enemy_one",
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: true,
+        },
+        category: "combat",
+        type: "attack",
+        effects: [
+            {
+                type: "damage",
+                element: "physical",
+                dice: 0,
+                sides: 10,
+                flat: 10,
+                fix: 0,
+                armor_pierce: 0,
+            },
+        ]
+    },
+    {
+        id: "full-slash",
+        name: "フルスラッシュ",
+        cost: {
+            hp: 8
+        },
+        target_type: "alive_enemy_all",
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: true,
+        },
+        category: "combat",
+        type: "attack",
+        effects: [
+            {
+                type: "damage",
+                element: "physical",
+                dice: 0,
+                sides: 5,
+                flat: 5,
+                fix: 0,
+                armor_pierce: 0,
+            }
+        ]
+    },
 ];

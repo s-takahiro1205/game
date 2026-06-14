@@ -60,6 +60,8 @@ export let player = new Proxy({
         party: [new Proxy({            // 最大4
             id: self.crypto.randomUUID(),
             name: "",
+            level: 1,
+            exp: 0,
             hp: 0,
             maxHp: 0,
             mp: 0,
@@ -113,7 +115,15 @@ export const gameState = new Proxy({
             phase: null,// string画面制御用フラグ[start|turn_start|pending|command_waiting|exec|result]
             actor: null,// コマンド表示や行動実行用のキャラ保管
             actorStan: null,// 麻痺や睡眠などで行動できないフラグ
-            pendingCommand: null// ターゲット選択や行動実行用のコマンドオブジェクト
+            pendingCommand: null,// ターゲット選択や行動実行用のコマンドオブジェクト
+            result: {},
+            // {
+            //   gold: 120,
+            //   exp: 80,
+            //   items: [ { name: "回復薬", isNew: true }, ... ],
+            //   levelUps: [ { name: "アレス", oldLv: 3, newLv: 4, statChanges: {maxHp: +10, attack: +2} } ],
+            //   rankUps: [ { name: "アレス", oldRank: "D", newRank: "C" } ],
+            // }
         }, {set: setAndRender}),
 
         // ログ系
@@ -577,6 +587,8 @@ function initializePlayer(isStrongNewGame = false, inheritedMaxHp = 0, inherited
         unit.dex = parseInt(dexAllocationInput.value);
         unit.size = parseInt(sizeAllocationInput.value);
     }
+    unit.level = 1;
+    unit.exp = 0;
     unit.hp = unit.maxHp;
     unit.mp = unit.maxMp;
     unit.multi_action = 1;
@@ -1642,6 +1654,7 @@ function battleInit(enemies) {
         actor: null,
         actor_stan: null,// paralyzeなどスタン事由を表記
         pendingCommand: new Proxy({}, {set: setAndRender}),
+        result: {},
     }, {set: setAndRender});
     gameState.currentScreen = 'battle-screen';
     gameState.battle.phase = "start";
@@ -1985,9 +1998,31 @@ function battleTurnEnd() {
 function battleResult(is_victory) {
     gameState.battle.phase = "result";// ログパネル描画
     if (is_victory) {
-        battleEndButton.dataset.result = "true";
+        // 勝利時にリザルトを組み立ててセット
+        const total_money = gameState.battle.enemies.reduce((acc, enemy) => acc + enemy.money, 0);
+        const total_exp = gameState.battle.enemies.reduce((acc, enemy) => acc + enemy.exp, 0);
+
+        // 経験値加算処理
+        const level_ups = [];
+        for (const unit of player.party) {
+            const mod_levels = addExp(unit, total_exp);
+            if (mod_levels) {
+                level_ups.push(mod_levels)
+            }
+        }
+
+        const drop_items = rollDropItems(gameState.battle.enemies);
+        gameState.battle.result = {
+            is_victory: true,
+            exp: total_exp,
+            gold: total_money,
+            items: drop_items.map(i => ({ name: i.name })),
+            levelUps: level_ups ?? null,  // [{name, oldLv, newLv, statChanges}, ...]
+            rankUps: null,    // [{name, oldRank, newRank}, ...]
+        };
+        gameState.battle.phase = "result";
     } else {
-        battleEndButton.dataset.result = "false";
+        gameState.battle.result.is_victory = false;
     }
 }
 
@@ -2132,21 +2167,16 @@ function onTargetSelect(e) {
 async function battleEnd() {
     gameState.currentScreen = 'main-game-screen';
     gameState.explorePhase = "idle";
-    const is_victory = battleEndButton.dataset.result;
-    if (is_victory === "true") {
+    const result = gameState.battle.result;
+    if (result.is_victory) {
         const enemy_name = gameState.battle.enemies[0].name + (gameState.battle.enemies.length === 1 ? "" : "たち");
-        const total_money = gameState.battle.enemies.reduce((acc, enemy) => acc + enemy.money, 0);
         addMessage(`${enemy_name}を倒した！`);
-        addMessage(`${total_money}Gを手に入れた！`);
-        player.money += total_money;
+        addMessage(`${result.gold}Gを手に入れた！`);
+        player.money += result.gold;
         player.currentEventCompleted = true; // 戦闘イベント完了
 
-        const dropItemIds = rollDropItems(gameState.battle.enemies);
-        for (const dropItemId in dropItemIds) {
-            const item = getItemById(dropItemId);
-            for (let i = 0; i < dropItemIds[dropItemId]; i++) {
-                await acquireItem(item);
-            }
+        for (const item in result.items) {
+            await acquireItem(item);
         }
 
         // 最終ボス撃破判定
@@ -2156,6 +2186,101 @@ async function battleEnd() {
     }
     checkGameEnd();
     saveGame(player); // 戦闘勝利後にセーブ
+}
+
+/**
+ * 必要経験値の算出
+ * Math.floor(10 * (1.07 ** unit.level)の累積
+ * @param {number} level 
+ * @returns 
+ */
+function getRequiredExp(level) {
+    const r = 1.07;
+    return Math.floor(
+        10 * (r * (r ** (level - 1) - 1)) / (r - 1)
+    );
+}
+
+function levelUp(unit) {
+    unit.level++;
+
+    // TODO: 装備や職業加算
+    const growthRates = {
+        maxHp: 100,
+        maxMp: 100,
+        attack: 50,
+        armor: 50,
+        speed: 50,
+        intel: 50,
+        dex: 50,
+        size: 50,
+    };
+
+    const statusUp = {};
+    for (const [stat, rate] of Object.entries(growthRates)) {
+        const gain = rollGrowth(rate);
+        if (gain > 0) {
+            unit[stat] += gain;
+            if (stat === "maxHp") {
+                unit.hp += gain;
+            } else if (stat === "maxMp") {
+                unit.mp += gain;
+            }
+            statusUp[stat] = gain;
+        }
+    }
+
+    return statusUp;
+}
+
+/**
+ * 成長判定を行います
+ * @param {number} rate 
+ * @returns 
+ */
+function rollGrowth(rate) {
+    let growth = 0;
+    while (rate > 0) {
+        const roll = Math.floor(Math.random() * 100) + 1;
+        if (roll <= rate) {
+            growth++;
+        }
+        rate -= roll;
+    }
+    return growth;
+}
+
+/**
+ * 経験値を加算してレベルアップ判定を行う
+ * @param {Object} unit 
+ * @param {number} exp 
+ * @returns 
+ */
+function addExp(unit, exp) {
+    const before_level = unit.level;
+    // 累積経験値
+    unit.exp += exp;
+
+    // 上昇量集計
+    const total_status_up = {};
+    while (unit.exp >= getRequiredExp(unit.level)) {
+        // レベルアップ
+        const status_up = levelUp(unit);
+        // 上昇量を加算
+        for (const [key, value] of Object.entries(status_up)) {
+            total_status_up[key] = (total_status_up[key] ?? 0) + value;
+        }
+    }
+    if (before_level === unit.level) {
+
+    }
+
+    return {
+        name: unit.name,
+        before: before_level,
+        after: unit.level,
+        statChanges: total_status_up,
+    };
 }
 
 /**
@@ -2176,7 +2301,15 @@ function rollDropItems(enemies) {
         }
     }
 
-    return result;
+    const items = [];
+    for (const itemId in result) {
+        const item = getItemById(itemId);
+        for (let i = 0; i < result[itemId]; i++) {
+            items.push(item);
+        }
+    }
+
+    return items;
 }
 
 /**

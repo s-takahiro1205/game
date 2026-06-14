@@ -68,6 +68,7 @@ const itemPanel = document.getElementById("item-panel");
 const skillPanel = document.getElementById("skill-panel");
 const targetPanel = document.getElementById("target-panel");
 const resultPanel = document.getElementById("result-panel");
+const resultTitle = document.getElementById("result-title");
 
 const menuModal = document.getElementById("menu-modal");
 const menuTabStatus = document.getElementById("status-tab");
@@ -289,7 +290,9 @@ function renderMenuStats() {
         <div class="player-stats-display">
             <p>現在地: <span>${player.position}</span></p>
             <p>所持金: <span>${player.money}</span>G</p>
-            <p>名前: <span>${player.party[0].name}</span></p>
+            <p>名前: <span>${player.party[0].name}</span></p><p></p>
+            <p>レベル: <span>${player.party[0].level}</span></p>
+            <p>経験値: <span>${player.party[0].exp}</span></p>
             <p>HP: <span>${player.party[0].hp}</span>/<span>${player.party[0].maxHp}</span></p>
             <p>MP: <span>${player.party[0].mp}</span>/<span>${player.party[0].maxMp}</span></p>
             <p>攻撃力: <span>${player.party[0].attack}</span></p>
@@ -497,7 +500,8 @@ function renderBattle() {
         battleMessage.classList.remove("hidden");
     } else if (phase === "result") {
         // ログ表示
-        battleMessage.classList.remove("hidden");
+        // battleMessage.classList.remove("hidden");
+        renderResultPanel();
         resultPanel.classList.remove("hidden");
     } else if (phase === "command_waiting") {
         if (gameState.battle.alert) {
@@ -540,6 +544,84 @@ function renderBattle() {
             }
         }
     }
+}
+
+/**
+ * リザルトパネルを描画する
+ */
+function renderResultPanel() {
+    const r = gameState.battle.result;
+    if (!r) return;
+
+    // 敗北時
+    if (!gameState.battle.result.is_victory) {
+        resultTitle.innerHTML = "パーティーは全滅した…";
+    } else {
+        resultTitle.innerHTML = "⚔️ 戦闘勝利！";
+    }
+
+    // EXP/Gold
+    document.querySelector('#result-exp span').textContent = r.exp ?? 0;
+    document.querySelector('#result-gold span').textContent = r.gold ?? 0;
+
+    // 獲得アイテム
+    const itemsList = document.getElementById('result-items-list');
+    const itemsSection = document.getElementById('result-items-section');
+    itemsList.innerHTML = '';
+    if (r.items && r.items.length > 0) {
+        itemsSection.classList.remove('hidden');
+        r.items.forEach(item => {
+            const p = document.createElement('p');
+            p.textContent = `・${item.name}${item.isNew ? ' 【NEW】' : ''}`;
+            itemsList.appendChild(p);
+        });
+    } else {
+        itemsSection.classList.add('hidden');
+    }
+
+    // レベルアップ
+    const lvList = document.getElementById('result-levelup-list');
+    const lvSection = document.getElementById('result-levelup-section');
+    lvList.innerHTML = '';
+    if (r.levelUps && r.levelUps.length > 0) {
+        lvSection.classList.remove('hidden');
+        r.levelUps.forEach(lu => {
+            const card = document.createElement('div');
+            card.className = 'result-levelup-card';
+            const statLines = Object.entries(lu.statChanges || {})
+                .map(([k, v]) => `${k} +${v}`)
+                .join(' | ');
+            card.innerHTML = `
+                <strong>${lu.name}</strong>
+                Lv${lu.before} → <span style="color:#ffd700">Lv${lu.after}</span>
+                <br><small>${statLines}</small>
+            `;
+            lvList.appendChild(card);
+        });
+    } else {
+        lvSection.classList.add('hidden');
+    }
+
+    // ランクアップ
+    const rkList = document.getElementById('result-rankup-list');
+    const rkSection = document.getElementById('result-rankup-section');
+    rkList.innerHTML = '';
+    if (r.rankUps && r.rankUps.length > 0) {
+        rkSection.classList.remove('hidden');
+        r.rankUps.forEach(ru => {
+            const badge = document.createElement('p');
+            badge.innerHTML = `${ru.name}：
+                <span class="result-rankup-badge">${ru.oldRank}</span>
+                → 
+                <span class="result-rankup-badge" style="background:#e67e22">${ru.newRank}</span>
+            `;
+            rkList.appendChild(badge);
+        });
+    } else {
+        rkSection.classList.add('hidden');
+    }
+
+    resultPanel.classList.remove('hidden');
 }
 
 /**
@@ -666,10 +748,10 @@ function createPartyPanel() {
                 ${actor.name}
                 <!-- <span class="job ${actor.jobClass}">
                     ${actor.jobShort}
-                </span>
+                </span> -->
                 <span class="level">
                     Lv${actor.level}
-                </span> -->
+                </span>
             </div>
 
             <div class="actor-info">

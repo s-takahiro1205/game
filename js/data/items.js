@@ -137,6 +137,168 @@ export const ITEMS = [
         stat_modifier: null,
         equip_type: null
     },
+    {
+        id: "potion_of_poizon",
+        name: "バルサグの毒粉",
+        description: "南部地方に生える植物の花粉。多量に吸うと全身に激しい痛みが走る。",
+        category: "consumable",
+        price: 50,
+        effects: [
+            {
+                type: "add_state",
+                stateId: "poizon",
+                dice: 0,
+                sides: 0,
+                flat: 0,
+                fix: 100,
+                turn: 4,
+            }
+        ],
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: true,
+        },
+        uses: 1,
+        use_type: "attack",
+        use_target_type: "alive_enemy_one",
+        stat_modifier: null,
+        equip_type: null
+    },
+    {
+        id: "powder_of_sleep",
+        name: "アンミネルケの粉",
+        description: "アンミネルケの花粉を集めたもの。多量に摂取すると意識障害が起きる。",
+        category: "consumable",
+        price: 50,
+        effects: [
+            {
+                type: "add_state",
+                stateId: "sleep",
+                dice: 0,
+                sides: 0,
+                flat: 0,
+                fix: 100,
+                turn: 4,
+            }
+        ],
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: true,
+        },
+        uses: 1,
+        use_type: "attack",
+        use_target_type: "alive_enemy_one",
+        stat_modifier: null,
+        equip_type: null
+    },
+    {
+        id: "congas_stomach",
+        name: "コンガの胃袋",
+        description: "コンガの胃袋。大きく膨らませて破裂させることで、とてつもない爆音が鳴り響く。",
+        category: "consumable",
+        price: 50,
+        effects: [
+            {
+                type: "add_state",
+                stateId: "stan",
+                dice: 0,
+                sides: 0,
+                flat: 0,
+                fix: 100,
+                turn: 1,
+            }
+        ],
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: true,
+        },
+        uses: 1,
+        use_type: "attack",
+        use_target_type: "alive_enemy_one",
+        stat_modifier: null,
+        equip_type: null
+    },
+    {
+        id: "ketsukuru_fruit",
+        name: "ケツクルルの実",
+        description: "隣の地区まで流れるほどの悪臭を放つ木の実。栄養満点のうえ、その臭気から気付けにも適している。",
+        category: "consumable",
+        price: 50,
+        effects: [
+            {
+                type: "recover_state",
+                stateId: "poizon",
+                dice: 0,
+                sides: 0,
+                flat: 0,
+                fix: 100,
+            },
+            {
+                type: "recover_state",
+                stateId: "paralyze",
+                dice: 0,
+                sides: 0,
+                flat: 0,
+                fix: 100,
+            },
+            {
+                type: "recover_state",
+                stateId: "sleep",
+                dice: 0,
+                sides: 0,
+                flat: 0,
+                fix: 100,
+            },
+            {
+                type: "recover_state",
+                stateId: "stan",
+                dice: 0,
+                sides: 0,
+                flat: 0,
+                fix: 100,
+            }
+        ],
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: true,
+        },
+        uses: 1,
+        use_type: "heal",
+        use_target_type: "alive_ally_one",
+        stat_modifier: null,
+        equip_type: null
+    },
+    {
+        id: "root_of_ambrosius",
+        name: "アンブロシウスの根",
+        description: "肥沃で魔力に富む地域に稀に生える植物の根。その強すぎる強心作用は、毒として利用されることもあるほど。",
+        category: "consumable",
+        price: 1000,
+        effects: [
+            {
+                type: "revive",
+                heal: 100,
+                dice: 0,
+                sides: 0,
+                flat: 0,
+                fix: 100,
+            },
+        ],
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: true,
+        },
+        uses: 1,
+        use_type: "heal",
+        use_target_type: "dead_enemy_one",
+        stat_modifier: null,
+        equip_type: null
+    },
     // 装備アイテム
     {
         id: "cursed_dagger",

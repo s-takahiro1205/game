@@ -131,6 +131,11 @@ body{
     margin-bottom: 0.5em;
 }
 
+.actor-card.dead, .enemy-card.dead{
+    filter: grayscale(100%);
+    opacity: 0.75;
+} 
+
 /* ======================
    タイムライン
 ====================== */
@@ -275,6 +280,7 @@ body{
 
 .cmd.heal {background:#27ae60;}
 .cmd.attack {background:#c0392b;}
+.cmd.support {background:#2980b9;}
 
 .target-panel{
     margin-top: 1em;

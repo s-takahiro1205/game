@@ -1059,7 +1059,7 @@ export async function useItem(_) {
     if (this.item.uses) {
         this.item.uses -= 1;
     }
-    if (this.item.uses && this.item.uses <= 0) {
+    if (this.item.uses !== null && this.item.uses <= 0) {
         player.item_slot = player.item_slot.filter(i => i !== this.item);
         const msg = `${this.item.name} を使い切った！`;
         addMessage(msg);
@@ -1212,8 +1212,7 @@ async function applyEffect(effect) {
         case "damage":
             value = resolveValue(effect, player.party[0]);
             const actualDamage = calculateDamage(value, player.party[0].armor);
-            player.party[0].hp -= actualDamage;
-            addMessage(`${actualDamage} ダメージを受けた！ (元ダメージ: ${value}, あなたのアーマー: ${player.party[0].armor})`);
+            applyDamage(player.party[0], actualDamage);
             break;
         case "stat_change":
             value = resolveValue(effect, player.party[0]);
@@ -1352,6 +1351,22 @@ function calculateDamage(rawDamage, targetArmor) {
 }
 
 /**
+ * 対象にダメージを与える
+ * @param {Object} target
+ * @param {number} damage
+ * @param {bool} is_physics // 眠りから覚めるか
+ */
+function applyDamage(target, damage, is_phisycs = false) {
+    target.hp = Math.max(0, target.hp - damage);
+    addMessage(`${target.name} に ${damage} のダメージ！`);
+    takeDead(target);
+    // 眠りの解除判定 50%で眠り削除
+    if (is_phisycs && target.battle_status.some(s => s.type === "sleep") && Math.random() < 0.5) {
+        recoverBattleStatus("sleep");
+    }
+}
+
+/**
  * ダイスによるダメージ計算（アーマー軽減込み）
  * @param {Object} attacker 
  * @param {Object} target 
@@ -1429,7 +1444,7 @@ function calculateDiceHeal(attacker, target, dice, sides, flat, is_magic = false
  * @param {number} fix_value // 固定回復量：すべてを無視した固定確率
  * @returns {bool}
  */
-function calculateDiceChance(attacker, target, state_id, get, dice, sides, flat, is_magic = false, fix_value = 0) {
+function calculateDiceChance(attacker, target, state_id, dice, sides, flat, is_magic = false, fix_value = 0) {
     let chance_rate = flat;
 
     if (fix_value > 0) {
@@ -1573,8 +1588,8 @@ function battleExecOrder() {
     gameState.battle.actor_stan = null;
     applyBatleStatus("act_before", gameState.battle.actor);
 
-    // 麻痺等のスタン状態なら次へ
-    if (gameState.battle.actor_stan) {
+    // 麻痺等のスタン状態や戦闘不能なら次へ TODO: 行動不能判定
+    if (gameState.battle.actor_stan || gameState.battle.actor.hp === 0) {
         battleExecCommand();
         return;
     }
@@ -1606,7 +1621,9 @@ function battleExecCommand() {
     const actor = gameState.battle.actor;
     advanceTimeline(actor.id);
 
-    if (gameState.battle.actor_stan) {
+    if ( gameState.battle.actor.hp === 0) {
+        // Nothing to do
+    } else if (gameState.battle.actor_stan) {
         const status_def = BATTLE_STATUSES.find(_status => _status.id === gameState.battle.actor_stan);
         addMessage(status_def.stanMessageGen(gameState.battle.actor.name));
     } else if (cmd.act === "attack") {
@@ -1620,8 +1637,7 @@ function battleExecCommand() {
             if (target.battle_status.some(s => s.type === "guard")) {
                 actualDamage = Math.floor(actualDamage / 2);
             }
-            target.hp = Math.max(0, target.hp - actualDamage);
-            addMessage(`${target.name} に ${actualDamage} のダメージ！ (元ダメージ: ${rawDmg}, 敵アーマー: ${target.armor})`);
+            applyDamage(target, actualDamage, true)
         }
     } else if (cmd.act === "guard") {
         console.log("防御コマンドが実行されました")
@@ -1646,10 +1662,9 @@ function battleExecCommand() {
                         actor, target,
                         effect.dice, effect.sides, effect.flat,
                         effect.category === "magic" ? true : false,
-                        effect.fix_value ?? 0, effect.armor_pierce ?? 0
+                        effect.fix ?? 0, effect.armor_pierce ?? 0
                     );
-                    target.hp = Math.max(0, target.hp - damage);
-                    addMessage(`${target.name} に ${damage} のダメージ！`);
+                    applyDamage(target, damage, effect.category !== "magic");
                 }
             } else if (effect.type === "heal") {
                 for (const target of targets) {
@@ -1657,7 +1672,7 @@ function battleExecCommand() {
                         actor, target,
                         effect.dice, effect.sides, effect.flat,
                         effect.category === "magic" ? true : false,
-                        effect.fix_value ?? 0
+                        effect.fix ?? 0
                     );
                     target.hp = Math.min(target.maxHp, target.hp + heal);
                     addMessage(`${target.name} は ${heal} 回復した！`);
@@ -1669,7 +1684,7 @@ function battleExecCommand() {
                         actor, target, effect.stateId,
                         effect.dice, effect.sides, effect.flat,
                         is_magic,
-                        effect.fix_value ?? 0
+                        effect.fix ?? 0
                     );
                     if (is_success) {
                         const turn = effect.turn;
@@ -1679,6 +1694,39 @@ function battleExecCommand() {
                             turn = Math.floor(turn);
                         }
                         addBattleStatus(effect.stateId, target, turn);
+                    }
+                }
+            } else if (effect.type === "recover_state") {
+                for (const target of targets) {
+                    // その状態異常になっているか
+                    if (!target.battle_status.some(s => s.type === effect.stateId)) {
+                        continue;
+                    }
+                    const is_magic = effect.category === "magic";
+                    const is_success = calculateDiceChance(
+                        actor, target, effect.stateId,
+                        effect.dice, effect.sides, effect.flat,
+                        is_magic,
+                        effect.fix ?? 0
+                    );
+                    if (is_success) {
+                        recoverBattleStatus(effect.stateId, target);
+                    }
+                }
+            } else if (effect.type === "revive") {
+                for (const target of targets) {
+                    if (!target.battle_status.some(s => s.type === "dead")) {
+                        continue;
+                    }
+                    const is_magic = effect.category === "magic";
+                    const is_success = calculateDiceChance(
+                        actor, target, "dead",
+                        effect.dice, effect.sides, effect.flat,
+                        is_magic,
+                        effect.fix ?? 0
+                    );
+                    if (is_success) {
+                        revive(target, effect.heal);
                     }
                 }
             }
@@ -1692,8 +1740,7 @@ function battleExecCommand() {
         for (const effect of item.effects) {
             if (effect.type === "damage") {
                 for (const target of targets) {
-                    target.hp = Math.max(0, target.hp - effect.value);
-                    addMessage(`${target.name} に ${effect.value} のダメージ！`);
+                    applyDamage(target, effect.value, false)
                 }
             } else if (effect.type === "heal") {
                 for (const target of targets) {
@@ -1706,11 +1753,43 @@ function battleExecCommand() {
                         actor, target, effect.stateId,
                         effect.dice, effect.sides, effect.flat,
                         false,
-                        effect.fix_value ?? 0
+                        effect.fix ?? 0
                     );
                     if (is_success) {
                         const turn = effect.turn;
                         addBattleStatus(effect.stateId, target, turn);
+                    }
+                }
+            } else if (effect.type === "recover_state") {
+                for (const target of targets) {
+                    // その状態異常になっているか
+                    if (!target.battle_status.some(s => s.type === effect.stateId)) {
+                        continue;
+                    }
+                    const is_success = calculateDiceChance(
+                        actor, target, effect.stateId,
+                        effect.dice, effect.sides, effect.flat,
+                        false,
+                        effect.fix ?? 0
+                    );
+                    if (is_success) {
+                        recoverBattleStatus(effect.stateId, target)
+                    }
+                }
+            } else if (effect.type === "revive") {
+                for (const target of targets) {
+                    // その状態異常になっているか
+                    if (!target.battle_status.some(s => s.type === "dead")) {
+                        continue;
+                    }
+                    const is_success = calculateDiceChance(
+                        actor, target, "dead",
+                        effect.dice, effect.sides, effect.flat,
+                        false,
+                        effect.fix ?? 0
+                    );
+                    if (is_success) {
+                        revive(target, effect.heal)
                     }
                 }
             }
@@ -1982,17 +2061,16 @@ function applyBatleStatus(timing, target = null) {
 
             // 効果発揮
             if (status_def.exec_timing === timing) {
-                status_def.applyEffect(gameState, target);
+                const apply_message = status_def.applyEffect(gameState, target);
+                if (apply_message) {
+                    addMessage(apply_message);
+                }
             }
 
             // 減算
             if (status_def.sub_timing === timing) {
                 if (status.turn === 1) {
-                    const sub_message = status_def.subMessageGen(target.name);
-                    if (sub_message) {
-                        addMessage(sub_message);
-                    }
-                    target.battle_status = target.battle_status.filter(_status => _status.type !== status.type);
+                    recoverBattleStatus(status.type, target);
                 } else {
                     status.turn -= 1;
                 }
@@ -2012,7 +2090,32 @@ function applyBatleStatus(timing, target = null) {
     });
 }
 
-// TODO: 戦闘不能処理
+/**
+ * hpが0かチェックしてdead状態を付与する
+ * @param {Object} target 
+ * @param {boolean} is_allow_zero // 何か特殊な事情があれば 
+ */
+function takeDead(target, is_allow_zero = false) {
+    // TODO* ゾンビ状態など作るなら判定
+    if (!is_allow_zero && target.hp === 0) {
+        // 既存の状態異常をすべて除く
+        target.battle_status = target.battle_status.filter(_status => false);
+        addBattleStatus("dead", target, -1);
+    }
+}
+
+/**
+ * 戦闘不能から復帰させる
+ * @param {Object} target 
+ * @param {number} heal
+ * @param {boolean} is_allow_zero // 何か特殊な事情があれば 
+ */
+function revive(target, heal, is_allow_zero = false) {
+    target.hp = Math.min(target.maxHp, target.hp + heal);
+    if (is_allow_zero || target.hp >= 0) {
+        recoverBattleStatus("dead", target);
+    }
+}
 
 /**
  * 魔法のpowerに乗ずる値をintから計算する
@@ -2045,6 +2148,21 @@ function addBattleStatus(state_id, target, turn) {
         //　防御以外ならターンを最大値に更新する
         current_status.turn = Math.max(current_status.turn, turn);
     }
+}
+
+/**
+ * 状態異常を解除する
+ * @param {string} state_id 
+ * @param {Object} target 
+ * @param {number} turn 
+ */
+function recoverBattleStatus(state_id, target) {
+    const status_def = BATTLE_STATUSES.find(_status => _status.id === state_id);
+    const sub_message = status_def.subMessageGen(target.name);
+    if (sub_message) {
+        addMessage(sub_message);
+    }
+    target.battle_status = target.battle_status.filter(_status => _status.type !== state_id);
 }
 
 /**

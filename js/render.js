@@ -2,7 +2,7 @@
 
 import { player, gameState, useItem, equip, unequip, getUsableList } from './game.js';
 import { loadGame } from './save.js';
-import { TARGET_TYPE_EXTRACTOR } from './const.js';
+import { BATTLE_STATUSES, TARGET_TYPE_EXTRACTOR } from './const.js';
 
 // DOM Elements
 // TODO:精査してね
@@ -389,25 +389,29 @@ function renderMenuEquip() {
 function formatItemEffect(item) {
     const parts = [];
     // TODO: ここに置いてんじゃねーよバカ
-    const STAT_LABEL = { maxHp: "最大HP", maxMp: "最大MP", attack: "攻撃力", armor: "防御力", speed: "速度", intel: "知能", dex: "器用", size: "体格" , multi_action: "行動回数" };
+    const STAT_LABEL = {
+        maxHp: "最大HP", maxMp: "最大MP", attack: "攻撃力", armor: "防御力", speed: "速度", intel: "知能", dex: "器用", size: "体格" , multi_action: "行動回数",
+        poizon: "毒", paralyze: "麻痺", sleep: "眠り", stan: "スタン", blind: "盲目", seal: "魔封じ", bind: "捕縛"
+    };
 
     if (item.effects && item.effects.length > 0) {
         item.effects.forEach(ef => {
             switch (ef.type) {
                 case "heal":
-                    if (ef.value !== undefined)      parts.push(`HP +${ef.value}`);
-                    else if (ef.min !== undefined)   parts.push(`HP +${ef.min}〜${ef.max}`);
-                    else if (ef.rate !== undefined)  parts.push(`HP +${ef.rate * 100}%`);
+                    parts.push(`HP +${ef.value}`);
                     break;
                 case "damage":
-                    if (ef.value !== undefined)      parts.push(`ダメージ ${ef.value}`);
-                    else if (ef.min !== undefined)   parts.push(`ダメージ ${ef.min}〜${ef.max}`);
+                    parts.push(`ダメージ ${ef.value}`);
                     break;
                 case "stat_change": {
                     const label = STAT_LABEL[ef.stat] || ef.stat;
-                    const sign = (ef.value ?? ef.min ?? 0) >= 0 ? "+" : "";
-                    if (ef.value !== undefined)      parts.push(`${label} ${sign}${ef.value}`);
-                    else if (ef.min !== undefined)   parts.push(`${label} ${sign}${ef.min}〜${ef.max}`);
+                    const sign = ef.value >= 0 ? "+" : "";
+                    parts.push(`${label} ${sign}${ef.value}`);
+                    break;
+                }
+                case "add_state": {
+                    const label = STAT_LABEL[ef.stateId] || ef.stateId;
+                    parts.push(`${label} 付与(${ef.turn}ターン)`);
                     break;
                 }
                 case "dice_check":
@@ -554,7 +558,14 @@ function updatePartyStatus() {
             (unit.hp / unit.maxHp) * 100,
             0
         );
-        card.querySelector('.hp-label').textContent =`HP ${unit.hp}/${unit.maxHp}`;
+        card.querySelector('.hp-label').textContent = `HP ${unit.hp}/${unit.maxHp}`;
+        // 状態異常アイコンの描画
+        if (unit.battle_status) {
+            for (const status of unit.battle_status) {
+                const status_def = BATTLE_STATUSES.find(_status => _status.id === status.type);
+                card.querySelector('.hp-label').textContent += status_def.icon;
+            }
+        }
         const hpFill = card.querySelector('.hp-bar-fill');
         hpFill.style.width = `${hpPercentage}%`;
         hpFill.classList.toggle('low-hp', hpPercentage <= 25);
@@ -583,6 +594,16 @@ function updateEnemyStatus() {
             0
         );
         card.querySelector('.hp-label').textContent =`HP ${unit.hp}/${unit.maxHp}`;
+        // 状態異常アイコンの描画
+        if (unit.battle_status) {
+            for (const status of unit.battle_status) {
+                const status_def = BATTLE_STATUSES.find(_status => _status.id === status.type);
+                card.querySelector('.hp-label').textContent += status_def.icon;
+            }
+        }
+        // 戦闘不能ならクラスを追加
+        card.classList.toggle("dead", unit.battle_status.some(s => s.type === "dead"));
+
         const hpFill = card.querySelector('.hp-bar-fill');
         hpFill.style.width = `${hpPercentage}%`;
         hpFill.classList.toggle('low-hp', hpPercentage <= 25);
@@ -769,30 +790,13 @@ function renderTargetPanel(candidates) {
         button.classList.add('cmd', gameState.battle.party.includes(candidate) ? "ally" : "enemy");
         button.dataset.targets = candidate.id;
         button.textContent = candidate.name;
+        // 状態異常アイコンの描画
+        if (candidate.battle_status) {
+            for (const status of candidate.battle_status) {
+                const status_def = BATTLE_STATUSES.find(_status => _status.id === status.type);
+                button.textContent += status_def.icon;
+            }
+        }
         targetPanel.appendChild(button);
     });
 }
-
-// /**
-//  * 戦闘コマンドの表示切替
-//  * TODO: 定数にあとで置き換え
-//  */
-// function updateCombatCommand() {
-//     if (gameState.combatPhase === "command_waiting") {
-//         attackButton.disabled = false;
-//         attackButton.classList.remove("hidden");
-//     } else {
-//         // start | exec | enemy_act | result
-//         attackButton.disabled = true;
-//         attackButton.classList.add("hidden");
-//     }
-
-//     if (gameState.combatPhase === "result") {
-//         battleEndButton.disabled = false;
-//         battleEndButton.classList.remove("hidden");
-//     } else {
-//         // start | exec | enemy_act | command_waiting
-//         battleEndButton.disabled = true;
-//         battleEndButton.classList.add("hidden");
-//     }
-// }

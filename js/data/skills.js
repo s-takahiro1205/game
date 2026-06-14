@@ -64,7 +64,7 @@ export const SKILLS = [
                 dice: 2,
                 sides: 20,
                 flat: 5,
-                fix: 100,
+                fix: 0,
                 turn: 5,
             }
         ]

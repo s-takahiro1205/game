@@ -357,7 +357,6 @@ async function debugChangeJob() {
     }
     const unit_id = debugJobUnitSelect.value;
     const unit = player.party.find(unit => unit.id === unit_id);
-    console.log(unit_id, unit)
     if (!unit_id || !unit) {
         addMessage("デバッグ: ユニットを選択してください。", false);
         return;
@@ -1882,7 +1881,6 @@ function battleExecCommand() {
         console.log("攻撃コマンドが実行されました")
         addMessage(`${actor.name} のこうげき！`);
         const dice = unitDiceCreate(actor);
-        console.log(actor.name, dice);
         for (const target of targets) {
             const damage = calculateDiceDamage(
                 actor, target,
@@ -2134,7 +2132,7 @@ function battleResult(is_victory) {
             if (mod_levels) {
                 level_ups.push(mod_levels)
             }
-            const mod_ranks = addRankExp(unit, total_rank_exp+10);
+            const mod_ranks = addRankExp(unit, total_rank_exp);
             if (mod_ranks) {
                 rank_ups.push(mod_ranks)
             }
@@ -2340,16 +2338,18 @@ function levelUp(unit) {
     unit.level++;
 
     // TODO: 装備や職業加算
+    const job = JOBS[unit.currentJob];
     const growthRates = {
-        maxHp: 100,
-        maxMp: 100,
-        attack: 50,
-        armor: 50,
-        speed: 50,
-        intel: 50,
-        dex: 50,
-        size: 50,
+        maxHp: 100 + (job.growthRates.maxHp ?? 0),
+        maxMp: 100 + (job.growthRates.maxMp ?? 0),
+        attack: 50 + (job.growthRates.attack ?? 0),
+        armor: 50 + (job.growthRates.armor ?? 0),
+        speed: 50 + (job.growthRates.speed ?? 0),
+        intel: 50 + (job.growthRates.intel ?? 0),
+        dex: 50 + (job.growthRates.dex ?? 0),
+        size: 50 + (job.growthRates.size ?? 0),
     };
+
 
     const statusUp = {};
     for (const [stat, rate] of Object.entries(growthRates)) {

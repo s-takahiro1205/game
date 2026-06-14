@@ -13,7 +13,7 @@ export const JOBS = {
                 value: 1
             }
         ],
-        growthRate: {// 成長率補正 200
+        growthRates: {// 成長率補正 200
             maxHp: 100,
             maxMp: 0,
             attack: 50,
@@ -71,7 +71,7 @@ export const JOBS = {
                 value: 1
             }
         ],
-        growthRate: {// 成長率補正 200
+        growthRates: {// 成長率補正 200
             maxHp: 40,
             maxMp: 90,
             attack: 0,

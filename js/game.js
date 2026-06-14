@@ -1054,7 +1054,7 @@ export async function useItem(_) {
         // TODO: 戦闘中と共通化したいね。。無理か
         const targets = [player.party[0]]; 
         const actor = player.party[0]; 
-        for (const effect of item.effects) {
+        for (const effect of this.item.effects) {
             if (effect.type === "damage") {
                 for (const target of targets) {
                     const damage = calculateDiceDamage(
@@ -1446,6 +1446,34 @@ function applyDamage(target, damage, is_phisycs = false) {
     }
 }
 
+// キャラの能力値からダイス数値を計算する
+function unitDiceCreate(unit) {
+    //装備の攻撃ダイス修正を収集
+    const equip_dices = unit.equipment_slot
+        .filter((equip) => equip.dice_modifier)
+        .map((equip) => equip.dice_modifier)
+    // ダイス数：速度 / 333 + 装備の値 + 1：下限1 999で3
+    const dice = Math.max(
+        Math.floor(unit.speed / 333) + equip_dices.reduce((sum, _dice) => sum + _dice.dice, 0) + 1,
+        1
+    );
+    // ダイス面：攻撃の25% + 装備の値：下限1 999で250
+    const sides = Math.max(
+        Math.floor(unit.attack * 0.25) + equip_dices.reduce((sum, _dice) => sum + _dice.sides, 0),
+        1
+    );
+    // 修正値：器用 ^ 0.80 - 1 + 装備の値：下限0 999で250
+    const flat = Math.max(
+        Math.floor(unit.dex ^ 0.80 - 1) + equip_dices.reduce((sum, _dice) => sum + _dice.flat, 0),
+        1
+    );
+    return {
+        dice: dice,
+        sides: sides,
+        flat: flat
+    }
+}
+
 /**
  * ダイスによるダメージ計算（アーマー軽減込み）
  * @param {Object} attacker 
@@ -1709,15 +1737,16 @@ function battleExecCommand() {
     } else if (cmd.act === "attack") {
         console.log("攻撃コマンドが実行されました")
         addMessage(`${actor.name} のこうげき！`);
-        // TODO: cmd.targetから対象を取り出す仕組み
-        const rawDmg = Math.ceil(Math.random() * actor.attack);
+        const dice = unitDiceCreate(actor);
+        console.log(actor.name, dice);
         for (const target of targets) {
-            let actualDamage = calculateDamage(rawDmg, target.armor);
-            // 防御中なら半減
-            if (target.battle_status.some(s => s.type === "guard")) {
-                actualDamage = Math.floor(actualDamage / 2);
-            }
-            applyDamage(target, actualDamage, true)
+            const damage = calculateDiceDamage(
+                actor, target,
+                dice.dice, dice.sides, dice.flat,
+                false,// TODO: 魔法武器とかが今後出れば
+                dice.fix ?? 0, dice.armor_pierce ?? 0
+            );
+            applyDamage(target, damage, true);
         }
     } else if (cmd.act === "guard") {
         console.log("防御コマンドが実行されました")

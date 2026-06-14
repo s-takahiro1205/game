@@ -441,10 +441,17 @@ function formatItemEffect(item) {
 
     if (item.stat_modifier) {
         Object.entries(item.stat_modifier).forEach(([stat, val]) => {
-            const label = STAT_LABEL[stat] || stat;
+            const label = LABEL[stat] || stat;
             const sign = val >= 0 ? "+" : "";
             parts.push(`${label} ${sign}${val}`);
         });
+    }
+
+    if (item.dice_modifier) {
+            const dice = (item.dice_modifier.dice > 0 ? "" : "-") + item.dice_modifier.dice;
+            const sides = (item.dice_modifier.sides > 0 ? "" : "-") + item.dice_modifier.sides;
+            const flat = (item.dice_modifier.flat > 0 ? "+" : "-") + item.dice_modifier.flat;
+            parts.push(`${dice}D${sides}${flat}`);
     }
 
     return parts.length > 0 ? parts.join(" / ") : null;

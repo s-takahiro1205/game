@@ -369,7 +369,15 @@ export const ITEMS = [
         uses: null,
         use_type: null,
         use_target_type: null,
-        stat_modifier: { attack: 5, dex: -1 },
+        stat_modifier: {
+            attack: 5,
+            dex: -1
+        },
+        dice_modifier: {
+            dice: 10,
+            sides: 10,
+            flat: 10
+        },
         equip_type: "weapon"
     },
     {
@@ -406,6 +414,11 @@ export const ITEMS = [
         use_type: null,
         use_target_type: null,
         stat_modifier: { intel: 2, maxMp: 10 },
+        dice_modifier: {
+            dice: 0,
+            sides: 100,
+            flat: 0
+        },
         equip_type: "accessory"
     },
     {
@@ -424,6 +437,11 @@ export const ITEMS = [
         use_type: null,
         use_target_type: null,
         stat_modifier: { speed: 15, multi_action: 1 },
+        dice_modifier: {
+            dice: 0,
+            sides: 5,
+            flat: 5
+        },
         equip_type: "accessory"
     },
 ];

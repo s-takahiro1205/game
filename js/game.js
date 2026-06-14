@@ -178,6 +178,7 @@ const attackButton = document.getElementById("attack-button");
 const menuButton = document.getElementById("menu-button");
 
 const battleMessage = document.getElementById("battle-message");
+const alertPanel = document.getElementById("alert-panel");
 const commandPanel = document.getElementById("command-panel");
 const itemPanel = document.getElementById("item-panel");
 const skillPanel = document.getElementById("skill-panel");
@@ -2005,12 +2006,10 @@ function onActSelect(e) {
         battleExecCommand();
         return;
     } else if (act === "skill" && getUsableList(gameState.battle.actor.skill_list, "battle").length === 0) {
-        // TODO: 戦闘中に表示できるトーストパネル
-        console.log("使用できるスキルがありません");
+        gameState.battle.alert = "使用できるスキルがありません";
         gameState.battle.pendingCommand.act = null;
-    } else if (act === "item" && player.item_slot.length === 0) {
-        // TODO: 戦闘中に表示できるトーストパネル
-        console.log("使用できるアイテムがありません");
+    } else if (act === "item" && !player.item_slot.some((item) => item.usableIn["battle"])) {
+        gameState.battle.alert = "使用できるアイテムがありません";
         gameState.battle.pendingCommand.act = null;
     }
 }
@@ -2034,8 +2033,7 @@ function onActDetailItemSelect(e) {
     const item =  player.item_slot[actDetail];
     const units = TARGET_TYPE_EXTRACTOR[item.use_target_type](gameState.battle.party, gameState.battle.enemies);
     if (units.length === 0) {
-        // TODO: 戦闘中に表示できるトーストパネル
-        console.log("対象が存在しないため使用できません")
+        gameState.battle.alert = "対象が存在しないため使用できません";
         return;
     }
     gameState.battle.pendingCommand.actDetail = actDetail;
@@ -2070,14 +2068,12 @@ function onActDetailSkillSelect(e) {
     if ((skill.cost.hp && gameState.battle.actor.hp <= skill.cost.hp)
         || (skill.cost.mp && gameState.battle.actor.mp < skill.cost.mp)
     ) {
-        // TODO: 戦闘中に表示できるトーストパネル
-        console.log("コストが足りないため使用できません");
+        gameState.battle.alert = "コストが足りないため使用できません";
         return;
     }
     const units = TARGET_TYPE_EXTRACTOR[skill.target_type](gameState.battle.party, gameState.battle.enemies);
     if (units.length === 0) {
-        // TODO: 戦闘中に表示できるトーストパネル
-        console.log("対象が存在しないため使用できません")
+        gameState.battle.alert = "対象が存在しないため使用できません";
         return;
     }
     gameState.battle.pendingCommand.actDetail = actDetail;
@@ -2136,6 +2132,14 @@ function battleEnd() {
     saveGame(player); // 戦闘勝利後にセーブ
 }
 
+/**
+ * 戦闘画面のアラートを消去
+ */
+function battleAlertClear() {
+    gameState.battle.alert = null;
+}
+
+alertPanel.addEventListener("click", battleAlertClear);
 commandPanel.addEventListener("click", onActSelect);
 itemPanel.addEventListener("click", onActDetailItemSelect);
 skillPanel.addEventListener("click", onActDetailSkillSelect);

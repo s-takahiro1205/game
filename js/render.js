@@ -62,6 +62,7 @@ const partyPanel = document.getElementById("party-panel");
 const enemyPanel = document.getElementById("enemy-panel");
 const timelinePanel = document.getElementById("timeline-panel");
 const battleMessage = document.getElementById("battle-message");
+const alertPanel = document.getElementById("alert-panel");
 const commandPanel = document.getElementById("command-panel");
 const itemPanel = document.getElementById("item-panel");
 const skillPanel = document.getElementById("skill-panel");
@@ -469,6 +470,7 @@ function renderBattle() {
     }
 
     battleMessage.classList.add("hidden");
+    alertPanel.classList.add("hidden");
     commandPanel.classList.add("hidden");
     skillPanel.classList.add("hidden");
     itemPanel.classList.add("hidden");
@@ -498,6 +500,15 @@ function renderBattle() {
         battleMessage.classList.remove("hidden");
         resultPanel.classList.remove("hidden");
     } else if (phase === "command_waiting") {
+        if (gameState.battle.alert) {
+            alertPanel.innerHTML = "";
+            const p = document.createElement("p");
+            p.textContent = gameState.battle.alert;
+            alertPanel.appendChild(p);
+            alertPanel.scrollTop = alertPanel.scrollHeight; // スクロールを一番下へ
+            alertPanel.classList.remove("hidden");
+            return;
+        }
         // コマンドパネル表示
         if (!gameState.battle.pendingCommand.act) {
             // 基本行動4つのパネル表示

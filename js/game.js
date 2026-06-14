@@ -1585,6 +1585,21 @@ function checkCondition(condition) {
         return true; // 無効な条件は常に満たすとみなす
     }
 
+    // TODO: ちゃんと作り直して
+    if (condition.stat === "money") {
+        switch (condition.operator) {
+            case "gte": // Greater Than or Equal to
+                return player[condition.stat] >= condition.value;
+            case "lte": // Less Than or Equal to
+                return player[condition.stat] <= condition.value;
+            case "eq":  // Equal to
+                return player[condition.stat] === condition.value;
+            default:
+                console.warn("Unknown operator in condition:", condition.operator);
+                return false;
+        }
+    }
+
     const playerStat = player.party[0][condition.stat];
     if (playerStat === undefined) {
         console.warn(`Player stat "${condition.stat}" not found for condition check.`);
@@ -2111,7 +2126,10 @@ function onTargetSelect(e) {
     battleExecCommand();
 }
 
-function battleEnd() {
+/**
+ * 戦闘画面から戻る処理
+ */
+async function battleEnd() {
     gameState.currentScreen = 'main-game-screen';
     gameState.explorePhase = "idle";
     const is_victory = battleEndButton.dataset.result;
@@ -2123,6 +2141,14 @@ function battleEnd() {
         player.money += total_money;
         player.currentEventCompleted = true; // 戦闘イベント完了
 
+        const dropItemIds = rollDropItems(gameState.battle.enemies);
+        for (const dropItemId in dropItemIds) {
+            const item = getItemById(dropItemId);
+            for (let i = 0; i < dropItemIds[dropItemId]; i++) {
+                await acquireItem(item);
+            }
+        }
+
         // 最終ボス撃破判定
         if (player.position === 100) {
             player.isCleared = true;
@@ -2130,6 +2156,27 @@ function battleEnd() {
     }
     checkGameEnd();
     saveGame(player); // 戦闘勝利後にセーブ
+}
+
+/**
+ * 戦闘終了時のアイテムドロップ判定
+ * @param {Array<Object>} enemies 
+ * @returns // {id: count}形式
+ */
+function rollDropItems(enemies) {
+    const result = {};
+
+    for (const enemy of enemies) {
+        for (const drop of enemy.drop_items ?? []) {
+            const roll = Math.floor(Math.random() * 100) + 1;
+
+            if (roll <= drop.chance) {
+                result[drop.id] = (result[drop.id] ?? 0) + 1;
+            }
+        }
+    }
+
+    return result;
 }
 
 /**

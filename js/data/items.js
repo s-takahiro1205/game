@@ -416,17 +416,40 @@ export const ITEMS = [
         stat_modifier: { intel: 2, maxMp: 10 },
         dice_modifier: {
             dice: 0,
-            sides: 100,
+            sides: 0,
+            flat: 3
+        },
+        equip_type: "accessory"
+    },
+    {
+        id: "weary_brand_of_Shadow",
+        name: "擦り切れた影の烙印",
+        description: "影の大精霊によって紋章を授けられている指輪。長い時間が経ち紋章が風化している。",
+        category: "equipment",
+        price: 1000000,
+        effects: null,
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: false,
+        },
+        uses: null,
+        use_type: null,
+        use_target_type: null,
+        stat_modifier: { maxHp: 10, maxMp: 50, dex: 3 },
+        dice_modifier: {
+            dice: 0,
+            sides: 0,
             flat: 0
         },
         equip_type: "accessory"
     },
     {
-        id: "the_emblem_of_windia",
+        id: "emblem_of_windia",
         name: "ウィンディアの紋章",
         description: "風の大精霊によって紋章を授けられているネックレス。身に着けるだけで普段の倍の速さで動けるという。",
         category: "equipment",
-        price: 1000000,
+        price: 10000,
         effects: null,
         usableIn: {
             home: false,

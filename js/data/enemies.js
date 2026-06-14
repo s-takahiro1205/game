@@ -46,6 +46,12 @@ export const ENEMIES = [
         equipment_slot: [],
         skill_list: [],
         battle_status: [],
+        drop_items: [
+            {
+                id: "potion_of_decay",
+                chance: 10
+            }
+        ],
         money: 10,
     },
     {
@@ -67,6 +73,16 @@ export const ENEMIES = [
         equipment_slot: [],
         skill_list: [],
         battle_status: [],
+        drop_items: [
+            {
+                id: "potion_of_decay",
+                chance: 10
+            },
+            {
+                id: "cursed_dagger",
+                chance: 5
+            }
+        ],
         money: 20,
     },
     {
@@ -88,6 +104,12 @@ export const ENEMIES = [
         equipment_slot: [],
         skill_list: [],
         battle_status: [],
+        drop_items: [
+            {
+                id: "elixir_of_shadow",
+                chance: 5
+            }
+        ],
         money: 30,
     },
 
@@ -111,6 +133,12 @@ export const ENEMIES = [
         equipment_slot: [],
         skill_list: [],
         battle_status: [],
+        drop_items: [
+            {
+                id: "chainmail_of_the_undead",
+                chance: 10
+            }
+        ],
         money: 50,
     },
     {
@@ -132,6 +160,12 @@ export const ENEMIES = [
         equipment_slot: [],
         skill_list: [],
         battle_status: [],
+        drop_items: [
+            {
+                id: "ring_of_the_ancients",
+                chance: 10
+            }
+        ],
         money: 100,
     },
     {
@@ -153,6 +187,12 @@ export const ENEMIES = [
         equipment_slot: [],
         skill_list: [],
         battle_status: [],
+        drop_items: [
+            {
+                id: "weary_brand_of_Shadow",
+                chance: 10
+            }
+        ],
         money: 200,
     },
     {
@@ -175,6 +215,12 @@ export const ENEMIES = [
         equipment_slot: [],
         skill_list: [],
         battle_status: [],
+        drop_items: [
+            {
+                id: "emblem_of_windia",
+                chance: 10
+            }
+        ],
         money: 500,
     },
 ];

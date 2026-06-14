@@ -229,11 +229,11 @@ NdS+B  →  N 個の S 面ダイスを振り、合計に B を加算
 }
 ```
 
-#### 特殊攻撃属性
+#### 特殊属性
 
 | 属性 | 効果 |
 |------|------|
-| `multi_hit: N` | 同一ターンに N 回攻撃判定 |
+| `multi_action: N` | 同一ターンに N 回行動 |
 | `aoe: true` | 対象を敵全体にする |
 | `armor_pierce: N` | 防御側の armor を N 点無視 |
 
@@ -319,14 +319,21 @@ jobMastery: {
 
 #### スキルのデータ構造
 
+スキルにはpowerを設定する。INTに応じて威力を計算するため、それを加味して設定すること。
+INT	倍率
+0	  0.5
+100	0.95
+300	1.40
+500	1.82
+700	2.23
+999	3.0
+
 ```js
 {
   id: string,
   name: string,
   description: string,
-  jobId: string,
   mpCost: number,
-  cooldown: number,         // 使用後の待機ターン数
   targetType: "single_enemy" | "all_enemies" | "random_enemy"
             | "self" | "single_ally" | "all_allies",
   effects: Effect[],        // 既存 Effect と互換

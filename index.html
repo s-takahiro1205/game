@@ -265,7 +265,16 @@ body{
     grid-template-columns: repeat(3, 1fr);
     gap: 10px;
 }
-.item-panel > .heal {background:#27ae60;}
+
+.skill-panel{
+    margin-top: 1em;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.cmd.heal {background:#27ae60;}
+.cmd.attack {background:#c0392b;}
 
 .target-panel{
     margin-top: 1em;
@@ -528,6 +537,7 @@ body{
                         <p>器用: <span id="modal-player-dex"></span></p>
                         <p>体格: <span id="modal-player-size"></span></p>
                         <p>行動回数: <span id="modal-player-multi-action"></span></p>
+                        <p>習得スキル: <span></span></p>
                     </div>
                 </div>
                 <div id="items-tab" class="tab-content hidden">

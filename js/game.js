@@ -3,6 +3,7 @@
 import { saveGame, loadGame, deleteSaveData } from './save.js';
 import { ITEMS } from './data/items.js';
 import { ENEMIES } from './data/enemies.js';
+import { SKILLS } from './data/skills.js';
 import { NORMAL_EVENTS, BENEFIT_EVENTS, DANGER_EVENTS, MILESTONE_EVENTS_DATA, EVENTS, generateRandomEvent } from './data/events.js';
 import { scheduleRender } from './render.js';
 import { BATTLE_STATUSES, DEBUFF_STATUS_MODIFIERS, SELECT_TARGET_TYPE, TARGET_TYPE_EXTRACTOR } from './const.js';
@@ -70,7 +71,9 @@ export let player = new Proxy({
             size: 0,
             multi_action: 1,
             equipment_slot: [], // 最大5
-            skill_list: [], // スキル
+            skill_list: [ // スキル
+                // getSkillById("thunder"),// 例
+            ],
             battle_status: [ // 状態異常
                 // {// 例
                 //     id: "weakness",
@@ -108,6 +111,7 @@ export const gameState = new Proxy({
             turn: 0,// ターン数
             phase: null,// string画面制御用フラグ[start|turn_start|pending|command_waiting|exec|result]
             actor: null,// コマンド表示や行動実行用のキャラ保管
+            actorStan: null,// 麻痺や睡眠などで行動できないフラグ
             pendingCommand: null// ターゲット選択や行動実行用のコマンドオブジェクト
         }, {set: setAndRender}),
 
@@ -175,6 +179,7 @@ const menuButton = document.getElementById("menu-button");
 const battleMessage = document.getElementById("battle-message");
 const commandPanel = document.getElementById("command-panel");
 const itemPanel = document.getElementById("item-panel");
+const skillPanel = document.getElementById("skill-panel");
 const targetPanel = document.getElementById("target-panel");
 const battleEndButton = document.getElementById("battle-end");
 
@@ -574,7 +579,12 @@ function initializePlayer(isStrongNewGame = false, inheritedMaxHp = 0, inherited
     unit.mp = unit.maxMp;
     unit.multi_action = 1;
     unit.equipment_slot = [];
-    unit.skill_list = [];
+    unit.skill_list = [
+        // TODO: デバッグ用
+        getSkillById("thunder"),
+        getSkillById("full-thunder"),
+        getSkillById("heal")
+    ];
     unit.battle_status = [];
     player.party[0] = unit;
     gameState.dirty = true;
@@ -1304,6 +1314,30 @@ function getEnemyById(id) {
 }
 
 /**
+ * IDをキーにスキルデータをマスタから取得してクローンを返す
+ * @param id
+ * @returns {Skill}
+ */
+function getSkillById(id) {
+    const skill = SKILLS.find(i => i.id === id);
+    if (!skill) {
+        console.warn(`Skill not found: ${id}`);
+        return null;
+    }
+    return structuredClone(skill);
+}
+
+/**
+ * リストから指定されたタイミングで使用可能なリストを返します
+ * @param {Array<Skill>} skills
+ * @param {string} timing
+ * @returns {Array<Skill>}
+ */
+export function getUsableList(skills, timing) {
+    return skills.filter(s => s.usableIn[timing]);
+}
+
+/**
  * ダメージ計算（アーマー軽減込み）
  * @param {number} rawDamage - 軽減前のダメージ
  * @param {number} targetArmor - 対象のアーマー値
@@ -1311,6 +1345,105 @@ function getEnemyById(id) {
  */
 function calculateDamage(rawDamage, targetArmor) {
     return Math.max(0, rawDamage - targetArmor);
+}
+
+/**
+ * ダイスによるダメージ計算（アーマー軽減込み）
+ * @param {Object} attacker 
+ * @param {Object} target 
+ * @param {number} dice // ダイス数
+ * @param {number} sides // ダイス1つあたりの出目最大数
+ * @param {number} flat // ダイス出目の補正値+N
+ * @param {boolean} is_magic // 魔法なら威力にINT乗算
+ * @param {number} fix_value // 固定ダメージ：防御以外のすべてを無視した固定値
+ * @param {number} armor_pierce // アーマー貫通割合（小数）
+ * @returns 
+ */
+function calculateDiceDamage(attacker, target, dice, sides, flat, is_magic = false, fix_value = 0, armor_pierce = 0) {
+    let damage = flat;
+
+    if (fix_value > 0) {
+        damage = fix_value;
+    } else {
+        for (let i = 0; i < dice; i++) {
+            damage += 1 + Math.floor(Math.random() * sides);
+        }
+        // 魔法なら威力増減
+        if (is_magic) {
+            damage *= magicRate(attacker.int);
+        }
+        // アーマー軽減
+        damage = damage * (1 - armor_pierce);
+    }
+
+    // 防御中なら半減
+    if (target.battle_status.some(s => s.type === "guard")) {
+        damage = Math.floor(damage / 2);
+    }
+
+    return Math.max(0, Math.floor(damage));
+}
+
+/**
+ * ダイスによる回復量計算
+ * @param {Object} healer 
+ * @param {Object} target 
+ * @param {number} dice // ダイス数
+ * @param {number} sides // ダイス1つあたりの出目最大数
+ * @param {number} flat // ダイス出目の補正値+N
+ * @param {boolean} is_magic // 魔法なら威力にINT乗算
+ * @param {number} fix_value // 固定回復量：すべてを無視した固定値
+ * @returns 
+ */
+function calculateDiceHeal(attacker, target, dice, sides, flat, is_magic = false, fix_value = 0) {
+    let heal = flat;
+
+    if (fix_value > 0) {
+        heal = fix_value;
+    } else {
+        for (let i = 0; i < dice; i++) {
+            heal += 1 + Math.floor(Math.random() * sides);
+        }
+        // 魔法なら威力増減
+        if (is_magic) {
+            heal *= magicRate(attacker.int);
+        }
+    }
+
+    return Math.max(0, Math.floor(heal));
+}
+
+/**
+ * ダイスによる確率計算 判定を返す
+ * @param {Object} modifier
+ * @param {Object} target
+ * @param {string} state_id // 状態異常種別
+ * @param {number} dice // ダイス数
+ * @param {number} sides // ダイス1つあたりの出目最大数
+ * @param {number} flat // ダイス出目の補正値+N
+ * @param {boolean} is_magic // 魔法なら威力にINT乗算
+ * @param {number} fix_value // 固定回復量：すべてを無視した固定確率
+ * @returns {bool}
+ */
+function calculateDiceChance(attacker, target, state_id, get, dice, sides, flat, is_magic = false, fix_value = 0) {
+    let chance_rate = flat;
+
+    if (fix_value > 0) {
+        chance_rate = fix_value;
+    } else {
+        for (let i = 0; i < dice; i++) {
+            chance_rate += 1 + Math.floor(Math.random() * sides);
+        }
+        // 魔法なら威力増減
+        if (is_magic) {
+            chance_rate *= magicRate(attacker.int);
+        }
+    }
+    // TODO: 抵抗力の増減
+
+    // 1D100を実施しchance以下であれば成功判定を返す
+    const roll = Math.ceil(Math.random() * 100);
+    return roll <= Math.floor(chance_rate);
 }
 
 /**
@@ -1364,6 +1497,7 @@ function battleInit(enemies) {
         turn: 0,
         phase: null,
         actor: null,
+        actor_stan: null,// paralyzeなどスタン事由を表記
         pendingCommand: new Proxy({}, {set: setAndRender}),
     }, {set: setAndRender});
     gameState.currentScreen = 'battle-screen';
@@ -1432,7 +1566,15 @@ function battleExecOrder() {
 
     // 味方ならコマンド選択を表示｜敵ならランダムに決定してコマンド実行処理
     gameState.battle.actor = gameState.battle.turnOrder.shift();
+    gameState.battle.actor_stan = null;
     applyBatleStatus("act_before", gameState.battle.actor);
+
+    // 麻痺等のスタン状態なら次へ
+    if (gameState.battle.actor_stan) {
+        battleExecCommand();
+        return;
+    }
+
     if (gameState.battle.party.includes(gameState.battle.actor)) {
         gameState.battle.phase = "command_waiting";// コマンドパネル描画
     } else {
@@ -1456,13 +1598,16 @@ function battleExecCommand() {
     addMessage("　");
     gameState.battle.phase = "exec";// ログや演出のパネル描画
     const cmd = gameState.battle.pendingCommand;
-    const targets = cmd.targets.map(id => getUnitById(id));
+    const targets = cmd.targets?.map(id => getUnitById(id));
     const actor = gameState.battle.actor;
     advanceTimeline(actor.id);
 
-    if (cmd.act === "attack") {
+    if (gameState.battle.actor_stan) {
+        const status_def = BATTLE_STATUSES.find(_status => _status.id === gameState.battle.actor_stan);
+        addMessage(status_def.stanMessageGen(gameState.battle.actor.name));
+    } else if (cmd.act === "attack") {
         console.log("攻撃コマンドが実行されました")
-        addMessage(`${actor.name}のこうげき！`);
+        addMessage(`${actor.name} のこうげき！`);
         // TODO: cmd.targetから対象を取り出す仕組み
         const rawDmg = Math.ceil(Math.random() * actor.attack);
         for (const target of targets) {
@@ -1477,21 +1622,67 @@ function battleExecCommand() {
     } else if (cmd.act === "guard") {
         console.log("防御コマンドが実行されました")
         for (const target of targets) {
-            addMessage(`${target.name} は身を守っている。`);
-            const guard_status = target.battle_status.find(s => s.type === "guard");
-            if (!guard_status) {
-                target.battle_status.push({type: "guard", turn: 1});
-            }
+            addBattleStatus("guard", target, 1);
         }
 
     } else if (cmd.act === "skill") {
         console.log("スキルコマンドが実行されました")
-        //TODO: スキル発動処理
+        const skill = gameState.battle.actor.skill_list.find(skill => skill.id === gameState.battle.pendingCommand.actDetail);
+        addMessage(`${actor.name} は ${skill.name} を放った！`);
+        // TOOD: コスト支払いメソッド化 別にいいかも
+        for (const type in skill.cost) {
+            actor[type] = Math.max(0, actor[type] - skill.cost[type]);
+        }
 
+        // TODO: これ以外の処理
+        for (const effect of skill.effects) {
+            if (effect.type === "damage") {
+                for (const target of targets) {
+                    const damage = calculateDiceDamage(
+                        actor, target,
+                        effect.dice, effect.sides, effect.flat,
+                        effect.category === "magic" ? true : false,
+                        effect.fix_value ?? 0, effect.armor_pierce ?? 0
+                    );
+                    target.hp = Math.max(0, target.hp - damage);
+                    addMessage(`${target.name} に ${damage} のダメージ！`);
+                }
+            } else if (effect.type === "heal") {
+                for (const target of targets) {
+                    const heal = calculateDiceHeal(
+                        actor, target,
+                        effect.dice, effect.sides, effect.flat,
+                        effect.category === "magic" ? true : false,
+                        effect.fix_value ?? 0
+                    );
+                    target.hp = Math.min(target.maxHp, target.hp + heal);
+                    addMessage(`${target.name} は ${heal} 回復した！`);
+                }
+            } else if (effect.type === "add_state") {
+                for (const target of targets) {
+                    const is_magic = effect.category === "magic";
+                    const is_success = calculateDiceChance(
+                        actor, target, effect.stateId,
+                        effect.dice, effect.sides, effect.flat,
+                        is_magic,
+                        effect.fix_value ?? 0
+                    );
+                    if (is_success) {
+                        const turn = effect.turn;
+                        // 魔法なら持続増減
+                        if (is_magic) {
+                            turn *= magicRate(attacker.int);
+                            turn = Math.floor(turn);
+                        }
+                        addBattleStatus(effect.stateId, target, turn);
+                    }
+                }
+            }
+        }
     } else if (cmd.act === "item") {
         console.log("アイテムコマンドが実行されました");
         const item = player.item_slot[cmd.actDetail];
-        addMessage(`${actor.name}は${item.name}を使用した！`);
+        addMessage(`${actor.name} は ${item.name} を使用した！`);
 
         // TODO: healとdamage以外の処理
         for (const effect of item.effects) {
@@ -1537,6 +1728,7 @@ function battleFinishCommand() {
     console.log(4);
     applyBatleStatus("act_after", gameState.battle.actor);
     gameState.battle.actor = null;
+    gameState.battle.actor_stan = null;
     // 次の行動につなぐ
     setTimeout(battleExecOrder, 750);
 }
@@ -1592,7 +1784,7 @@ function onActSelect(e) {
         gameState.battle.pendingCommand.targets = [gameState.battle.actor.id];
         battleExecCommand();
         return;
-    } else if (act === "skill" && gameState.battle.actor.skill_list.length === 0) {
+    } else if (act === "skill" && getUsableList(gameState.battle.actor.skill_list, "battle").length === 0) {
         // TODO: 戦闘中に表示できるトーストパネル
         console.log("使用できるスキルがありません");
         gameState.battle.pendingCommand.act = null;
@@ -1639,6 +1831,48 @@ function onActDetailItemSelect(e) {
 }
 
 /**
+ * コマンド[スキル選択]押下イベント
+ * @param {*} e 
+ * @returns 
+ */
+function onActDetailSkillSelect(e) {
+    const choice = e.target.closest('.cmd');
+    if (!choice) return;
+
+    const actDetail = choice.dataset.actDetail;
+    if (actDetail === "back") {
+        gameState.battle.pendingCommand.act = null;
+        return;
+    }
+
+    const skill =  gameState.battle.actor.skill_list.find(skill => skill.id === actDetail);
+    // TODO: コストの支払いチェックメソッド 特殊なの作らない限りはこれでいけそうだけどね
+    if ((skill.cost.hp && gameState.battle.actor.hp <= skill.cost.hp)
+        || (skill.cost.mp && gameState.battle.actor.mp < skill.cost.mp)
+    ) {
+        // TODO: 戦闘中に表示できるトーストパネル
+        console.log("コストが足りないため使用できません");
+        return;
+    }
+    const units = TARGET_TYPE_EXTRACTOR[skill.target_type](gameState.battle.party, gameState.battle.enemies);
+    if (units.length === 0) {
+        // TODO: 戦闘中に表示できるトーストパネル
+        console.log("対象が存在しないため使用できません")
+        return;
+    }
+    gameState.battle.pendingCommand.actDetail = actDetail;
+
+    // 選択が必要な種別でないなら対象を格納して実行
+    // 選択が必要であっても対象が1体なら自動選択
+    if (!SELECT_TARGET_TYPE.includes(skill.target_type)
+        || units.length === 1) {
+        gameState.battle.pendingCommand.targets = units.map(unit => unit.id);
+        battleExecCommand();
+        return;
+    }
+}
+
+/**
  * コマンド[対象選択]押下イベント
  * @param {*} e 
  * @returns 
@@ -1660,7 +1894,6 @@ function onTargetSelect(e) {
     gameState.battle.pendingCommand.targets = [targets];
     battleExecCommand();
 }
-
 
 function battleEnd() {
     gameState.currentScreen = 'main-game-screen';
@@ -1685,6 +1918,7 @@ function battleEnd() {
 
 commandPanel.addEventListener("click", onActSelect);
 itemPanel.addEventListener("click", onActDetailItemSelect);
+skillPanel.addEventListener("click", onActDetailSkillSelect);
 targetPanel.addEventListener("click", onTargetSelect);
 battleEndButton.addEventListener("click", battleEnd);
 
@@ -1721,39 +1955,77 @@ async function advanceTimeline(unitId) {
  * 行動開始/終了などはtargetあり、その他は全体に反映なのでなし
  */
 function applyBatleStatus(timing, target = null) {
-    if (target) {
+    // 処理を格納
+    const func = (target, timing) => {
         for (const status of target.battle_status) {
             const status_def = BATTLE_STATUSES.find(_status => _status.id === status.type);
-            // TODO: 効果発揮
+
+            // 効果発揮
+            if (status_def.exec_timing === timing) {
+                status_def.applyEffect(gameState, target);
+            }
+
             // 減算
             if (status_def.sub_timing === timing) {
                 if (status.turn === 1) {
+                    const sub_message = status_def.subMessageGen(target.name);
+                    if (sub_message) {
+                        addMessage(sub_message);
+                    }
                     target.battle_status = target.battle_status.filter(_status => _status.type !== status.type);
                 } else {
                     status.turn -= 1;
                 }
             }
         }
+    }
+
+    // 個別処理の場合
+    if (target) {
+        func(target, timing);
         return;
     }
+    // 全体処理の場合
     TARGET_TYPE_EXTRACTOR["alive_all"](gameState.battle.party, gameState.battle.enemies)
         .forEach(unit => {
-            for (const status of unit.battle_status) {
-                const status_def = BATTLE_STATUSES.find(_status => _status.id === status.type);
-                // TODO: 効果発揮
-                // 減算
-                if (status_def.sub_timing === timing) {
-                    if (status.turn === 1) {
-                        unit.battle_status = unit.battle_status.filter(_status => _status.type !== status.type);
-                    } else {
-                        status.turn -= 1;
-                    }
-                }
-            }
+            func(unit, timing);
     });
 }
 
 // TODO: 戦闘不能処理
+
+/**
+ * 魔法のpowerに乗ずる値をintから計算する
+ * @param {number} int 
+ * @returns 
+ */
+function magicRate(int) {
+    const t = int / 999;
+    return 0.5 + 2.5 * Math.pow(t, 0.7);
+}
+
+/**
+ * 状態異常を付与する
+ * @param {string} state_id 
+ * @param {Object} target 
+ * @param {number} turn 
+ */
+function addBattleStatus(state_id, target, turn) {
+    const status_def = BATTLE_STATUSES.find(_status => _status.id === state_id);
+    // メッセージ表示
+    const add_message = status_def.addMessageGen(target.name);
+    if (add_message) {
+        addMessage(add_message);
+    }
+
+    const current_status = target.battle_status.find(s => s.type === state_id);
+    if (!current_status) {
+        target.battle_status.push({type: state_id, turn: turn});
+    } else if (state_id !== "guard") {
+        //　防御以外ならターンを最大値に更新する
+        current_status.turn = Math.max(current_status.turn, turn);
+    }
+}
 
 /**
  * 生存している対象を抽出

@@ -1,6 +1,6 @@
 // 画面描画
 
-import { player, gameState, useItem, equip, unequip } from './game.js';
+import { player, gameState, useItem, equip, unequip, getUsableList } from './game.js';
 import { loadGame } from './save.js';
 import { TARGET_TYPE_EXTRACTOR } from './const.js';
 
@@ -279,6 +279,11 @@ function updateTab() {
  */
 function renderMenuStats() {
     const statusTab = document.getElementById("status-tab");
+    // TODO: 仮作成
+    let skill_names = "";
+    player.party[0].skill_list.forEach(skill => {
+        skill_names += skill.name + " ";
+    });
     statusTab.innerHTML = `
         <div class="player-stats-display">
             <p>現在地: <span>${player.position}</span></p>
@@ -293,6 +298,7 @@ function renderMenuStats() {
             <p>器用: <span>${player.party[0].dex}</span></p>
             <p>体格: <span>${player.party[0].size}</span></p>
             <p>行動回数: <span>${player.party[0].multi_action}</span></p>
+            <p>習得スキル: <span>${skill_names}</span></p>
         </div>
     `;
 }
@@ -472,18 +478,8 @@ function renderBattle() {
             commandPanel.classList.remove("hidden");
         } else if (gameState.battle.pendingCommand.act === "skill" && !gameState.battle.pendingCommand.actDetail) {
             // スキル一覧を生成
-            // TODO: イベントデリゲーションを調べて。親に代わりに登録しておく形。これでええやん
-            /*こんな感じ
-            const parent = document.getElementById('parent');
-
-            parent.addEventListener('click', (e) => {
-                const choice = e.target.closest('.clickable');
-                if (!choice) return;
-
-                const id = choice.dataset.id;
-                call(id);
-            });
-            */
+            renderSkillPanel();
+            skillPanel.classList.remove("hidden");
         } else if (gameState.battle.pendingCommand.act === "item" && !gameState.battle.pendingCommand.actDetail) {
             // アイテム一覧を生成
             renderItemPanel();
@@ -495,10 +491,10 @@ function renderBattle() {
                 renderTargetPanel(candidates);
                 targetPanel.classList.remove("hidden");
             } else if (gameState.battle.pendingCommand.act === "skill" && gameState.battle.pendingCommand.actDetail) {
-                // スキル一覧からスキル取得
-                // スキルの対象抽出タイプからメソッドを呼び出して対象を抽出
-                // イベントデリゲーションなのでハンドラ不要 ⇒ targetブロックに付与
-                // 対象を表示
+                const skill = gameState.battle.actor.skill_list.find(skill => skill.id === gameState.battle.pendingCommand.actDetail);
+                const candidates = TARGET_TYPE_EXTRACTOR[skill.target_type](gameState.battle.party, gameState.battle.enemies);
+                renderTargetPanel(candidates);
+                targetPanel.classList.remove("hidden");
             } else if (gameState.battle.pendingCommand.act === "item" && gameState.battle.pendingCommand.actDetail) {
                 const item = player.item_slot[gameState.battle.pendingCommand.actDetail];
                 const candidates = TARGET_TYPE_EXTRACTOR[item.use_target_type](gameState.battle.party, gameState.battle.enemies);
@@ -730,8 +726,32 @@ function renderItemPanel() {
         const button = document.createElement('button');
         button.classList.add('cmd', item.use_type);
         button.dataset.actDetail = index; // item_slot のインデックス
-        button.textContent = item.name;
+        button.textContent = item.name + "|" + item.uses + "回";
         itemPanel.appendChild(button);
+    });
+}
+
+/**
+ * スキルボタン生成
+ */
+function renderSkillPanel() {
+    skillPanel.innerHTML = '';
+    const backButton = document.createElement('button');
+    backButton.classList.add('cmd', 'back');
+    backButton.dataset.actDetail = "back";
+    backButton.textContent = "戻る";
+    skillPanel.appendChild(backButton);
+
+    getUsableList(gameState.battle.actor.skill_list, "battle").forEach((skill, index) => {
+        const button = document.createElement('button');
+        button.classList.add('cmd', skill.type);
+        button.dataset.actDetail = skill.id;
+        const cost_text = `(${Object.entries(skill.cost)
+            .map(([key, value]) => `${key}:${value}`)
+            .join(", ")})`;
+
+        button.textContent = skill.name + "|" + cost_text;
+        skillPanel.appendChild(button);
     });
 }
 

@@ -8,6 +8,24 @@ export const BATTLE_STATUSES = [
         sub_timing: "act_before",
         sub_finish_text: "",
         exec_timing: "always",
+        addMessageGen: (name) => {return `${name} は身を守っている。`},
+        subMessageGen: (name) => {return null},
+        applyEffect: (gameState, target) => {return null},
+    },
+    {
+        id: "paralyze",
+        sub_timing: "act_after",
+        sub_finish_text: "",
+        exec_timing: "act_before",
+        addMessageGen: (name) => {return `${name} の体は痺れた。`},
+        subMessageGen: (name) => {return `${name} の麻痺は治った。`},
+        applyEffect: (gameState, target) => {
+            // 50%の確率でスタン
+            if (Math.random() < 0.5) {
+                return gameState.battle.actor_stan = "paralyze"
+            }
+        },
+        stanMessageGen: (name) => {return `${name} は痺れている。`},
     },
 ]
 
@@ -24,7 +42,11 @@ export const DEBUFF_STATUS_MODIFIERS = {
 // 選択が必要な対象種別
 export const SELECT_TARGET_TYPE = [
     "alive_enemy_one",
+    "dead_enemy_one",
     "alive_ally_one",
+    "dead_ally_one",
+    "alive_one",
+    "dead_one",
 ];
 
 /**

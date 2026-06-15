@@ -235,4 +235,21 @@ export const SKILLS = [
             }
         ]
     },
+
+    // 敵専用
+    {
+        id: "wait-and-see",
+        name: "様子を見る",
+        customMessage: "${actor-name} は様子を見ている",
+        cost: {},
+        target_type: "own",
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: true,
+        },
+        category: "special",
+        type: "support",
+        effects: []
+    },
 ];

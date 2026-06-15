@@ -358,66 +358,71 @@
         <h1>暁の探訪者</h1>
         <button id="new-game-button" class="button">新しく始める</button>
         <button id="load-game-button" class="button hidden">続きから</button>
-        <button id="strong-new-game-button" class="button hidden">引き継いで始める</button>
     </div>
 
-    <!-- Character Creation Screen -->
     <div id="character-creation-screen" class="game-screen hidden">
         <h2>キャラクター作成</h2>
         <div class="input-group">
             <label for="player-name">キャラクター名:</label>
             <input type="text" id="player-name" value="名もなき探訪者">
         </div>
-        <div class="input-group">
-            <label>能力値配分 (残りポイント: <span id="remaining-points">39</span>)</label>
-            <div class="stat-allocation">
-                <label>HP (1pt = +2HP):</label>
-                <input type="number" id="hp-allocation" min="5" value="10">
-                <span id="display-hp">HP: 20</span>
-            </div>
-            <div class="stat-allocation">
-                <label>MP (1pt = +2MP):</label>
-                <input type="number" id="mp-allocation" min="0" value="5">
-                <span id="display-mp">MP: 10</span>
-            </div>
-            <div class="stat-allocation">
-                <label>攻撃力 (1pt = +1ATK):</label>
-                <input type="number" id="attack-allocation" min="3" value="10">
-                <span id="display-attack">攻撃力: 10</span>
-            </div>
-            <div class="stat-allocation">
-                <label>速度 (1pt = +1SPD):</label>
-                <input type="number" id="speed-allocation" min="3" value="5">
-                <span id="display-speed">速度: 5</span>
-            </div>
-            <div class="stat-allocation">
-                <label>知能 (1pt = +1INT):</label>
-                <input type="number" id="intel-allocation" min="3" value="3">
-                <span id="display-intel">知能: 3</span>
-            </div>
-            <div class="stat-allocation">
-                <label>器用 (1pt = +1DEX):</label>
-                <input type="number" id="dex-allocation" min="3" value="3">
-                <span id="display-dex">器用: 3</span>
-            </div>
-            <div class="stat-allocation">
-                <label>体格 (1pt = +1SIZ):</label>
-                <input type="number" id="size-allocation" min="3" value="3">
-                <span id="display-size">体格: 3</span>
-            </div>
+        <div>
+            <label>能力値配分 (残りポイント: <span id="remaining-points"></span>)</label>
+        </div>
+        <div class="stat-row">
+            <label>HP</label>
+            <button class="character-creation-stat-minus">－</button>
+            <input type="number" id="hp-allocation" min="1" readonly>
+            <button class="character-creation-stat-plus">＋</button>
+            <span id="display-hp"></span>
         </div>
 
-        <!-- 強くてニューゲーム時の表示 (追加) -->
-        <div id="strong-new-game-stats-display" class="input-group hidden">
-            <h3>引き継ぎ能力値</h3>
-            <p>HP: <span id="strong-new-game-hp">0</span></p>
-            <p>MP: <span id="strong-new-game-mp">0</span></p>
-            <p>攻撃力: <span id="strong-new-game-attack">0</span></p>
-            <p>アーマー: <span id="strong-new-game-armor">0</span></p>
-            <p>速度: <span id="strong-new-game-speed">0</span></p>
-            <p>知能: <span id="strong-new-game-intel">0</span></p>
-            <p>器用: <span id="strong-new-game-dex">0</span></p>
-            <p>体格: <span id="strong-new-game-size">0</span></p>
+        <div class="stat-row">
+            <label>MP</label>
+            <button class="character-creation-stat-minus">－</button>
+            <input type="number" id="mp-allocation" min="0" readonly>
+            <button class="character-creation-stat-plus">＋</button>
+            <span id="display-mp"></span>
+        </div>
+
+        <div class="stat-row">
+            <label>攻撃</label>
+            <button class="character-creation-stat-minus">－</button>
+            <input type="number" id="attack-allocation" min="1" readonly>
+            <button class="character-creation-stat-plus">＋</button>
+            <span id="display-attack"></span>
+        </div>
+
+        <div class="stat-row">
+            <label>速度</label>
+            <button class="character-creation-stat-minus">－</button>
+            <input type="number" id="speed-allocation" min="1" readonly>
+            <button class="character-creation-stat-plus">＋</button>
+            <span id="display-speed"></span>
+        </div>
+
+        <div class="stat-row">
+            <label>知能</label>
+            <button class="character-creation-stat-minus">－</button>
+            <input type="number" id="intel-allocation" min="1" readonly>
+            <button class="character-creation-stat-plus">＋</button>
+            <span id="display-intel"></span>
+        </div>
+
+        <div class="stat-row">
+            <label>器用</label>
+            <button class="character-creation-stat-minus">－</button>
+            <input type="number" id="dex-allocation" min="1" readonly>
+            <button class="character-creation-stat-plus">＋</button>
+            <span id="display-dex"></span>
+        </div>
+
+        <div class="stat-row">
+            <label>体格</label>
+            <button class="character-creation-stat-minus">－</button>
+            <input type="number" id="size-allocation" min="1" readonly>
+            <button class="character-creation-stat-plus">＋</button>
+            <span id="display-size"></span>
         </div>
         <button id="start-adventure-button" class="button">冒険を始める</button>
     </div>

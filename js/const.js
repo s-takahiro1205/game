@@ -110,65 +110,68 @@ export const SELECT_TARGET_TYPE = [
  * one系のみ選択候補、それ以外は対象
  */
 export const TARGET_TYPE_EXTRACTOR = {
-    alive_enemy_all: (allies = [], enemies) => {
+    alive_enemy_all: (allies = [], enemies, actor = null) => {
         return enemies.filter(unit => !isDead(unit));
     },
-    alive_enemy_random: (allies = [], enemies) => {
+    alive_enemy_random: (allies = [], enemies, actor = null) => {
         const aliveUnits = enemies.filter(unit => !isDead(unit));
-        return aliveUnits[Math.floor(Math.random() * aliveUnits.length)];
+        return [aliveUnits[Math.floor(Math.random() * aliveUnits.length)]];
     },
-    alive_enemy_one: (allies = [], enemies) => {
+    alive_enemy_one: (allies = [], enemies, actor = null) => {
         return enemies.filter(unit => !isDead(unit));
     },
-    dead_enemy_all: (allies = [], enemies) => {
+    dead_enemy_all: (allies = [], enemies, actor = null) => {
         return enemies.filter(unit => isDead(unit));
     },
-    dead_enemy_random: (allies = [], enemies) => {
+    dead_enemy_random: (allies = [], enemies, actor = null) => {
         const aliveUnits = enemies.filter(unit => isDead(unit));
-        return aliveUnits[Math.floor(Math.random() * aliveUnits.length)];
+        return [aliveUnits[Math.floor(Math.random() * aliveUnits.length)]];
     },
-    dead_enemy_one: (allies = [], enemies) => {
+    dead_enemy_one: (allies = [], enemies, actor = null) => {
         return enemies.filter(unit => isDead(unit));
     },
-    alive_ally_all: (allies, enemies = []) => {
+    alive_ally_all: (allies, enemies = [], actor = null) => {
         return allies.filter(unit => !isDead(unit));
     },
-    alive_ally_random: (allies, enemies = []) => {
+    alive_ally_random: (allies, enemies = [], actor = null) => {
         const aliveUnits = allies.filter(unit => !isDead(unit));
-        return aliveUnits[Math.floor(Math.random() * aliveUnits.length)];
+        return [aliveUnits[Math.floor(Math.random() * aliveUnits.length)]];
     },
-    alive_ally_one: (allies, enemies = []) => {
+    alive_ally_one: (allies, enemies = [], actor = null) => {
         return allies.filter(unit => !isDead(unit));
     },
-    dead_ally_all: (allies, enemies = []) => {
+    dead_ally_all: (allies, enemies = [], actor = null) => {
         return allies.filter(unit => isDead(unit));
     },
-    dead_ally_random: (allies, enemies = []) => {
+    dead_ally_random: (allies, enemies = [], actor = null) => {
         const aliveUnits = allies.filter(unit => isDead(unit));
-        return aliveUnits[Math.floor(Math.random() * aliveUnits.length)];
+        return [aliveUnits[Math.floor(Math.random() * aliveUnits.length)]];
     },
-    dead_ally_one: (allies, enemies = []) => {
+    dead_ally_one: (allies, enemies = [], actor = null) => {
         return allies.filter(unit => isDead(unit));
     },
-    alive_all: (allies, enemies = []) => {
+    alive_all: (allies, enemies = [], actor = null) => {
         return [...allies, ...enemies].filter(unit => !isDead(unit));
     },
-    alive_random: (allies, enemies = []) => {
+    alive_random: (allies, enemies = [], actor = null) => {
         const aliveUnits = [...allies, ...enemies].filter(unit => !isDead(unit));
-        return aliveUnits[Math.floor(Math.random() * aliveUnits.length)];
+        return [aliveUnits[Math.floor(Math.random() * aliveUnits.length)]];
     },
-    alive_one: (allies, enemies = []) => {
+    alive_one: (allies, enemies = [], actor = null) => {
         return [...allies, ...enemies].filter(unit => !isDead(unit));
     },
-    dead_all: (allies, enemies = []) => {
+    dead_all: (allies, enemies = [], actor = null) => {
         return [...allies, ...enemies].filter(unit => isDead(unit));
     },
-    dead_random: (allies, enemies = []) => {
+    dead_random: (allies, enemies = [], actor = null) => {
         const aliveUnits = [...allies, ...enemies].filter(unit => isDead(unit));
-        return aliveUnits[Math.floor(Math.random() * aliveUnits.length)];
+        return [aliveUnits[Math.floor(Math.random() * aliveUnits.length)]];
     },
-    dead_one: (allies, enemies = []) => {
+    dead_one: (allies, enemies = [], actor = null) => {
         return [...allies, ...enemies].filter(unit => isDead(unit));
+    },
+    own: (allies, enemies = [], actor) => {
+        return [actor];
     },
 };
 

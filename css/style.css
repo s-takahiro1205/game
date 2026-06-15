@@ -24,6 +24,8 @@ body {
     padding: 20px;
     width: 90%;
     max-width: 800px;
+    max-width: 90%;
+    margin: 0 5%;
     text-align: center;
     position: relative;
     z-index: 1;
@@ -110,58 +112,45 @@ input[type="number"] {
 }
 
 /* Character Creation Screen */
-.allocation-controls {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 20px;
-}
-
-.allocation-item {
-    background-color: #2a2a4a;
-    border: 1px solid #ffcc00;
-    border-radius: 8px;
-    padding: 10px;
-    width: calc(50% - 20px); /* 2列表示 */
-    box-sizing: border-box;
-    text-align: left;
-}
-
-.allocation-item label {
-    display: block;
-    margin-bottom: 5px;
+#remaining-points {
     color: #ffcc00;
+    font-weight: bold;
 }
 
-.allocation-item input[type="number"] {
-    width: 100%;
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
 }
 
-#remaining-points-container {
-    background-color: #2a2a4a;
-    border: 1px solid #ffcc00;
-    border-radius: 8px;
-    padding: 10px;
-    margin-top: 15px;
-    display: inline-block;
+.stat-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 6px;
 }
 
-#strong-new-game-stats-display {
-    background-color: #2a2a4a;
-    border: 1px solid #ffcc00;
-    border-radius: 8px;
-    padding: 15px;
-    margin-top: 20px;
-    text-align: left;
+.stat-row label {
+    width: 60px;
+    font-weight: bold;
 }
 
-#strong-new-game-stats-display p {
-    margin: 5px 0;
+.stat-row input {
+    width: 50px;
+    text-align: center;
 }
 
-#strong-new-game-stats-display>h3 {
-    margin-top: 0;
+.stat-row button {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
 }
 
 /* Main Game Screen */

@@ -521,6 +521,12 @@ OK・敵の分離
 - [x] 画面拡大無効化を追加。試す <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
 - [x] 上記3点を戦闘・スキル使用・ランクアップそれぞれで動作確認
 
+!!Extned!!
+- [ ] 強くてニューゲームの導線を削除 strong-new-game-button
+- [ ] 
+- [ ] 
+- [ ] 
+- [ ] 
 
 ---
 

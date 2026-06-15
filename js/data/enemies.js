@@ -116,7 +116,7 @@ export const ENEMIES = [
         currentJob: null,
         jobs: {},
         equipment_slot: [],
-        skill_list: [],
+        skill_list: ["fire"],
         battle_status: [],
         drop_items: [
             {
@@ -149,7 +149,7 @@ export const ENEMIES = [
         currentJob: null,
         jobs: {},
         equipment_slot: [],
-        skill_list: [],
+        skill_list: ["power-slash"],
         battle_status: [],
         drop_items: [
             {
@@ -180,7 +180,7 @@ export const ENEMIES = [
         currentJob: null,
         jobs: {},
         equipment_slot: [],
-        skill_list: [],
+        skill_list: ["heal"],
         battle_status: [],
         drop_items: [
             {
@@ -211,7 +211,7 @@ export const ENEMIES = [
         currentJob: null,
         jobs: {},
         equipment_slot: [],
-        skill_list: [],
+        skill_list: ["full-thunder"],
         battle_status: [],
         drop_items: [
             {
@@ -243,7 +243,7 @@ export const ENEMIES = [
         currentJob: null,
         jobs: {},
         equipment_slot: [],
-        skill_list: [],
+        skill_list: ["power-slash", "full-slash"],
         battle_status: [],
         drop_items: [
             {

@@ -10,7 +10,6 @@ import { BATTLE_STATUSES, TARGET_TYPE_EXTRACTOR } from './const.js';
 const titleScreen = document.getElementById("title-screen");
 const newGameButton = document.getElementById("new-game-button");
 const loadGameButton = document.getElementById("load-game-button");
-const strongNewGameButton = document.getElementById("strong-new-game-button");
 
 const characterCreationScreen = document.getElementById("character-creation-screen");
 const playerNameInput = document.getElementById("player-name");
@@ -28,16 +27,6 @@ const displayIntelSpan = document.getElementById("display-intel");
 const displayDexSpan = document.getElementById("display-dex");
 const displaySizeSpan = document.getElementById("display-size");
 const startAdventureButton = document.getElementById("start-adventure-button");
-
-// 強くてニューゲーム用の表示要素
-const strongNewGameStatsDisplay = document.getElementById("strong-new-game-stats-display");
-const strongNewGameHpDisplay = document.getElementById("strong-new-game-hp");
-const strongNewGameAttackDisplay = document.getElementById("strong-new-game-attack");
-const strongNewGameArmorDisplay = document.getElementById("strong-new-game-armor");
-const strongNewGameSpeedDisplay = document.getElementById("strong-new-game-speed");
-const strongNewGameIntelDisplay = document.getElementById("strong-new-game-intel");
-const strongNewGameDexDisplay = document.getElementById("strong-new-game-dex");
-const strongNewGameSizeDisplay = document.getElementById("strong-new-game-size");
 
 const mainGameScreen = document.getElementById("main-game-screen");
 const currentPositionSpan = document.getElementById("current-position");
@@ -908,7 +897,7 @@ function renderSkillPanel() {
             .map(([key, value]) => `${key}:${value}`)
             .join(", ")})`;
 
-        button.innerHTML = skill.name + "<br>" + cost_text;
+        button.innerHTML = skill.name + (cost_text !== "()" ? "<br>" + cost_text : "");
         skillPanel.appendChild(button);
     });
 }

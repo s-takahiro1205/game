@@ -4,19 +4,19 @@ export const JOBS = {
     warrior: {
         id: "warrior",
         name: "戦士",
+        grade: 1,// 職業の階位
         maxRank: 10,// 最大ランク
-        baseExp: 10,// 基礎必要経験値
-        rateExp: 1.1,// 必要経験値倍率 10 * (1.1 ^ ランク) + 5 * ランク
+        rateExp: 1.0,// 必要経験値倍率
         unlockConditions: [// 転職条件
             {
                 type: "level",
                 value: 1
             }
         ],
-        growthRates: {// 成長率補正 200
-            maxHp: 100,
+        growthRates: {// 成長率補正 150
+            maxHp: 60,
             maxMp: 0,
-            attack: 50,
+            attack: 40,
             armor: 20,
             speed: 10,
             intel: 0,
@@ -62,16 +62,16 @@ export const JOBS = {
     mage: {
         id: "mage",
         name: "魔法使い",
+        grade: 1,
         maxRank: 10,
-        baseExp: 10,
-        rateExp: 1.1,
+        rateExp: 1.0,
         unlockConditions: [
             {
                 type: "level",
                 value: 1
             }
         ],
-        growthRates: {// 成長率補正 200
+        growthRates: {// 成長率補正 165 魔法職は1割増し
             maxHp: 40,
             maxMp: 90,
             attack: 0,

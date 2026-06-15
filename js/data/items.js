@@ -56,7 +56,8 @@ export const ITEMS = [
         use_type: "heal",
         use_target_type: "alive_ally_one",
         stat_modifier: null,
-        equip_type: null
+        equip_type: null,
+        uuid: "",
     },
     {
         id: "elixir_of_shadow",
@@ -109,7 +110,8 @@ export const ITEMS = [
         use_type: "mod_status",
         use_target_type: "alive_ally_one",
         stat_modifier: null,
-        equip_type: null
+        equip_type: null,
+        uuid: "",
     },
     {
         id: "scroll_of_oblivion",
@@ -137,7 +139,8 @@ export const ITEMS = [
         use_type: "mod_status",
         use_target_type: "alive_ally_one",
         stat_modifier: null,
-        equip_type: null
+        equip_type: null,
+        uuid: "",
     },
     {
         id: "scroll_of_sand_storm",
@@ -163,7 +166,8 @@ export const ITEMS = [
         use_type: "attack",
         use_target_type: "alive_enemy_all",
         stat_modifier: null,
-        equip_type: null
+        equip_type: null,
+        uuid: "",
     },
     {
         id: "scroll_of_fire_bullet",
@@ -189,7 +193,8 @@ export const ITEMS = [
         use_type: "attack",
         use_target_type: "alive_enemy_one",
         stat_modifier: null,
-        equip_type: null
+        equip_type: null,
+        uuid: "",
     },
     {
         id: "potion_of_poizon",
@@ -217,7 +222,8 @@ export const ITEMS = [
         use_type: "attack",
         use_target_type: "alive_enemy_one",
         stat_modifier: null,
-        equip_type: null
+        equip_type: null,
+        uuid: "",
     },
     {
         id: "powder_of_sleep",
@@ -245,7 +251,8 @@ export const ITEMS = [
         use_type: "attack",
         use_target_type: "alive_enemy_one",
         stat_modifier: null,
-        equip_type: null
+        equip_type: null,
+        uuid: "",
     },
     {
         id: "congas_stomach",
@@ -273,7 +280,8 @@ export const ITEMS = [
         use_type: "attack",
         use_target_type: "alive_enemy_one",
         stat_modifier: null,
-        equip_type: null
+        equip_type: null,
+        uuid: "",
     },
     {
         id: "ketsukuru_fruit",
@@ -324,7 +332,8 @@ export const ITEMS = [
         use_type: "heal",
         use_target_type: "alive_ally_one",
         stat_modifier: null,
-        equip_type: null
+        equip_type: null,
+        uuid: "",
     },
     {
         id: "root_of_ambrosius",
@@ -351,7 +360,8 @@ export const ITEMS = [
         use_type: "heal",
         use_target_type: "dead_ally_one",
         stat_modifier: null,
-        equip_type: null
+        equip_type: null,
+        uuid: "",
     },
     // 装備アイテム
     {
@@ -374,11 +384,12 @@ export const ITEMS = [
             dex: -1
         },
         dice_modifier: {
-            dice: 10,
-            sides: 10,
-            flat: 10
+            dice: 0,
+            sides: 3,
+            flat: 2
         },
-        equip_type: "weapon"
+        equip_type: "weapon",
+        uuid: "",
     },
     {
         id: "chainmail_of_the_undead",
@@ -396,7 +407,8 @@ export const ITEMS = [
         use_type: null,
         use_target_type: null,
         stat_modifier: { maxHp: 15, armor: 3, speed: -1 }, // 防御力+3、速度-1
-        equip_type: "armor"
+        equip_type: "armor",
+        uuid: "",
     },
     {
         id: "ring_of_the_ancients",
@@ -419,7 +431,8 @@ export const ITEMS = [
             sides: 0,
             flat: 3
         },
-        equip_type: "accessory"
+        equip_type: "accessory",
+        uuid: "",
     },
     {
         id: "weary_brand_of_Shadow",
@@ -442,7 +455,8 @@ export const ITEMS = [
             sides: 0,
             flat: 0
         },
-        equip_type: "accessory"
+        equip_type: "accessory",
+        uuid: "",
     },
     {
         id: "emblem_of_windia",
@@ -465,6 +479,7 @@ export const ITEMS = [
             sides: 5,
             flat: 5
         },
-        equip_type: "accessory"
+        equip_type: "accessory",
+        uuid: "",
     },
 ];

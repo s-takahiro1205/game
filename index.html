@@ -2,19 +2,11 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
     <title>暁の探訪者</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     <style>
-
-/* 
-body{
-    background:#111;
-    color:#fff;
-    font-family:sans-serif;
-} */
-
 
 /* ======================
    パーティ
@@ -254,7 +246,7 @@ body{
     border-radius:12px;
 
     color:white;
-    font-size:16px;
+    font-size:14px;
     font-weight:bold;
 
     cursor:pointer;
@@ -679,6 +671,16 @@ body{
                 <select id="debug-job-select"></select>
                 <button id="debug-change-job-button" class="button">転職</button>
             </div>
+            <h3>経験値</h3>
+            <div class="debug-controls">
+                <input type="number" value="100" id="debug-add-exp-input"></input>
+                <button id="debug-add-exp-button" class="button">Exp加算</button>
+            </div>
+            <div class="debug-controls">
+                <input type="number" value="10" id="debug-add-rank-exp-input"></input>
+                <button id="debug-add-rank-exp-button" class="button">Exp加算</button>
+            </div>
+            <h3>ログ</h3>
             <div class="debug-controls">
                 <button id="debug-game-state-button" class="button">ステータス出力</button>
             </div>

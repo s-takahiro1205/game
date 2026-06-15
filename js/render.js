@@ -2,6 +2,7 @@
 
 import { player, gameState, useItem, equip, unequip, getUsableList, getRequiredExp, getRequiredRankExp } from './game.js';
 import { loadGame } from './save.js';
+import { JOBS } from './data/jobs.js';
 import { BATTLE_STATUSES, TARGET_TYPE_EXTRACTOR } from './const.js';
 
 // DOM Elements
@@ -284,8 +285,13 @@ function renderMenuStats() {
     // TODO: 仮作成
     let skill_names = "";
     player.party[0].skill_list.forEach(skill => {
-        skill_names += skill.name + " ";
+        skill_names += "<p>・" + skill.name + "</p>";
     });
+    const job = JOBS[player.party[0].currentJob];
+    const job_history = player.party[0].jobs[player.party[0].currentJob];
+    const rank_exp = job.maxRank === job_history.rank
+                    ? "★"
+                    : job_history.exp + "/" + getRequiredRankExp(job.id, job_history.rank);
     statusTab.innerHTML = `
         <div class="player-stats-display">
             <p>現在地: <span>${player.position}</span></p>
@@ -294,8 +300,8 @@ function renderMenuStats() {
             <p></p>
             <p>レベル: <span>${player.party[0].level}</span></p>
             <p>経験値: <span>${player.party[0].exp} / ${getRequiredExp(player.party[0].level)}</span></p>
-            <p>職業: <span>${player.party[0].currentJob} - ランク${player.party[0].jobs[player.party[0].currentJob].rank}</span></p>
-            <p>職業経験値: <span>${player.party[0].jobs[player.party[0].currentJob].exp} / ${getRequiredRankExp(player.party[0].currentJob, player.party[0].jobs[player.party[0].currentJob].rank)}</span></p>
+            <p>職業: <span>${job.name} - ランク${job_history.rank}</span></p>
+            <p>職業経験値: <span>${rank_exp}</span></p>
             <p>HP: <span>${player.party[0].hp}</span>/<span>${player.party[0].maxHp}</span></p>
             <p>MP: <span>${player.party[0].mp}</span>/<span>${player.party[0].maxMp}</span></p>
             <p>攻撃力: <span>${player.party[0].attack}</span></p>
@@ -305,8 +311,12 @@ function renderMenuStats() {
             <p>器用: <span>${player.party[0].dex}</span></p>
             <p>体格: <span>${player.party[0].size}</span></p>
             <p>行動回数: <span>${player.party[0].multi_action}</span></p>
-            <p>習得スキル: <span>${skill_names}</span></p>
+            <p></p>
         </div>
+        <div class="player-stats-display" style="grid-template-columns: 1fr; gap:0;">
+            <p>習得スキル</p>
+            ${skill_names}
+        <div>
     `;
 }
 
@@ -455,9 +465,9 @@ function formatItemEffect(item) {
     }
 
     if (item.dice_modifier) {
-            const dice = (item.dice_modifier.dice > 0 ? "" : "-") + item.dice_modifier.dice;
-            const sides = (item.dice_modifier.sides > 0 ? "" : "-") + item.dice_modifier.sides;
-            const flat = (item.dice_modifier.flat > 0 ? "+" : "-") + item.dice_modifier.flat;
+            const dice = (item.dice_modifier.dice >= 0 ? "" : "-") + item.dice_modifier.dice;
+            const sides = (item.dice_modifier.sides >= 0 ? "" : "-") + item.dice_modifier.sides;
+            const flat = (item.dice_modifier.flat >= 0 ? "+" : "-") + item.dice_modifier.flat;
             parts.push(`${dice}D${sides}${flat}`);
     }
 
@@ -620,7 +630,7 @@ function renderResultPanel() {
             const skillLines = (ru.learnSkills ?? [])
                 .join(' | ');
             card.innerHTML = `
-                <strong>${ru.name}</strong>
+                <strong>${ru.name}-${JOBS[ru.jobId].name}</strong>
                 <span class="result-rankup-card">${ru.before}</span>
                 → 
                 <span class="result-rankup-card" style="color:#ffd700">${ru.after}</span>
@@ -873,8 +883,8 @@ function renderItemPanel() {
 
         const button = document.createElement('button');
         button.classList.add('cmd', item.use_type);
-        button.dataset.actDetail = index; // item_slot のインデックス
-        button.textContent = item.name + "|" + (item.uses ? item.uses + "回" : "無制限");
+        button.dataset.actDetail = item.uuid;
+        button.innerHTML = item.name + "<br>" + (item.uses ? item.uses + "回" : "無制限");
         itemPanel.appendChild(button);
     });
 }
@@ -898,7 +908,7 @@ function renderSkillPanel() {
             .map(([key, value]) => `${key}:${value}`)
             .join(", ")})`;
 
-        button.textContent = skill.name + "|" + cost_text;
+        button.innerHTML = skill.name + "<br>" + cost_text;
         skillPanel.appendChild(button);
     });
 }

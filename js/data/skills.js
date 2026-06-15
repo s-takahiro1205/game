@@ -100,7 +100,7 @@ export const SKILLS = [
         id: "full-thunder",
         name: "フルサンダー",
         cost: {
-            mp: 105
+            mp: 15
         },
         target_type: "alive_enemy_all",
         usableIn: {

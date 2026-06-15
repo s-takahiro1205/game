@@ -232,6 +232,10 @@ const debugAcquireItemButton = document.getElementById("debug-acquire-item-butto
 const debugJobUnitSelect = document.getElementById("debug-job-unit-select");
 const debugJobSelect = document.getElementById("debug-job-select");
 const debugChangeJobButton = document.getElementById("debug-change-job-button");
+const debugAddExpInput = document.getElementById("debug-add-exp-input");
+const debugAddExpButton = document.getElementById("debug-add-exp-button");
+const debugAddRankExpInput = document.getElementById("debug-add-rank-exp-input");
+const debugAddRankExpButton = document.getElementById("debug-add-rank-exp-button");
 const debugBackLogButton = document.getElementById("debug-back-log-button");
 const debugGameStateButton = document.getElementById("debug-game-state-button");
 
@@ -365,6 +369,44 @@ async function debugChangeJob() {
     await changeJob(unit, job_id);
     addMessage(`デバッグ: ${unit.name} は ${job.name} に転職した！`, false);
     saveGame(player);
+}
+
+/**
+ * デバッグ: パーティー全員に経験値を加算
+ */
+function debugAddExp() {
+    const exp = debugAddExpInput.value;
+
+    const result = []
+    for (const unit of player.party) {
+        const ret = addExp(unit, parseInt(exp));
+        if (ret) {
+            result.push(ret);
+        }
+    }
+
+    saveGame(player);
+    console.log(result);
+    showToast(JSON.stringify(result), 10000);
+}
+
+/**
+ * デバッグ: パーティー全員にランク経験値を加算
+ */
+function debugAddRankExp() {
+    const exp = debugAddRankExpInput.value;
+
+    const result = []
+    for (const unit of player.party) {
+        const ret = addRankExp(unit, parseInt(exp));
+        if (ret) {
+            result.push(ret);
+        }
+    }
+
+    saveGame(player);
+    console.log(result);
+    showToast(JSON.stringify(result), 10000);
 }
 
 const debugStartCombatButton = document.getElementById("debug-start-combat");
@@ -700,6 +742,7 @@ function getStatus(chara, property) {
  */
 async function acquireItem(item) {
     if (player.item_slot.length < 20) {
+        item.uuid = self.crypto.randomUUID();
         player.item_slot.push(item);
         addMessage(`${item.name} を手に入れた！`);
         return true;
@@ -1569,7 +1612,7 @@ function applyDamage(target, damage, is_phisycal = false) {
     takeDead(target);
     // 眠りの解除判定 50%で眠り削除
     if (is_phisycal && target.battle_status.some(s => s.type === "sleep") && Math.random() < 0.5) {
-        recoverBattleStatus("sleep");
+        recoverBattleStatus("sleep", target);
     }
 }
 
@@ -1900,7 +1943,8 @@ function battleExecCommand() {
         console.log("スキルコマンドが実行されました")
         const skill = gameState.battle.actor.skill_list.find(skill => skill.id === gameState.battle.pendingCommand.actDetail);
         addMessage(`${actor.name} は ${skill.name} を放った！`);
-        // TOOD: コスト支払いメソッド化 別にいいかも
+
+        // コスト支払い
         for (const type in skill.cost) {
             actor[type] = Math.max(0, actor[type] - skill.cost[type]);
         }
@@ -1908,7 +1952,7 @@ function battleExecCommand() {
         // TODO: これ以外の処理
         for (const effect of skill.effects) {
             if (effect.type === "damage") {
-                const is_combat = effect.category === "combat";
+                const is_combat = skill.category === "combat";
                 const unit_dice = unitDiceCreate(actor);
                 for (const target of targets) {
                     // 戦技なら通常ダイスに加算
@@ -1992,7 +2036,7 @@ function battleExecCommand() {
         }
     } else if (cmd.act === "item") {
         console.log("アイテムコマンドが実行されました");
-        const item = player.item_slot[cmd.actDetail];
+        const item = player.item_slot.find(item => item.uuid === cmd.actDetail);
         addMessage(`${actor.name} は ${item.name} を使用した！`);
 
         // TODO: healとdamage以外の処理
@@ -2207,7 +2251,7 @@ function onActDetailItemSelect(e) {
         return;
     }
 
-    const item =  player.item_slot[actDetail];
+    const item =  player.item_slot.find(item => item.uuid === actDetail);
     const units = TARGET_TYPE_EXTRACTOR[item.use_target_type](gameState.battle.party, gameState.battle.enemies);
     if (units.length === 0) {
         gameState.battle.alert = "対象が存在しないため使用できません";
@@ -2302,7 +2346,7 @@ async function battleEnd() {
         player.money += result.gold;
         player.currentEventCompleted = true; // 戦闘イベント完了
 
-        for (const item in result.items) {
+        for (const item of result.items) {
             await acquireItem(item);
         }
 
@@ -2317,14 +2361,13 @@ async function battleEnd() {
 
 /**
  * 必要経験値の算出
- * Math.floor(10 * (1.07 ** unit.level)の累積
  * @param {number} level 
  * @returns 
  */
 export function getRequiredExp(level) {
-    const r = 1.07;
+    const n = level - 1; 
     return Math.floor(
-        10 * (r * (r ** (level - 1) - 1)) / (r - 1)
+        (2.5 * n * (n + 1) * (2 * n + 1) / 6) + (10 * level)
     );
 }
 
@@ -2340,14 +2383,14 @@ function levelUp(unit) {
     // TODO: 装備や職業加算
     const job = JOBS[unit.currentJob];
     const growthRates = {
-        maxHp: 100 + (job.growthRates.maxHp ?? 0),
-        maxMp: 100 + (job.growthRates.maxMp ?? 0),
-        attack: 50 + (job.growthRates.attack ?? 0),
-        armor: 50 + (job.growthRates.armor ?? 0),
-        speed: 50 + (job.growthRates.speed ?? 0),
-        intel: 50 + (job.growthRates.intel ?? 0),
-        dex: 50 + (job.growthRates.dex ?? 0),
-        size: 50 + (job.growthRates.size ?? 0),
+        maxHp: 75 + (job.growthRates.maxHp ?? 0),
+        maxMp: 50 + (job.growthRates.maxMp ?? 0),
+        attack: 35 + (job.growthRates.attack ?? 0),
+        armor: 35 + (job.growthRates.armor ?? 0),
+        speed: 35 + (job.growthRates.speed ?? 0),
+        intel: 35 + (job.growthRates.intel ?? 0),
+        dex: 35 + (job.growthRates.dex ?? 0),
+        size: 35 + (job.growthRates.size ?? 0),
     };
 
 
@@ -2427,9 +2470,7 @@ function addExp(unit, exp) {
  */
 export function getRequiredRankExp(job_id, rank) {
     const job = JOBS[job_id];
-    return Math.floor(
-        job.baseExp * (job.rateExp ** rank) + 5 * rank
-    );
+    return Math.floor(rank * rank * 1.5 + rank * 10 * job.rateExp);
 }
 
 /**
@@ -2457,6 +2498,7 @@ function addRankExp(unit, exp) {
         }
         total_skills.push(...skills);
     }
+    gameState.dirty = true;
     if (before_rank === job_history.rank) {
         return;
     }
@@ -2467,6 +2509,7 @@ function addRankExp(unit, exp) {
         after: job_history.rank,
         statChanges: total_status_up,
         learnSkills: total_skills,
+        jobId: unit.currentJob,
     };
 }
 
@@ -2820,6 +2863,8 @@ debugStartCombatButton.addEventListener("click", () => {
 
 debugAcquireItemButton.addEventListener("click", debugAcquireItem);
 debugChangeJobButton.addEventListener("click", debugChangeJob);
+debugAddExpButton.addEventListener("click", debugAddExp);
+debugAddRankExpButton.addEventListener("click", debugAddRankExp);
 
 debugBackLogButton.addEventListener("click", () => {console.log(gameState.backLog)});
 debugBackLogButton.addEventListener("click", () => {console.log(gameState)});

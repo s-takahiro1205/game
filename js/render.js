@@ -3,15 +3,15 @@
 import { player, gameState, useItem, equip, unequip, getUsableList, getRequiredExp, getRequiredRankExp } from './game.js';
 import { loadGame } from './save.js';
 import { JOBS } from './data/jobs.js';
-import { BATTLE_STATUSES, TARGET_TYPE_EXTRACTOR } from './const.js';
+import { SCREENS, BATTLE_STATUSES, TARGET_TYPE_EXTRACTOR } from './const.js';
 
 // DOM Elements
 // TODO:精査してね
-const titleScreen = document.getElementById("title-screen");
+const titleScreen = document.getElementById(SCREENS.titleScreen);
 const newGameButton = document.getElementById("new-game-button");
 const loadGameButton = document.getElementById("load-game-button");
 
-const characterCreationScreen = document.getElementById("character-creation-screen");
+const characterCreationScreen = document.getElementById(SCREENS.characterCreationScreen);
 const playerNameInput = document.getElementById("player-name");
 const hpAllocationInput = document.getElementById("hp-allocation");
 const attackAllocationInput = document.getElementById("attack-allocation");
@@ -28,7 +28,7 @@ const displayDexSpan = document.getElementById("display-dex");
 const displaySizeSpan = document.getElementById("display-size");
 const startAdventureButton = document.getElementById("start-adventure-button");
 
-const mainGameScreen = document.getElementById("main-game-screen");
+const mainGameScreen = document.getElementById(SCREENS.mainGameScreen);
 const currentPositionSpan = document.getElementById("current-position");
 const playerDisplayName = document.getElementById("player-display-name");
 const playerHpText = document.getElementById("player-hp-text");
@@ -47,7 +47,7 @@ const battleEndButton = document.getElementById("battle-end");
 const menuButton = document.getElementById("menu-button");
 
 // 戦闘画面
-const battleScreen = document.getElementById("battle-screen");
+const battleScreen = document.getElementById(SCREENS.battleScreen);
 const partyPanel = document.getElementById("party-panel");
 const enemyPanel = document.getElementById("enemy-panel");
 const timelinePanel = document.getElementById("timeline-panel");
@@ -71,12 +71,9 @@ const discardCloseButton = document.querySelector(".discard-close-button");
 const discardItemList = document.getElementById("discard-item-list");
 const discardSelectedItemButton = document.getElementById("discard-selected-item-button");
 
-let selectedItemToDiscardIndex = -1; // 破棄するアイテムのインデックス
-let itemToAcquireAfterDiscard = null; // 破棄後に取得するアイテム
-
-const gameOverScreen = document.getElementById("game-over-screen");
+const gameOverScreen = document.getElementById(SCREENS.gameOverScreen);
 const backToTitleFromGameOverButton = document.getElementById("back-to-title-from-gameover");
-const clearScreen = document.getElementById("clear-screen");
+const clearScreen = document.getElementById(SCREENS.clearScreen);
 
 // Debug Elements
 const debugPanel = document.getElementById("debug-panel");
@@ -100,16 +97,26 @@ function render() {
         return;// dirty=falseでもう一度走るためreturn
     }
     showScreen();
-    updatePlayerStatus();
-    updateLog();
 
-    menuButton.classList.toggle("hidden", gameState.currentScreen !== 'main-game-screen');
+    menuButton.classList.toggle("hidden", gameState.currentScreen !== SCREENS.mainGameScreen);
+    // デバッグパネルの表示/非表示
+    debugPanel.classList.toggle("hidden", (!gameState.is_debug_mode || gameState.currentScreen !== SCREENS.mainGameScreen));
 
-    if (gameState.currentScreen === 'main-game-screen') {
+    if (gameState.currentScreen === SCREENS.mainGameScreen) {
+        // TODO: 場所移動
+        gameMessage.innerHTML = "";
+        for (const message of gameState.exploreLog) {
+            const p = document.createElement("p");
+            p.textContent = message;
+            gameMessage.appendChild(p);
+        }
+        gameMessage.scrollTop = gameMessage.scrollHeight; // スクロールを一番下へ
+
+        updatePlayerStatus();
         updateExploreCommand();
         updateModal();
     }
-    if (gameState.currentScreen === 'battle-screen') {
+    if (gameState.currentScreen === SCREENS.battleScreen) {
         renderBattle();
         updateEnemyStatus();
         updatePartyStatus();
@@ -132,49 +139,18 @@ export function scheduleRender() {
  */
 function showScreen() {
     const screens = {
-        'title-screen': titleScreen,
-        'character-creation-screen': characterCreationScreen,
-        'main-game-screen': mainGameScreen,
-        'battle-screen': battleScreen,
-        'game-over-screen': gameOverScreen,
-        'clear-screen': clearScreen
+        [SCREENS.titleScreen]: titleScreen,
+        [SCREENS.characterCreationScreen]: characterCreationScreen,
+        [SCREENS.mainGameScreen]: mainGameScreen,
+        [SCREENS.battleScreen]: battleScreen,
+        [SCREENS.gameOverScreen]: gameOverScreen,
+        [SCREENS.clearScreen]: clearScreen
     };
     for (const id in screens) {
         screens[id].classList.add("hidden");
     }
     screens[gameState.currentScreen].classList.remove("hidden");
     screens[gameState.currentScreen].classList.add("active");
-
-    // デバッグパネルの表示/非表示
-    // TODO: この処理危うい
-    if (player.party[0].name === "デバッグ" && gameState.currentScreen === 'main-game-screen') {
-        debugPanel.classList.remove("hidden");
-    } else {
-        debugPanel.classList.add("hidden");
-    }
-}
-
-/**
- * 現在の画面に応じてログを表示する
- */
-function updateLog() {
-    if (gameState.currentScreen === 'main-game-screen') {
-        gameMessage.innerHTML = "";
-        for (const message of gameState.exploreLog) {
-            const p = document.createElement("p");
-            p.textContent = message;
-            gameMessage.appendChild(p);
-        }
-        gameMessage.scrollTop = gameMessage.scrollHeight; // スクロールを一番下へ
-    } else if (gameState.currentScreen === 'battle-screen') {
-        battleMessage.innerHTML = "";
-        for (const message of gameState.combatLog) {
-            const p = document.createElement("p");
-            p.textContent = message;
-            battleMessage.appendChild(p);
-        }
-        battleMessage.scrollTop = battleMessage.scrollHeight; // スクロールを一番下へ
-    }
 }
 
 /**
@@ -186,24 +162,13 @@ function updateLog() {
 function updatePlayerStatus() {
     const hpPercentage = Math.max((player.party[0].hp / player.party[0].maxHp) * 100);
 
-    if (gameState.currentScreen === 'battle-screen') {
-        // battlePlayerDisplayName.textContent = player.name;
-        // battlePlayerHpText.textContent = `${player.hp}/${player.maxHp}`;
-        // battleHpBarFill.style.width = `${hpPercentage}%`;
-        if (hpPercentage <= 25) {
-            gameHpBarFill.classList.add("low-hp");
-        } else {
-            gameHpBarFill.classList.remove("low-hp");
-        }
+    playerDisplayName.textContent = player.party[0].name;
+    playerHpText.textContent = `${player.party[0].hp}/${player.party[0].maxHp}`;
+    gameHpBarFill.style.width = `${hpPercentage}%`;
+    if (hpPercentage <= 25) {
+        gameHpBarFill.classList.add("low-hp");
     } else {
-        playerDisplayName.textContent = player.party[0].name;
-        playerHpText.textContent = `${player.party[0].hp}/${player.party[0].maxHp}`;
-        gameHpBarFill.style.width = `${hpPercentage}%`;
-        if (hpPercentage <= 25) {
-            gameHpBarFill.classList.add("low-hp");
-        } else {
-            gameHpBarFill.classList.remove("low-hp");
-        }
+        gameHpBarFill.classList.remove("low-hp");
     }
 }
 
@@ -212,7 +177,7 @@ function updatePlayerStatus() {
  * TODO: 定数にあとで置き換え
  */
 function updateExploreCommand() {
-    if (gameState.explorePhase === "idle") {
+    if (gameState.explore.phase === "idle") {
         advanceButton.disabled = false;
         advanceButton.classList.remove("hidden");
     } else {
@@ -474,6 +439,15 @@ function renderBattle() {
         return;
     }
 
+    // ログの更新
+    battleMessage.innerHTML = "";
+    for (const message of gameState.combatLog) {
+        const p = document.createElement("p");
+        p.textContent = message;
+        battleMessage.appendChild(p);
+    }
+    battleMessage.scrollTop = battleMessage.scrollHeight; // スクロールを一番下へ
+
     battleMessage.classList.add("hidden");
     alertPanel.classList.add("hidden");
     commandPanel.classList.add("hidden");
@@ -539,7 +513,7 @@ function renderBattle() {
                 renderTargetPanel(candidates);
                 targetPanel.classList.remove("hidden");
             } else if (gameState.battle.pendingCommand.act === "item" && gameState.battle.pendingCommand.actDetail) {
-                const item = player.item_slot[gameState.battle.pendingCommand.actDetail];
+                const item = player.item_slot.find(item => item.uuid === gameState.battle.pendingCommand.actDetail);
                 const candidates = TARGET_TYPE_EXTRACTOR[item.use_target_type](gameState.battle.party, gameState.battle.enemies);
                 renderTargetPanel(candidates);
                 targetPanel.classList.remove("hidden");
@@ -623,6 +597,7 @@ function renderResultPanel() {
                 <span class="result-rankup-card">${ru.before}</span>
                 → 
                 <span class="result-rankup-card" style="color:#ffd700">${ru.after}</span>
+                ${JOBS[ru.jobId].maxRank === ru.after ? '<br><span class="result-rankup-card" style="color:#ffd700">★' + JOBS[ru.jobId].name + 'をマスターした！！</span>' : ''}
                 <br><small>ステータスアップ：${statLines}</small>
                 <br><small>スキル習得：${skillLines}</small>
             `;

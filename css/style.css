@@ -2,6 +2,7 @@
 
 html {
     touch-action: manipulation;
+    transform: scale(0.99);/* TODO: 調整*/
 }
 
 body {

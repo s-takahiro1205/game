@@ -1,3 +1,21 @@
+/**
+ * スクリーン一覧
+ */
+export const SCREENS = {
+    titleScreen: "title-screen",// タイトル
+    characterCreationScreen: "character-creation-screen",// 主人公作成
+    baseScreen: "base-screen",// 拠点
+    tavernScreen: "tavern-screen",// 酒場
+    mansionScreen: "mansion-screen",// 待機所
+    storageScreen: "storage-screen",// 倉庫
+    changeJobScreen: "change-job-screen",// 転職
+    shopScreen: "shop-screen",// ショップ
+    questBoardScreen: "quest-board-screen",// 依頼板
+    mainGameScreen: "main-game-screen",// 探索
+    battleScreen: "battle-screen",// 戦闘
+    gameOverScreen: "game-over-screen",// 探索敗北 TODO: いずれ消す
+    clearScreen: "clear-screen",// 探索クリア TODO: いずれ消す
+};
 
 /**
  * 状態異常の一覧
@@ -98,10 +116,13 @@ export const DEBUFF_STATUS_MODIFIERS = {
 // 選択が必要な対象種別
 export const SELECT_TARGET_TYPE = [
     "alive_enemy_one",
+    "damaged_enemy_one",
     "dead_enemy_one",
     "alive_ally_one",
+    "damaged_ally_one",
     "dead_ally_one",
     "alive_one",
+    "damaged_one",
     "dead_one",
 ];
 
@@ -110,6 +131,7 @@ export const SELECT_TARGET_TYPE = [
  * one系のみ選択候補、それ以外は対象
  */
 export const TARGET_TYPE_EXTRACTOR = {
+    // 相手
     alive_enemy_all: (allies = [], enemies, actor = null) => {
         return enemies.filter(unit => !isDead(unit));
     },
@@ -119,6 +141,16 @@ export const TARGET_TYPE_EXTRACTOR = {
     },
     alive_enemy_one: (allies = [], enemies, actor = null) => {
         return enemies.filter(unit => !isDead(unit));
+    },
+    damaged_enemy_all: (allies = [], enemies, actor = null) => {
+        return enemies.filter(unit => !isDead(unit) && unit.hp < unit.maxHp);
+    },
+    damaged_enemy_random: (allies = [], enemies, actor = null) => {
+        const aliveUnits = enemies.filter(unit => !isDead(unit) && unit.hp < unit.maxHp);
+        return [aliveUnits[Math.floor(Math.random() * aliveUnits.length)]];
+    },
+    damaged_enemy_one: (allies = [], enemies, actor = null) => {
+        return enemies.filter(unit => !isDead(unit) && unit.hp < unit.maxHp);
     },
     dead_enemy_all: (allies = [], enemies, actor = null) => {
         return enemies.filter(unit => isDead(unit));
@@ -130,6 +162,8 @@ export const TARGET_TYPE_EXTRACTOR = {
     dead_enemy_one: (allies = [], enemies, actor = null) => {
         return enemies.filter(unit => isDead(unit));
     },
+
+    // 味方
     alive_ally_all: (allies, enemies = [], actor = null) => {
         return allies.filter(unit => !isDead(unit));
     },
@@ -139,6 +173,16 @@ export const TARGET_TYPE_EXTRACTOR = {
     },
     alive_ally_one: (allies, enemies = [], actor = null) => {
         return allies.filter(unit => !isDead(unit));
+    },
+    damaged_ally_all: (allies, enemies = [], actor = null) => {
+        return allies.filter(unit => !isDead(unit) && unit.hp < unit.maxHp);
+    },
+    damaged_ally_random: (allies, enemies = [], actor = null) => {
+        const aliveUnits = allies.filter(unit => !isDead(unit) && unit.hp < unit.maxHp);
+        return [aliveUnits[Math.floor(Math.random() * aliveUnits.length)]];
+    },
+    damaged_ally_one: (allies, enemies = [], actor = null) => {
+        return allies.filter(unit => !isDead(unit) && unit.hp < unit.maxHp);
     },
     dead_ally_all: (allies, enemies = [], actor = null) => {
         return allies.filter(unit => isDead(unit));
@@ -150,6 +194,8 @@ export const TARGET_TYPE_EXTRACTOR = {
     dead_ally_one: (allies, enemies = [], actor = null) => {
         return allies.filter(unit => isDead(unit));
     },
+
+    // 無差別
     alive_all: (allies, enemies = [], actor = null) => {
         return [...allies, ...enemies].filter(unit => !isDead(unit));
     },
@@ -159,6 +205,16 @@ export const TARGET_TYPE_EXTRACTOR = {
     },
     alive_one: (allies, enemies = [], actor = null) => {
         return [...allies, ...enemies].filter(unit => !isDead(unit));
+    },
+    damaged_all: (allies, enemies = [], actor = null) => {
+        return [...allies, ...enemies].filter(unit => !isDead(unit) && unit.hp < unit.maxHp);
+    },
+    damaged_random: (allies, enemies = [], actor = null) => {
+        const aliveUnits = [...allies, ...enemies].filter(unit => !isDead(unit) && unit.hp < unit.maxHp);
+        return [aliveUnits[Math.floor(Math.random() * aliveUnits.length)]];
+    },
+    damaged_one: (allies, enemies = [], actor = null) => {
+        return [...allies, ...enemies].filter(unit => !isDead(unit) && unit.hp < unit.maxHp);
     },
     dead_all: (allies, enemies = [], actor = null) => {
         return [...allies, ...enemies].filter(unit => isDead(unit));
@@ -170,11 +226,17 @@ export const TARGET_TYPE_EXTRACTOR = {
     dead_one: (allies, enemies = [], actor = null) => {
         return [...allies, ...enemies].filter(unit => isDead(unit));
     },
+
+    // 特殊
     own: (allies, enemies = [], actor) => {
         return [actor];
     },
 };
 
-function isDead(unit) {
+/**
+ * 戦闘不能か判定する
+ * @param {Object} target 
+ */
+export function isDead(unit) {
     return unit.battle_status.some(s => s.type === "dead");
 }

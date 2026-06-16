@@ -25,9 +25,10 @@ skills.sort((a, b) =>
 );
  */
 export const SKILL_ORDER = [
-    "thunder",
-    "full-thunder",
+    "thunder", "full-thunder",
     "heal",
+    "slash", "power-slash", "full-slash",
+    "wait-and-see",
 ];
 
 /**
@@ -53,11 +54,11 @@ export const SKILLS = [
             {
                 type: "damage",
                 element: "flame",
-                dice: 2,
-                sides: 10,
-                flat: 5,
-                // fix: 0,// 固定ダメージ
-                // armor_pierce: 0,// 装甲貫通率
+                dice: 3,
+                sides: 7,
+                flat: 10,
+                fix: 0,
+                // armor_pierce: 0,// 装甲貫通率 魔法はなし
             },
         ]
     },
@@ -82,7 +83,7 @@ export const SKILLS = [
                 dice: 2,
                 sides: 10,
                 flat: 8,
-                // fix: 0,// 固定ダメージ
+                fix: 0,
                 // armor_pierce: 0,// 装甲貫通率
             },
             {
@@ -115,10 +116,10 @@ export const SKILLS = [
                 type: "damage",
                 element: "lightning",
                 dice: 2,
-                sides: 8,
+                sides: 9,
                 flat: 6,
                 fix: 0,
-                armor_pierce: 0,
+                // armor_pierce: 0,
             },
             {
                 type: "add_state",
@@ -137,7 +138,7 @@ export const SKILLS = [
         cost: {
             mp: 3
         },
-        target_type: "alive_ally_one",
+        target_type: "damaged_ally_one",
         usableIn: {
             home: false,
             explore: true,
@@ -148,9 +149,9 @@ export const SKILLS = [
         effects: [
             {
                 type: "heal",
-                dice: 3,
-                sides: 5,
-                flat: 5,
+                dice: 5,
+                sides: 6,
+                flat: 10,
                 fix: 0,
             }
         ]
@@ -202,8 +203,8 @@ export const SKILLS = [
                 type: "damage",
                 element: "physical",
                 dice: 0,
-                sides: 10,
-                flat: 10,
+                sides: 8,
+                flat: 12,
                 fix: 0,
                 armor_pierce: 0,
             },

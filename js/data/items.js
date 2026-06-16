@@ -54,7 +54,7 @@ export const ITEMS = [
         },
         uses: 2,
         use_type: "heal",
-        use_target_type: "alive_ally_one",
+        use_target_type: "damaged_ally_one",
         stat_modifier: null,
         equip_type: null,
         uuid: "",
@@ -151,9 +151,9 @@ export const ITEMS = [
         effects: [
             {
                 type: "damage",
-                dice: 3,
-                sides: 3,
-                flat: 6,
+                dice: 5,
+                sides: 5,
+                flat: 7,
                 fix: 0,
             },
         ],
@@ -178,8 +178,8 @@ export const ITEMS = [
         effects: [
             {
                 type: "damage",
-                dice: 4,
-                sides: 3,
+                dice: 5,
+                sides: 6,
                 flat: 10,
                 fix: 0,
             },
@@ -406,7 +406,7 @@ export const ITEMS = [
         uses: null,
         use_type: null,
         use_target_type: null,
-        stat_modifier: { maxHp: 15, armor: 3, speed: -1 }, // 防御力+3、速度-1
+        stat_modifier: { maxHp: 15, armor: 3, speed: -1 },
         equip_type: "armor",
         uuid: "",
     },
@@ -425,7 +425,7 @@ export const ITEMS = [
         uses: null,
         use_type: null,
         use_target_type: null,
-        stat_modifier: { intel: 2, maxMp: 10 },
+        stat_modifier: { intel: 10, maxMp: 10 },
         dice_modifier: {
             dice: 0,
             sides: 0,
@@ -463,7 +463,7 @@ export const ITEMS = [
         name: "ウィンディアの紋章",
         description: "風の大精霊によって紋章を授けられているネックレス。身に着けるだけで普段の倍の速さで動けるという。",
         category: "equipment",
-        price: 10000,
+        price: 1000000,
         effects: null,
         usableIn: {
             home: false,

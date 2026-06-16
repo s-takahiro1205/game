@@ -90,8 +90,6 @@ const unit_base = {
 
 export let player = new Proxy({
         position: 0,
-        isGameOver: false,
-        isCleared: false,
         currentEventCompleted: false, // 現在のマスでのイベントが完了したか
         savedEventCategory: null, // セーブされたイベントのカテゴリ
         savedEventIndex: null,    // セーブされたイベントのインデックス
@@ -171,6 +169,13 @@ const displayDexSpan = document.getElementById("display-dex");
 const displaySizeSpan = document.getElementById("display-size");
 const startAdventureButton = document.getElementById("start-adventure-button");
 
+// base
+const baseBtnExplore = document.getElementById("base-btn-explore");
+baseBtnExplore.addEventListener("click", () => {
+    showMainGameScreen();
+});
+
+// explore
 const mainGameScreen = document.getElementById(SCREENS.mainGameScreen);
 const currentPositionSpan = document.getElementById("current-position");
 const playerDisplayName = document.getElementById("player-display-name");
@@ -460,17 +465,17 @@ function showCharacterCreationScreen() {
 function showMainGameScreen() {
     // デバッグ用設定
     if (player.party.some(unit => unit.name === "デバッグ")) {
-        gameState.is_debug_mode = true
+        gameState.is_debug_mode = true;
+        populateDebugEnemySelect(); // デバッグ用敵選択を初期化
+        populateDebugEventSelects(); // デバッグイベント選択を初期化
+        populateDebugItemSelect(); // デバッグ用アイテム選択を初期化
+        populateDebugJobSelect(); // デバッグ用アイテム選択を初期化
     }
 
     moveScreen(SCREENS.mainGameScreen);
     gameState.explore.phase = "idle";
-    populateDebugEnemySelect(); // デバッグ用敵選択を初期化
-    populateDebugEventSelects(); // デバッグイベント選択を初期化
-    populateDebugItemSelect(); // デバッグ用アイテム選択を初期化
-    populateDebugJobSelect(); // デバッグ用アイテム選択を初期化
 
-    // ロード時にイベントが未完了だった場合の処理
+    // ロード時にイベントが未完了だった場合は再発火
     if (!player.currentEventCompleted && player.savedEventCategory && player.savedEventIndex !== null) {
         const event = getEventFromSavedData(player.savedEventCategory, player.savedEventIndex);
         if (event) {
@@ -603,8 +608,6 @@ document.querySelectorAll('.character-creation-stat-minus').forEach(btn => {
  */
 function initializePlayer() {
     player.position = 0;
-    player.isGameOver = false;
-    player.isCleared = false;
     player.currentEventCompleted = false;
     player.savedEventCategory = null;
     player.savedEventIndex = null;
@@ -944,8 +947,7 @@ function renderChoices(choices, event) {
             if (nextEvent !== null) {
                 displayCurrentEvent(nextEvent);
             } else {
-                // nextがない場合、イベントはここで終了し、進むボタンを再有効化
-                if (!player.isGameOver && !player.isCleared) {
+                if (player.position !== 100) {
                     // 選択肢が選ばれたので、現在のイベントは完了
                     player.currentEventCompleted = true;
                     gameState.explore.phase = "idle";
@@ -1019,7 +1021,7 @@ function displayCurrentEvent(event) {
     checkGameEnd();
 
     // 探索状態に戻す判定 敗北かクリアでなくイベント完了なら待機に戻す
-    if (!player.isGameOver && !player.isCleared && player.currentEventCompleted) {
+    if (player.position !== 100 && player.currentEventCompleted) {
         gameState.explore.phase = "idle";
     }
     saveGame(player); // イベント処理後にセーブ
@@ -1342,7 +1344,7 @@ export function unequip(_) {
 // ============================================================================
 // 5. ゲームループ (「進む」ボタン押下時)
 async function advance() {
-    if (player.isGameOver || player.isCleared) return;
+    if (player.position === 100) return;
 
     // 現在のマスでのイベントが未完了の場合、先に進めない
     if (player.position > 0 && !player.currentEventCompleted) {
@@ -2353,11 +2355,6 @@ async function battleEnd() {
         for (const item of result.items) {
             await acquireItem(item);
         }
-
-        // 最終ボス撃破判定
-        if (player.position === 100) {
-            player.isCleared = true;
-        }
     }
     checkGameEnd();
     saveGame(player); // 戦闘勝利後にセーブ
@@ -2768,15 +2765,12 @@ function getUnitById(id) {
 // 7. ゲーム終了判定
 // ============================================================================
 function checkGameEnd() {
-    if (getAliveUnits(player.party).length === 0 && !player.isGameOver) {
+    if (getAliveUnits(player.party).length === 0) {
         systemHealAll();
         player.position = 0;
-        player.isGameOver = false;
-        player.isCleared = false;
         player.currentEventCompleted = false;
         player.savedEventCategory = null;
         player.savedEventIndex = null;
-        // player.isGameOver = true;
 
         addMessage("HPが0になった... あなたの冒険はここで終わった...");
         saveGame(player);
@@ -2784,11 +2778,9 @@ function checkGameEnd() {
         return true;
     }
 
-    if (player.isCleared) {
+    if (player.position === 100 && player.currentEventCompleted) {
         systemHealAll();
         player.position = 0;
-        player.isGameOver = false;
-        player.isCleared = false;
         player.currentEventCompleted = false;
         player.savedEventCategory = null;
         player.savedEventIndex = null;
@@ -2815,8 +2807,15 @@ loadGameButton.addEventListener("click", () => {
             set: setAndRender
         });
         gameState.dirty = true;
-        showMainGameScreen();
-        addMessage("セーブデータをロードしました。冒険を再開します.");
+        // 探索中なら探索画面へ
+        // TODO: 雑判定
+        if (player.position !== 0) {
+            showMainGameScreen();
+            addMessage("セーブデータをロードしました。冒険を再開します.");
+        } else {
+            moveScreen(SCREENS.baseScreen);
+            showToast("おかえりなさい！");
+        }
     } else {
         addMessage("セーブデータが見つかりませんでした。", false);
         loadGameButton.classList.add("hidden"); // ボタンを非表示にする
@@ -2841,13 +2840,15 @@ advanceButton.addEventListener("click", advance);
 // attackButton.addEventListener("click", attack);
 
 backToTitleFromGameOverButton.addEventListener("click", () => {
-    // ゲームオーバー時はセーブデータを削除しないが、タイトルに戻る
-    showTitleScreen();
+    // 全滅後は拠点に戻る
+    moveScreen(SCREENS.baseScreen);
+    showToast("全滅した…");
 });
 
 backToTitleFromClearButton.addEventListener("click", () => {
     // クリア時はセーブデータを削除しないが、タイトルに戻る
-    showTitleScreen();
+    moveScreen(SCREENS.baseScreen);
+    showToast("クリア！");
 });
 
 debugTriggerEventButton.addEventListener("click", () => {

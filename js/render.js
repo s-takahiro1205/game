@@ -28,6 +28,8 @@ const displayDexSpan = document.getElementById("display-dex");
 const displaySizeSpan = document.getElementById("display-size");
 const startAdventureButton = document.getElementById("start-adventure-button");
 
+const baseScreen = document.getElementById(SCREENS.baseScreen);
+
 const mainGameScreen = document.getElementById(SCREENS.mainGameScreen);
 const currentPositionSpan = document.getElementById("current-position");
 const playerDisplayName = document.getElementById("player-display-name");
@@ -141,6 +143,7 @@ function showScreen() {
     const screens = {
         [SCREENS.titleScreen]: titleScreen,
         [SCREENS.characterCreationScreen]: characterCreationScreen,
+        [SCREENS.baseScreen]: baseScreen,
         [SCREENS.mainGameScreen]: mainGameScreen,
         [SCREENS.battleScreen]: battleScreen,
         [SCREENS.gameOverScreen]: gameOverScreen,
@@ -732,9 +735,6 @@ function createPartyPanel() {
         card.innerHTML = `
             <div class="actor-name">
                 ${actor.name}
-                <!-- <span class="job ${actor.jobClass}">
-                    ${actor.jobShort}
-                </span> -->
                 <span class="level">
                     Lv${actor.level}
                 </span>

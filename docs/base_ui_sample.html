@@ -792,104 +792,104 @@ html, body {
 <div id="app">
 
 <!-- ══ 拠点メイン ══ -->
-<div id="screen-base" class="screen">
-  <!-- HUD（共通） -->
-  <div class="hud" id="base-hud">
-    <div class="hud-main">
-      <div class="hud-char-icon" onclick="toggleParty('base')">⚔️</div>
-      <div class="hud-hp-mini">
-        <div class="hud-bar-row">
-          <span class="hud-bar-label">HP</span>
-          <div class="hud-bar-track"><div class="hud-bar-fill fill-hp" style="width:81%"></div></div>
-        </div>
-        <div class="hud-bar-row">
-          <span class="hud-bar-label">MP</span>
-          <div class="hud-bar-track"><div class="hud-bar-fill fill-mp" style="width:58%"></div></div>
-        </div>
-      </div>
-      <div class="hud-stats">
-        <div class="hud-stat gold">🪙 136</div>
-        <div class="hud-stat day">D+4</div>
-      </div>
-      <div style="flex:1"></div>
-      <div class="hud-btns">
-        <div class="hud-icon-btn" onclick="toggleParty('base')">👥</div>
-        <div class="hud-icon-btn" onclick="openBaseMenu('bm-home')">☰</div>
-      </div>
-    </div>
-    <div class="party-panel" id="party-panel-base">
-      <div class="party-grid" id="party-grid-base"></div>
-    </div>
-  </div>
-
-  <!-- 拠点ステージ -->
-  <div id="base-stage">
-    <div id="base-banner">
-      <div id="base-banner-title">ラグナ砦</div>
-      <div id="base-banner-sub">── RAGUNA FORTRESS ──</div>
-    </div>
-
-    <div id="base-notice">
-      <span id="base-notice-icon">📋</span>
-      <div id="base-notice-text"><strong>新しい依頼</strong>が3件掲示されています。ガルドスは<strong>治療が必要</strong>です。</div>
-    </div>
-
-    <div id="base-grid">
-      <div class="base-btn" onclick="goSub('inn')">
-        <span class="base-btn-icon">🏥</span>
-        <span class="base-btn-label">待機所</span>
-        <span class="base-btn-sub">HP/MP回復<br>状態異常治癒</span>
-        <span class="base-btn-badge rs-bad">要治療</span>
-      </div>
-      <div class="base-btn" onclick="goSub('storage')">
-        <span class="base-btn-icon">📦</span>
-        <span class="base-btn-label">倉庫</span>
-        <span class="base-btn-sub">アイテム預け入れ<br>引き出し</span>
-        <span class="base-btn-badge gold-badge">32/50</span>
-      </div>
-      <div class="base-btn" onclick="goSub('job')">
-        <span class="base-btn-icon">⚗️</span>
-        <span class="base-btn-label">転職</span>
-        <span class="base-btn-sub">クラスチェンジ<br>スキル引継ぎ</span>
-      </div>
-      <div class="base-btn" onclick="goSub('shop')">
-        <span class="base-btn-icon">🛒</span>
-        <span class="base-btn-label">ショップ</span>
-        <span class="base-btn-sub">武器・道具<br>購入・売却</span>
-        <span class="base-btn-badge new">NEW</span>
-      </div>
-      <div class="base-btn" onclick="goSub('board')">
-        <span class="base-btn-icon">📋</span>
-        <span class="base-btn-label">依頼板</span>
-        <span class="base-btn-sub">クエスト受諾<br>報告</span>
-        <span class="base-btn-badge">3</span>
-      </div>
-      <!-- 探索ボタン（全幅） -->
-      <div class="base-btn highlight" id="btn-explore" onclick="goSub('explore-confirm')">
-        <span class="base-btn-icon">🗺️</span>
-        <div>
-          <div class="base-btn-label">探索へ出発</div>
-          <div class="base-btn-sub">現在地：廃墟の回廊 B2F</div>
-        </div>
-      </div>
-    </div>
-
-    <div id="base-footer">
-      <div class="base-footer-stat">
-        <span class="base-footer-label">所持金</span>
-        <span class="base-footer-val gold">🪙 136</span>
-      </div>
-      <div class="base-footer-stat">
-        <span class="base-footer-label">パーティ状態</span>
-        <span class="base-footer-val red">🔴 要治療</span>
-      </div>
-      <div class="base-footer-stat">
-        <span class="base-footer-label">進行日数</span>
-        <span class="base-footer-val">D + 4</span>
-      </div>
-    </div>
-  </div>
-</div>
+<!-- <div id="screen-base" class="screen">-->
+<!--   <!-- HUD（共通） -->-->
+<!--   <div class="hud" id="base-hud">-->
+<!--     <div class="hud-main">-->
+<!--       <div class="hud-char-icon" onclick="toggleParty('base')">⚔️</div>-->
+<!--       <div class="hud-hp-mini">-->
+<!--         <div class="hud-bar-row">-->
+<!--           <span class="hud-bar-label">HP</span>-->
+<!--           <div class="hud-bar-track"><div class="hud-bar-fill fill-hp" style="width:81%"></div></div>-->
+<!--         </div>-->
+<!--         <div class="hud-bar-row">-->
+<!--           <span class="hud-bar-label">MP</span>-->
+<!--           <div class="hud-bar-track"><div class="hud-bar-fill fill-mp" style="width:58%"></div></div>-->
+<!--         </div>-->
+<!--       </div>-->
+<!--       <div class="hud-stats">-->
+<!--         <div class="hud-stat gold">🪙 136</div>-->
+<!--         <div class="hud-stat day">D+4</div>-->
+<!--       </div>-->
+<!--       <div style="flex:1"></div>-->
+<!--       <div class="hud-btns">-->
+<!--         <div class="hud-icon-btn" onclick="toggleParty('base')">👥</div>-->
+<!--         <div class="hud-icon-btn" onclick="openBaseMenu('bm-home')">☰</div>-->
+<!--       </div>-->
+<!--     </div>-->
+<!--     <div class="party-panel" id="party-panel-base">-->
+<!--       <div class="party-grid" id="party-grid-base"></div>-->
+<!--     </div>-->
+<!--   </div>-->
+<!-- -->
+<!--   <!-- 拠点ステージ -->-->
+<!--   <div id="base-stage">-->
+<!--     <div id="base-banner">-->
+<!--       <div id="base-banner-title">ラグナ砦</div>-->
+<!--       <div id="base-banner-sub">── RAGUNA FORTRESS ──</div>-->
+<!--     </div>-->
+<!-- -->
+<!--     <div id="base-notice">-->
+<!--       <span id="base-notice-icon">📋</span>-->
+<!--       <div id="base-notice-text"><strong>新しい依頼</strong>が3件掲示されています。ガルドスは<strong>治療が必要</strong>です。</div>-->
+<!--     </div>-->
+<!-- -->
+<!--     <div id="base-grid">-->
+<!--       <div class="base-btn" onclick="goSub('inn')">-->
+<!--         <span class="base-btn-icon">🏥</span>-->
+<!--         <span class="base-btn-label">待機所</span>-->
+<!--         <span class="base-btn-sub">HP/MP回復<br>状態異常治癒</span>-->
+<!--         <span class="base-btn-badge rs-bad">要治療</span>-->
+<!--       </div>-->
+<!--       <div class="base-btn" onclick="goSub('storage')">-->
+<!--         <span class="base-btn-icon">📦</span>-->
+<!--         <span class="base-btn-label">倉庫</span>-->
+<!--         <span class="base-btn-sub">アイテム預け入れ<br>引き出し</span>-->
+<!--         <span class="base-btn-badge gold-badge">32/50</span>-->
+<!--       </div>-->
+<!--       <div class="base-btn" onclick="goSub('job')">-->
+<!--         <span class="base-btn-icon">⚗️</span>-->
+<!--         <span class="base-btn-label">転職</span>-->
+<!--         <span class="base-btn-sub">クラスチェンジ<br>スキル引継ぎ</span>-->
+<!--       </div>-->
+<!--       <div class="base-btn" onclick="goSub('shop')">-->
+<!--         <span class="base-btn-icon">🛒</span>-->
+<!--         <span class="base-btn-label">ショップ</span>-->
+<!--         <span class="base-btn-sub">武器・道具<br>購入・売却</span>-->
+<!--         <span class="base-btn-badge new">NEW</span>-->
+<!--       </div>-->
+<!--       <div class="base-btn" onclick="goSub('board')">-->
+<!--         <span class="base-btn-icon">📋</span>-->
+<!--         <span class="base-btn-label">依頼板</span>-->
+<!--         <span class="base-btn-sub">クエスト受諾<br>報告</span>-->
+<!--         <span class="base-btn-badge">3</span>-->
+<!--       </div>-->
+<!--       <!-- 探索ボタン（全幅） -->-->
+<!--       <div class="base-btn highlight" id="btn-explore" onclick="goSub('explore-confirm')">-->
+<!--         <span class="base-btn-icon">🗺️</span>-->
+<!--         <div>-->
+<!--           <div class="base-btn-label">探索へ出発</div>-->
+<!--           <div class="base-btn-sub">現在地：廃墟の回廊 B2F</div>-->
+<!--         </div>-->
+<!--       </div>-->
+<!--     </div>-->
+<!-- -->
+<!--     <div id="base-footer">-->
+<!--       <div class="base-footer-stat">-->
+<!--         <span class="base-footer-label">所持金</span>-->
+<!--         <span class="base-footer-val gold">🪙 136</span>-->
+<!--       </div>-->
+<!--       <div class="base-footer-stat">-->
+<!--         <span class="base-footer-label">パーティ状態</span>-->
+<!--         <span class="base-footer-val red">🔴 要治療</span>-->
+<!--       </div>-->
+<!--       <div class="base-footer-stat">-->
+<!--         <span class="base-footer-label">進行日数</span>-->
+<!--         <span class="base-footer-val">D + 4</span>-->
+<!--       </div>-->
+<!--     </div>-->
+<!--   </div>-->
+<!-- </div>-->
 
 <!-- ══ 待機所 ══ -->
 <div id="screen-inn" class="screen sub-screen hidden-right">

@@ -6,349 +6,324 @@
     <title>暁の探訪者</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
-    <style>
-
-/* ======================
-   パーティ
-====================== */
-
-#party-panel{
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.5em;
-    margin-bottom: 0.5em;
+<style>
+/* ══════════════════════════════════
+    Reset & Root
+══════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+    /* --bg:         #1e1608; */
+    --bg:         #1a1a2e;
+    --bg-warm:    #f5ead0;
+    --panel:      #2c1f0e;
+    --panel2:     #3a2a14;
+    --panel3:     #4a3820;
+    --border:     #6a4e28;
+    --border2:    #4a3820;
+    --text:       #f0d890;
+    --text-dark:  #2a1a06;
+    --text-sub:   #a08858;
+    --text-dim:   #6a5030;
+    --parch:      #c8a96e;
+    --parch-dk:   #8a6535;
+    --paper:      #f0e0b0;
+    --paper2:     #e8d090;
+    --gold:       #f8c030;
+    --gold-dim:   #c89020;
+    --hp-red:     #f03868;
+    --hp-dark:    #7a1830;
+    --mp-blue:    #38a8f8;
+    --mp-dark:    #183878;
+    --green:      #50d870;
+    --red:        #e85858;
+    --yellow:     #f8d040;
+    --teal:       #40d0b8;
+}
+html, body {
+    height: 100%;
+    background: var(--bg);
+    overflow: hidden;
+    font-family: 'Hiragino Kaku Gothic ProN','Noto Sans JP',system-ui,sans-serif;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
 }
 
-.actor-card{
-    display: flex;
-    flex-direction: column;
-    padding: 1em;
-    font-size: 0.85em;
-    border: 1px solid #444;
-    border-radius: 12px;
-    background: #2b2b4f;
+/* ══════════════════════════════════
+    App / Screen Stack
+══════════════════════════════════ */
+#app {
+    width: 100%; max-width: 430px;
+    height: 100dvh; margin: 0 auto;
+    position: relative; overflow: hidden;
 }
-
-.actor-name{
-    flex:1;
-    margin-bottom: 0.5em;
+.screen {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    transition: transform 0.32s cubic-bezier(.4,0,.2,1), opacity 0.28s;
+    will-change: transform;
 }
+.screen.hidden-right { transform: translateX(100%); }
+.screen.hidden-left  { transform: translateX(-28%); opacity: 0.35; }
 
-.actor-info{
-    display: flex;
+/* ══════════════════════════════════
+    共通ヘッダー (HUD)
+══════════════════════════════════ */
+.hud {
+    flex: 0 0 auto;
+    background: var(--panel);
+    border-bottom: 2px solid var(--border);
+    position: relative; z-index: 20;
 }
-
-.portrait{
-    width:64px;
-    height:64px;
-    margin-right: 0.5em;
-
-    border-radius:8px;
-    background:#444;
+.hud-main {
+    display: flex; align-items: center;
+    gap: 6px; padding: 5px 8px;
 }
-
-.actor-status{
-    flex:1;
+.hud-char-icon {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--panel2); border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; cursor: pointer; flex: 0 0 auto;
 }
-
-.job{
-    display:inline-block;
-    width:28px;
-    text-align:center;
-    border-radius:6px;
-    font-weight:bold;
+.hud-hp-mini { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.hud-bar-row { display: flex; align-items: center; gap: 4px; }
+.hud-bar-label { font-size: 9px; color: var(--text-sub); width: 14px; }
+.hud-bar-track {
+    flex: 1; height: 5px;
+    background: var(--panel3); border: 1px solid var(--border2);
+    border-radius: 3px; overflow: hidden;
 }
-
-.warrior{background:#c0392b;}
-.priest{background:#27ae60;}
-.mage{background:#8e44ad;}
-.thief{background:#f39c12;}
-
-.level{
-    color:#ccc;
+.hud-bar-fill { height: 100%; border-radius: 3px; transition: width .4s; }
+.fill-hp { background: linear-gradient(90deg,#c02848,#f03868); }
+.fill-mp { background: linear-gradient(90deg,#1868c8,#38a8f8); }
+.hud-stats { display: flex; gap: 4px; }
+.hud-stat {
+    background: var(--panel2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 2px 7px;
+    display: flex; align-items: center; gap: 3px;
+    font-size: 11px; font-weight: bold;
 }
-
-.status-row{
-    margin-top:6px;
+.hud-stat.gold { color: var(--gold); }
+.hud-stat.day  { color: var(--text); letter-spacing: 1px; }
+.hud-btns { display: flex; gap: 4px; }
+.hud-icon-btn {
+    width: 28px; height: 28px;
+    background: var(--panel2); border: 1px solid var(--border);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; cursor: pointer; color: var(--text);
+    transition: background .12s;
 }
+.hud-icon-btn:active { background: var(--panel3); }
 
-.status-row label{
-    display:block;
-    margin-bottom:2px;
+/* パーティパネル */
+.party-panel {
+    overflow: hidden; max-height: 0;
+    transition: max-height .3s cubic-bezier(.4,0,.2,1);
 }
-
-.bar{
-    height:8px;
-    border-radius:99px;
-    background:#333;
-    overflow:hidden;
+.party-panel.open {
+    max-height: 200px;
+    border-top: 1px solid var(--border);
 }
-
-/* ======================
-   敵
-====================== */
-
-#enemy-panel{
-    display: grid;
-    grid-template-columns: repeat(4,1fr);
-    gap: 0.5em;
-    margin-bottom: 0.5em;
+.party-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 6px; padding: 8px;
 }
-
-.enemy-card{
-    padding: 0.8em;
-    border: 1px solid #555;
-    border-radius: 12px;
-    background: #3f1b1b;
-    text-align: center;
-    font-size: 0.85em;
+.party-member {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--panel2); border: 1px solid var(--border2);
+    border-radius: 6px; padding: 5px 7px;
 }
+.party-icon { font-size: 18px; width: 24px; text-align: center; }
+.party-bars { flex: 1; min-width: 0; }
+.party-name { font-size: 9px; color: var(--text); margin-bottom: 3px; font-weight: bold; }
+.party-bar-row { display: flex; align-items: center; gap: 3px; margin-bottom: 2px; }
+.party-bar-label { font-size: 8px; color: var(--text-sub); width: 14px; }
+.party-bar-track { flex: 1; height: 4px; background: #1a1008; border-radius: 2px; overflow: hidden; }
+.party-bar-fill  { height: 100%; border-radius: 2px; transition: width .4s; }
+.party-bar-val   { font-size: 8px; color: var(--text-sub); width: 26px; text-align: right; }
+.party-status    { font-size: 8px; margin-top: 1px; }
 
-.enemy-image{
-    width: 60px;
-    height: 60px;
-    margin: 0.5em auto;
-    border-radius: 50%;
-    background: #555;
-}
+/* ══════════════════════════════════
+    拠点メイン画面
+══════════════════════════════════ */
+#base-screen { background: var(--bg); }
 
-.enemy-name{
-    margin-bottom: 0.5em;
-    word-break: keep-all;
-    font-size: 75%;
-}
-
-.hp-label{
-    font-size: 0.8em;
-    margin-bottom: 0.5em;
-}
-
-.actor-card.dead, .enemy-card.dead{
-    filter: grayscale(100%);
-    opacity: 0.75;
-} 
-
-/* ======================
-   タイムライン
-====================== */
-
-#timeline-panel{
-    position:relative;
-    height:8em;
-    border:1px solid #444;
-    border-radius:12px;
-    background:#1b1b1b;
-    margin-bottom: 0.5em;
-}
-
-.timeline-line{
-    position:absolute;
-    left:16px;
-    right:16px;
-    top:50%;
-    height:2px;
-    background:#ddd;
-}
-
-.timeline-unit{
-    position:absolute;
-    transform:translateX(-50%);
-    transition:
-        left 0.3s ease,
-        opacity 0.3s ease,
-        transform 0.3s ease;
-}
-
-.timeline-unit.removing {
-    opacity: 0;
-    transform: scale(0.8);
-}
-
-.timeline-unit.enemy{
-    top: 6px;
-}
-
-.timeline-unit.ally{
-    bottom: 6px;
-}
-
-.timeline-icon{
-    width:36px;
-    height:36px;
-
-    margin:auto;
-
-    border-radius:8px;
-    /* background:#555; */
-}
-.ally .timeline-icon{
-    background: #2b2b4f;
-}
-.enemy .timeline-icon{
-    background: #3f1b1b;
-}
-
-.timeline-name{
-    margin-top: 2px;
-    font-size: 0.6em;
-    text-align: center;
-}
-
-/* ======================
-   ログ
-====================== */
-
-.log-panel{
-    height:10em;
-    overflow-y:auto;
-    padding:10px;
-    border:1px solid #444;
-    border-radius:12px;
-    background:#1b1b1b;
-    font-size: 0.8em;
-}
-
-.log-panel p {
-    margin: 0;
-    border-bottom: dotted 0.05em gray;
-}
-
-.alert-panel{
-    height:10em;
-    overflow-y:auto;
-    padding:10px;
-    border:1px solid #444;
-    border-radius:12px;
-    background:#1b1b1b;
-    font-size: 0.8em;
-}
-
-.alert-panel p {
-    margin: 0;
-    border-bottom: dotted 0.05em gray;
-}
-
-/* ======================
-   コマンド
-====================== */
-
-.command-panel{
-    margin-top: 1em;
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-}
-
-.cmd{
-    height:60px;
-
-    border:none;
-    border-radius:12px;
-
-    color:white;
-    font-size:14px;
-    font-weight:bold;
-
-    cursor:pointer;
-}
-.cmd.back {background:#888888;}
-
-.attack{background:#c0392b;}
-.skill{background:#2980b9;}
-.guard{background:#27ae60;}
-.item{background:#f39c12;}
-
-
-.item-panel{
-    margin-top: 1em;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-}
-
-.skill-panel{
-    margin-top: 1em;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-}
-
-.cmd.heal {background:#27ae60;}
-.cmd.attack {background:#c0392b;}
-.cmd.support {background:#2980b9;}
-
-.target-panel{
-    margin-top: 1em;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-}
-.target-panel > .enemy {background:#c0392b;}
-.target-panel > .ally {background:#2980b9;}
-
-/**.result-panel{
-    margin-top: 1em;
-    display: grid;
-    grid-template-columns: repeat(1, 1fr);
-    gap: 10px;
-}
-.result-panel > .cmd {background:#888888;}*/
-
-.result-panel {
-    position: fixed;
-    inset: 0;
-    z-index: 1000;
-    background: rgba(0, 0, 0, 0.85);
-    display: flex;
+/* 拠点背景エリア */
+#base-stage {
+    flex: 1 1 auto;
+    position: relative; overflow: hidden;
+    /* 城壁・石畳風グラデーション */
+    background:
+        linear-gradient(180deg,
+        #2a1e0e 0%,
+        #3a2a12 30%,
+        #4a3818 55%,
+        #3a2a12 75%,
+        #2a1e0e 100%);
+    display: flex; flex-direction: column;
     align-items: center;
-    justify-content: center;
-    overflow-y: auto;
 }
 
-.result-inner {
-    background: #1e1e3a;
-    border: 2px solid #ffd700;
-    border-radius: 16px;
-    padding: 2em;
-    max-width: 480px;
-    width: 90%;
-    max-height: 90vh;
-    overflow-y: auto;
+/* 装飾：石畳タイルパターン */
+#base-stage::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+        repeating-linear-gradient(0deg,   transparent, transparent 31px, rgba(0,0,0,0.18) 31px, rgba(0,0,0,0.18) 32px),
+        repeating-linear-gradient(90deg,  transparent, transparent 47px, rgba(0,0,0,0.12) 47px, rgba(0,0,0,0.12) 48px);
+    pointer-events: none;
+}
+/* 装飾：横長の光 */
+#base-stage::after {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+        radial-gradient(ellipse 90% 40% at 50% 42%, rgba(248,192,48,0.07) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 30% at 50% 100%, rgba(0,0,0,0.5) 0%, transparent 70%);
+    pointer-events: none;
 }
 
-.result-title {
+/* 拠点名バナー */
+#base-banner {
+    position: relative; z-index: 2;
     text-align: center;
-    font-size: 1.6em;
-    color: #ffd700;
-    margin-bottom: 1em;
+    padding: 16px 0 10px;
+}
+#base-banner-title {
+    font-size: 20px; font-weight: bold;
+    color: var(--gold);
+    letter-spacing: 6px;
+    text-shadow: 0 0 20px rgba(248,192,48,0.4), 0 2px 4px rgba(0,0,0,0.8);
+    font-family: 'Hiragino Mincho ProN', 'Yu Mincho', serif;
+}
+#base-banner-sub {
+    font-size: 10px; color: var(--parch);
+    letter-spacing: 3px; margin-top: 3px;
+    opacity: 0.7;
 }
 
-.result-section {
-    border-top: 1px solid #444;
-    padding: 0.8em 0;
-    margin-bottom: 0.5em;
+/* 通知バー */
+#base-notice {
+    position: relative; z-index: 2;
+    width: calc(100% - 24px);
+    background: rgba(42,30,14,0.85);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 12px;
+    margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+    backdrop-filter: blur(4px);
 }
+#base-notice-icon { font-size: 14px; }
+#base-notice-text { font-size: 11px; color: var(--text-sub); line-height: 1.4; }
+#base-notice-text strong { color: var(--yellow); }
 
-.result-section h3 {
-    color: #aaa;
-    font-size: 0.85em;
-    margin-bottom: 0.4em;
-}
-
-.result-close-btn {
+/* メニューグリッド */
+#base-grid {
+    position: relative; z-index: 2;
     width: 100%;
-    margin-top: 1em;
-    background: #27ae60;
-    font-size: 1.1em;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5em;
+    padding: 0 14px;
+    flex: 0 0 auto;
 }
 
-.result-levelup-card, .result-levelup-card {
-    background: #2b2b4f;
-    border-radius: 8px;
-    padding: 0.6em 1em;
-    margin-bottom: 0.5em;
+/* 各拠点ボタン */
+.base-btn {
+    position: relative;
+    background: linear-gradient(160deg, var(--panel2) 0%, var(--panel) 100%);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 8px 10px;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 6px;
+    cursor: pointer;
+    transition: transform .15s cubic-bezier(.34,1.4,.64,1), border-color .15s, box-shadow .15s;
+    overflow: hidden;
+    min-height: 88px;
+}
+.base-btn::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(248,192,48,0.3), transparent);
+}
+.base-btn:active {
+    transform: scale(0.94);
+    border-color: var(--gold-dim);
+    box-shadow: 0 0 12px rgba(248,192,48,0.2);
+}
+.base-btn.highlight {
+    border-color: var(--gold-dim);
+    box-shadow: 0 0 10px rgba(248,192,48,0.15);
+}
+.base-btn.danger { border-color: #8a3020; }
+.base-btn.danger:active { box-shadow: 0 0 12px rgba(232,88,88,0.25); }
+
+.base-btn-icon { font-size: 30px; line-height: 1; }
+.base-btn-label {
+    font-size: 11px; font-weight: bold;
+    color: var(--text); letter-spacing: 1px;
+    text-align: center; line-height: 1.2;
+}
+.base-btn-sub {
+    font-size: 9px; color: var(--text-dim);
+    text-align: center; line-height: 1.3;
 }
 
+/* バッジ */
+.base-btn-badge {
+    position: absolute; top: 6px; right: 7px;
+    background: var(--hp-red); color: #fff;
+    font-size: 8px; font-weight: bold;
+    padding: 1px 5px; border-radius: 10px;
+    min-width: 16px; text-align: center;
+}
+.base-btn-badge.new { background: var(--teal); color: #0a2a26; }
+.base-btn-badge.gold-badge { background: var(--gold-dim); color: #1a0c00; }
+
+/* 探索ボタン（大・横幅フル） */
+#btn-explore {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    padding: 14px 20px;
+    background: linear-gradient(135deg, #3a1a04, #6a3010, #3a1a04);
+    border-color: #c86020;
+    min-height: auto; gap: 14px;
+    box-shadow: 0 2px 12px rgba(200,96,32,0.3);
+}
+#btn-explore::before {
+    background: linear-gradient(90deg, transparent, rgba(248,160,32,0.4), transparent);
+}
+#btn-explore:active {
+    border-color: var(--gold);
+    box-shadow: 0 0 20px rgba(248,160,32,0.4);
+}
+#btn-explore .base-btn-icon { font-size: 32px; }
+#btn-explore .base-btn-label { font-size: 16px; letter-spacing: 3px; color: var(--gold); }
+#btn-explore .base-btn-sub { font-size: 10px; color: #c88050; text-align: left; }
+
+/* ステータス帯 */
+#base-footer {
+    position: relative; z-index: 2;
+    width: calc(100% - 24px);
+    margin-top: 12px;
+    display: flex; gap: 6px;
+}
+.base-footer-stat {
+    flex: 1;
+    background: rgba(42,30,14,0.8);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    padding: 6px 8px;
+    display: flex; flex-direction: column; gap: 3px;
+    backdrop-filter: blur(4px);
+}
+.base-footer-label { font-size: 8px; color: var(--text-dim); letter-spacing: 1px; text-transform: uppercase; }
+.base-footer-val   { font-size: 13px; font-weight: bold; color: var(--text); }
+.base-footer-val.gold  { color: var(--gold); }
+.base-footer-val.green { color: var(--green); }
+.base-footer-val.red   { color: var(--red); }
 </style>
 </head>
 <body>
@@ -360,6 +335,7 @@
         <button id="load-game-button" class="button hidden">続きから</button>
     </div>
 
+    <!-- Character Creation Screen -->
     <div id="character-creation-screen" class="game-screen hidden">
         <h2>キャラクター作成</h2>
         <div class="input-group">
@@ -427,7 +403,119 @@
         <button id="start-adventure-button" class="button">冒険を始める</button>
     </div>
 
-    <!-- Main Game Screen -->
+    <!-- Base Screen -->
+    <script>
+        function goSub(sub) {
+            alert(sub)
+        }
+        function toggleParty(sub) {
+            alert(sub)
+        }
+        function openBaseMenu(sub) {
+            alert(sub)
+        }
+    </script>
+    <div id="base-screen" class="screen">
+        <!-- HUD（共通） -->
+        <div class="hud" id="base-hud">
+            <div class="hud-main">
+                <div class="hud-char-icon" onclick="toggleParty('base')">⚔️</div>
+                <div class="hud-hp-mini">
+                    <div class="hud-bar-row">
+                        <span class="hud-bar-label">HP</span>
+                        <div class="hud-bar-track"><div class="hud-bar-fill fill-hp" style="width:81%"></div></div>
+                        </div>
+                        <div class="hud-bar-row">
+                            <span class="hud-bar-label">MP</span>
+                        <div class="hud-bar-track"><div class="hud-bar-fill fill-mp" style="width:58%"></div></div>
+                    </div>
+                </div>
+                <div class="hud-stats">
+                    <div class="hud-stat gold">🪙 136</div>
+                    <div class="hud-stat day">D+4</div>
+                </div>
+                <div style="flex:1"></div>
+                    <div class="hud-btns">
+                        <div class="hud-icon-btn" onclick="toggleParty('base')">👥</div>
+                        <div class="hud-icon-btn" onclick="openBaseMenu('bm-home')">☰</div>
+                    </div>
+                </div>
+                <div class="party-panel" id="party-panel-base">
+                <div class="party-grid" id="party-grid-base"></div>
+            </div>
+        </div>
+
+        <!-- 拠点ステージ -->
+        <div id="base-stage">
+            <div id="base-banner">
+            <div id="base-banner-title">ラグナ砦</div>
+            <div id="base-banner-sub">── RAGUNA FORTRESS ──</div>
+            </div>
+
+            <div id="base-notice">
+            <span id="base-notice-icon">📋</span>
+            <div id="base-notice-text"><strong>新しい依頼</strong>が3件掲示されています。ガルドスは<strong>治療が必要</strong>です。</div>
+            </div>
+
+            <div id="base-grid">
+            <div class="base-btn" onclick="goSub('inn')">
+                <span class="base-btn-icon">🏥</span>
+                <span class="base-btn-label">待機所</span>
+                <span class="base-btn-sub">HP/MP回復<br>状態異常治癒</span>
+                <span class="base-btn-badge rs-bad">要治療</span>
+            </div>
+            <div class="base-btn" onclick="goSub('storage')">
+                <span class="base-btn-icon">📦</span>
+                <span class="base-btn-label">倉庫</span>
+                <span class="base-btn-sub">アイテム預け入れ<br>引き出し</span>
+                <span class="base-btn-badge gold-badge">32/50</span>
+            </div>
+            <div class="base-btn" onclick="goSub('job')">
+                <span class="base-btn-icon">⚗️</span>
+                <span class="base-btn-label">転職</span>
+                <span class="base-btn-sub">クラスチェンジ<br>スキル引継ぎ</span>
+            </div>
+            <div class="base-btn" onclick="goSub('shop')">
+                <span class="base-btn-icon">🛒</span>
+                <span class="base-btn-label">ショップ</span>
+                <span class="base-btn-sub">武器・道具<br>購入・売却</span>
+                <span class="base-btn-badge new">NEW</span>
+            </div>
+            <div class="base-btn" onclick="goSub('board')">
+                <span class="base-btn-icon">📋</span>
+                <span class="base-btn-label">依頼板</span>
+                <span class="base-btn-sub">クエスト受諾<br>報告</span>
+                <span class="base-btn-badge">3</span>
+            </div>
+            <!-- 探索ボタン（全幅） -->
+            <div class="base-btn highlight" id="base-btn-explore">
+                <!-- onclick="goSub('explore-confirm')" -->
+                <span class="base-btn-icon">🗺️</span>
+                <div>
+                <div class="base-btn-label">探索へ出発</div>
+                <div class="base-btn-sub">現在地：廃墟の回廊 B2F</div>
+                </div>
+            </div>
+            </div>
+
+            <div id="base-footer">
+            <div class="base-footer-stat">
+                <span class="base-footer-label">所持金</span>
+                <span class="base-footer-val gold">🪙 136</span>
+            </div>
+            <div class="base-footer-stat">
+                <span class="base-footer-label">パーティ状態</span>
+                <span class="base-footer-val red">🔴 要治療</span>
+            </div>
+            <div class="base-footer-stat">
+                <span class="base-footer-label">進行日数</span>
+                <span class="base-footer-val">D + 4</span>
+            </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Explore Screen -->
     <div id="main-game-screen" class="game-screen hidden">
         <div class="player-status">
             <p><span id="player-display-name"></span></p>
@@ -476,7 +564,6 @@
             <!-- 例 <div class="actor-card">
                 <div class="actor-name">
                     アレス
-                    <span class="job warrior">戦</span>
                     <span class="level">Lv1</span>
                 </div>
                 <div class="actor-info">
@@ -500,34 +587,34 @@
         </section>
 
         <!-- ログ -->
-        <section id="battle-message" class="log-panel"></section>
+        <section id="battle-message"></section>
         <!-- アラート -->
-        <section id="alert-panel" class="alert-panel"></section>
+        <section id="alert-panel"></section>
 
         <!-- コマンド -->
-        <section id="command-panel" class="command-panel">
+        <section id="command-panel">
             <button class="cmd attack" data-act="attack">攻撃</button>
             <button class="cmd skill" data-act="skill">スキル</button>
             <button class="cmd guard" data-act="guard">防御</button>
             <button class="cmd item" data-act="item">アイテム</button>
         </section>
         <!-- アイテム -->
-        <section id="item-panel" class="item-panel">
+        <section id="item-panel">
             <!-- 例 <button class="cmd attack" data-act-detail="1">朽ちた回復薬</button> -->
         </section>
         <!-- スキル -->
-        <section id="skill-panel" class="skill-panel">
+        <section id="skill-panel">
             <!-- 例 <button class="cmd attack" data-act-detail="fire">ファイア</button> -->
         </section>
         <!-- ターゲット -->
-        <section id="target-panel" class="target-panel">
+        <section id="target-panel">
             <!-- 例 <button class="cmd ally enemy" data-target="asd35a1d">ネズミ</button> -->
         </section>
         <!-- リザルト -->
-        <div id="result-panel" class="result-panel hidden">
+        <div id="result-panel">
             <div class="result-inner">
 
-                <h2 id="result-title" class="result-title">⚔️ 戦闘勝利！</h2>
+                <h2 id="result-title">⚔️ 戦闘勝利！</h2>
 
                 <!-- 獲得リソース -->
                 <section class="result-section">
@@ -566,16 +653,15 @@
     <div id="toast"></div>
 
     <div id="game-over-screen" class="game-screen hidden">
-        <h2>ゲームオーバー</h2>
-        <p>あなたの冒険はここで終わった...</p>
-        <button id="back-to-title-from-gameover" class="button">タイトルへ戻る</button>
+        <h2>パーティーは全滅した</h2>
+        <button id="back-to-title-from-gameover" class="button">帰還する</button>
     </div>
 
     <!-- Clear Screen -->
     <div id="clear-screen" class="game-screen hidden">
-        <h1>ゲームクリア！</h1>
+        <h1>マップ制覇！</h1>
         <p>あなたは世界の真実を解き明かし、新たな夜明けを迎えました！</p>
-        <button id="back-to-title-from-clear" class="button">タイトルに戻る</button>
+        <button id="back-to-title-from-clear" class="button">帰還する</button>
     </div>
 
     <!-- Menu Modal -->

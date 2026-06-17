@@ -17,6 +17,17 @@ export const SCREENS = {
     clearScreen: "clear-screen",// 探索クリア TODO: いずれ消す
 };
 
+export const LABEL = {
+    maxHp: "最大HP", maxMp: "最大MP", attack: "攻撃力", armor: "防御力", speed: "速度", intel: "知能", dex: "器用", size: "体格" , multi_action: "行動回数",
+    poizon: "毒", paralyze: "麻痺", sleep: "眠り", stan: "スタン", blind: "盲目", seal: "魔封じ", bind: "捕縛",
+    alive_enemy_all: "敵全員", alive_enemy_random: "ランダムな敵1体", alive_enemy_one: "敵1体", damaged_enemy_all: "HPの減っている敵全員", damaged_enemy_random: "HPの減っているランダムな敵1体", damaged_enemy_one: "HPの減っている敵1体", dead_enemy_all: "戦闘不能中の敵全員", dead_enemy_random: "戦闘不能中のランダムな敵1体", dead_enemy_one: "戦闘不能中の敵1体",
+    poizoned_enemy_all: "毒状態の敵全員", poizoned_enemy_random: "毒状態のランダムな敵1体", poizoned_enemy_one: "毒状態の敵1体", 
+    alive_ally_all: "味方全員", alive_ally_random: "ランダムな味方1体", alive_ally_one: "味方1体", damaged_ally_all: "HPの減っている味方全員", damaged_ally_random: "HPの減っているランダムな味方1体", damaged_ally_one: "HPの減っている味方1体", dead_ally_all: "戦闘不能中の味方全員", dead_ally_random: "戦闘不能中のランダムな味方1体", dead_ally_one: "戦闘不能中の味方1体",
+    poizoned_ally_all: "毒状態の味方全員", poizoned_ally_random: "毒状態のランダムな味方1体", poizoned_ally_one: "毒状態の味方1体", 
+    alive_all: "全員", alive_random: "ランダムな1体", alive_one: "1体", damaged_all: "HPの減っている全員", damaged_random: "HPの減っているランダムな1体", damaged_one: "HPの減っている1体", dead_all: "戦闘不能中の全員", dead_random: "戦闘不能中のランダムな1体", dead_one: "戦闘不能中の1体",
+    poizoned_all: "毒状態の全員", poizoned_random: "毒状態のランダムな1体", poizoned_one: "毒状態の1体", 
+};
+
 /**
  * 状態異常の一覧
 盲目	👁️‍🗨️❌ / 🙈	
@@ -162,6 +173,16 @@ export const TARGET_TYPE_EXTRACTOR = {
     dead_enemy_one: (allies = [], enemies, actor = null) => {
         return enemies.filter(unit => isDead(unit));
     },
+    poizoned_enemy_all: (allies = [], enemies, actor = null) => {
+        return enemies.filter(unit => hasStatus("poizon"));
+    },
+    poizoned_enemy_random: (allies = [], enemies, actor = null) => {
+        const aliveUnits = enemies.filter(unit => hasStatus("poizon"));
+        return [aliveUnits[Math.floor(Math.random() * aliveUnits.length)]];
+    },
+    poizoned_enemy_one: (allies = [], enemies, actor = null) => {
+        return enemies.filter(unit => hasStatus("poizon"));
+    },
 
     // 味方
     alive_ally_all: (allies, enemies = [], actor = null) => {
@@ -193,6 +214,16 @@ export const TARGET_TYPE_EXTRACTOR = {
     },
     dead_ally_one: (allies, enemies = [], actor = null) => {
         return allies.filter(unit => isDead(unit));
+    },
+    poizoned_ally_all: (allies, enemies = [], actor = null) => {
+        return allies.filter(unit => hasStatus("poizon"));
+    },
+    poizoned_ally_random: (allies, enemies = [], actor = null) => {
+        const aliveUnits = allies.filter(unit => hasStatus("poizon"));
+        return [aliveUnits[Math.floor(Math.random() * aliveUnits.length)]];
+    },
+    poizoned_ally_one: (allies, enemies = [], actor = null) => {
+        return allies.filter(unit => hasStatus("poizon"));
     },
 
     // 無差別
@@ -226,6 +257,16 @@ export const TARGET_TYPE_EXTRACTOR = {
     dead_one: (allies, enemies = [], actor = null) => {
         return [...allies, ...enemies].filter(unit => isDead(unit));
     },
+    poizoned_all: (allies, enemies = [], actor = null) => {
+        return [...allies, ...enemies].filter(unit => hasStatus("poizon"));
+    },
+    poizoned_random: (allies, enemies = [], actor = null) => {
+        const aliveUnits = [...allies, ...enemies].filter(unit => hasStatus("poizon"));
+        return [aliveUnits[Math.floor(Math.random() * aliveUnits.length)]];
+    },
+    poizoned_one: (allies, enemies = [], actor = null) => {
+        return [...allies, ...enemies].filter(unit => hasStatus("poizon"));
+    },
 
     // 特殊
     own: (allies, enemies = [], actor) => {
@@ -239,4 +280,11 @@ export const TARGET_TYPE_EXTRACTOR = {
  */
 export function isDead(unit) {
     return unit.battle_status.some(s => s.type === "dead");
+}
+/**
+ * 状態異常中か判定する
+ * @param {Object} target 
+ */
+export function hasStatus(unit, status) {
+    return unit.battle_status.some(s => s.type === status);
 }

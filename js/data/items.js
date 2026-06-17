@@ -155,6 +155,7 @@ export const ITEMS = [
                 sides: 5,
                 flat: 7,
                 fix: 0,
+                armor_pierce: 1,//アイテムは全部アーマー無視
             },
         ],
         usableIn: {
@@ -182,6 +183,7 @@ export const ITEMS = [
                 sides: 6,
                 flat: 10,
                 fix: 0,
+                armor_pierce: 1,
             },
         ],
         usableIn: {

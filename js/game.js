@@ -170,6 +170,101 @@ const displaySizeSpan = document.getElementById("display-size");
 const startAdventureButton = document.getElementById("start-adventure-button");
 
 // base
+const baseBtnChangeJob = document.getElementById("base-btn-change-job");
+baseBtnChangeJob.addEventListener("click", () => {
+    player.party.forEach(unit => {
+        const result = changeJob(unit, unit.currentJob === "warrior" ? "mage" : (unit.currentJob === "mage" ? "priest" : "warrior"));
+        const job = JOBS[result.after];
+        let message = "";
+        if (result.success) {
+            message += `デバッグ: ${unit.name} は ${job.name} に転職した！`;
+            if (result.statChanges) {
+                message += "ステータスアップ：" + Object.entries(result.statChanges)
+                    .map(([k, v]) => `${k} +${v}`)
+                    .join(' | ');
+            }
+            if (result.learnSkills) {
+                message += "スキル習得：" + result.learnSkills.join(' | ');
+            }
+        } else {
+            message += `条件を満たしていません`;
+        }
+        showToast(message, 5000);
+    });
+    saveGame(player);
+});
+const baseBtnMansion = document.getElementById("base-btn-mansion");
+baseBtnMansion.addEventListener("click", () => {
+    const partyCount = player.party.length;
+    if (partyCount >= 4) {
+        showToast("パーティーがいっぱいです。");
+        return;
+    }
+    const unit = new Proxy(structuredClone(unit_base), {set: setAndRender});
+
+    let jobId = "";
+    if (partyCount === 3) {
+        jobId = "warrior";
+        unit.name = "センシ";
+        unit.maxHp = 30;
+        unit.maxMp = 0;
+        unit.attack = 25;
+        unit.armor = 3;
+        unit.speed = 1;
+        unit.intel = 3;
+        unit.dex = 10;
+        unit.size = 5;
+    } else if (partyCount === 2) {
+        jobId = "mage";
+        unit.name = "マホウツカイ";
+        unit.maxHp = 15;
+        unit.maxMp = 30;
+        unit.attack = 3;
+        unit.armor = 0;
+        unit.speed = 3;
+        unit.intel = 18;
+        unit.dex = 3;
+        unit.size = 3;
+    } else if (partyCount === 1) {
+        jobId = "priest";
+        unit.name = "ソウリョ";
+        unit.maxHp = 20;
+        unit.maxMp = 20;
+        unit.attack = 1;
+        unit.armor = 0;
+        unit.speed = 4;
+        unit.intel = 13;
+        unit.dex = 3;
+        unit.size = 3;
+    }
+
+    unit.id = self.crypto.randomUUID();
+    unit.level = 1;
+    unit.exp = 0;
+    unit.hp = unit.maxHp;
+    unit.mp = unit.maxMp;
+    unit.multi_action = 1;
+    unit.currentJob = null;
+    unit.jobs = {};
+    unit.equipment_slot = [];
+    unit.skill_list = [
+        // getSkillById("wait-and-see"),
+    ];
+    unit.battle_status = [];
+    const result = changeJob(unit, jobId);
+    if (!result.success) {
+        throw new Error(`Unknown Error: Job change failed`);
+    } else {
+        showToast(`${unit.name} が加入しました！`, 5000);
+    }
+    player.party.push(unit);
+
+    gameState.dirty = true;
+
+    console.log("Player initialized:", player);
+    saveGame(player);
+
+});
 const baseBtnExplore = document.getElementById("base-btn-explore");
 baseBtnExplore.addEventListener("click", () => {
     showMainGameScreen();
@@ -363,8 +458,20 @@ async function debugChangeJob() {
         return;
     }
 
-    await changeJob(unit, job_id);
-    addMessage(`デバッグ: ${unit.name} は ${job.name} に転職した！`, false);
+    const result = changeJob(unit, job_id);
+    if (result.success) {
+        addMessage(`デバッグ: ${unit.name} は ${job.name} に転職した！`, false);
+        if (result.statChanges) {
+            addMessage("ステータスアップ：" + Object.entries(result.statChanges)
+                .map(([k, v]) => `${k} +${v}`)
+                .join(' | '));
+        }
+        if (result.learnSkills) {
+            addMessage("スキル習得：" + result.learnSkills.join(' | '));
+        }
+    } else {
+        addMessage(`条件を満たしていません`);
+    }
     saveGame(player);
 }
 
@@ -640,7 +747,10 @@ function initializePlayer() {
         // getSkillById("wait-and-see"),
     ];
     unit.battle_status = [];
-    changeJob(unit, "warrior");
+    const result = changeJob(unit, "warrior");
+    if (!result.success) {
+        throw new Error(`Unknown Error: Job change failed`);
+    }
     player.party[0] = unit;
 
     gameState.dirty = true;
@@ -812,10 +922,13 @@ function openDiscardItemModal() {
  */
 function changeJob(unit, job_id) {
     const jobData = JOBS[job_id];
-
     if (!jobData) {
         throw new Error(`Unknown job: ${job_id}`);
     }
+
+    unit.currentJob = job_id;
+    let mod_ranks = {};
+    const beforeJob = unit.currentJob;
 
     // 未経験職なら転職条件チェック
     if (!unit.jobs[job_id]) {
@@ -828,21 +941,21 @@ function changeJob(unit, job_id) {
             }
         }
 
+        // ランク0で追加してランクアップ判定を行い、ランク1のボーナスを反映
         unit.jobs[job_id] = {
-            rank: 1,
+            rank: 0,
             exp: 0,
         };
+        mod_ranks = addRankExp(unit, 0);
     }
-
-    const beforeJob = unit.currentJob;
-
-    unit.currentJob = job_id;
 
     return {
         success: true,
         before: beforeJob,
         after: job_id,
         rank: unit.jobs[job_id].rank,
+        statChanges: mod_ranks.statChanges ?? null,
+        learnSkills: mod_ranks.learnSkills ?? null,
     };
 }
 
@@ -1407,20 +1520,24 @@ async function advance() {
  */
 async function applyEffect(effect) {
     let value = 0;
+    const list = player.party.filter(unit => !isDead(unit));
+    // ランダム
+    let unit = list[Math.floor(Math.random() * list.length)];
+
     switch (effect.type) {
         case "heal":
-            value = resolveValue(effect, player.party[0]);
-            player.party[0].hp = Math.min(player.party[0].hp + value, player.party[0].maxHp);
+            value = resolveValue(effect, unit);
+            unit.hp = Math.min(unit.hp + value, unit.maxHp);
             addMessage(`${value} HP回復した！`);
             break;
         case "damage":
-            value = resolveValue(effect, player.party[0]);
+            value = resolveValue(effect, unit);
             const actualDamage = calculateDamage(value, 0);// イベントはアーマー無視
-            applyDamage(player.party[0], actualDamage);
+            applyDamage(unit, actualDamage);
             break;
         case "stat_change":
-            value = resolveValue(effect, player.party[0]);
-            player.party[0][effect.stat] = Math.max(0, player.party[0][effect.stat] + value);
+            value = resolveValue(effect, unit);
+            unit[effect.stat] = Math.max(0, unit[effect.stat] + value);
             if (value > 0) {
                 addMessage(`${effect.stat} が ${value} 上がった！`);// TODO: effect.statに応じたラベル表示
             } else {
@@ -1586,10 +1703,10 @@ function unitDiceCreate(unit) {
         Math.floor(unit.attack * 0.35) + equip_dices.reduce((sum, _dice) => sum + _dice.sides, 0),
         1
     );
-    // 修正値：器用 ^ 0.60 - 1 + 装備の値：下限0 999で62
+    // 修正値：器用の20% + 装備の値：下限0 999で62
     const flat = Math.max(
-        Math.floor(unit.dex ^ 0.60 - 1) + equip_dices.reduce((sum, _dice) => sum + _dice.flat, 0),
-        1
+        Math.floor(unit.dex * 0.2) + equip_dices.reduce((sum, _dice) => sum + _dice.flat, 0),
+        0
     );
     return {
         dice: dice,
@@ -1621,16 +1738,23 @@ function calculateDiceDamage(attacker, target, dice, sides, flat, is_magic = fal
         }
         // 魔法なら威力増減
         if (is_magic) {
-            damage *= magicRate(attacker.int);
+            damage *= magicRate(attacker.intel);
         } else {
+            // ダメージ値 × 100 / (100 + DEF / 4)
             // 魔法でないならアーマー軽減
-            damage = damage - target.armor * (1 - armor_pierce);
+            damage = (damage * 100) / (100 + (target.armor * (1 - armor_pierce) / 4));
         }
     }
 
     // 防御中なら半減
     if (target.battle_status.some(s => s.type === "guard")) {
         damage = Math.floor(damage / 2);
+    }
+
+    // 耐性が出たら廃止かも
+    // ダメージが0ならランダムに1か0にする
+    if (damage <= 0) {
+        damage = Math.random() < 0.5 ? 1 : 0;
     }
 
     return Math.max(0, Math.floor(damage));
@@ -1658,7 +1782,7 @@ function calculateDiceHeal(attacker, target, dice, sides, flat, is_magic = false
         }
         // 魔法なら威力増減
         if (is_magic) {
-            heal *= magicRate(attacker.int);
+            heal *= magicRate(attacker.intel);
         }
     }
 
@@ -1688,7 +1812,7 @@ function calculateDiceChance(attacker, target, state_id, dice, sides, flat, is_m
         }
         // 魔法なら威力増減
         if (is_magic) {
-            chance_rate *= magicRate(attacker.int);
+            chance_rate *= magicRate(attacker.intel);
         }
     }
     // TODO: 抵抗力の増減
@@ -1950,10 +2074,10 @@ function battleExecCommand() {
                     const damage = calculateDiceDamage(
                         actor, target,
                         dice, sides, flat,
-                        effect.category === "magic" ? true : false,
+                        skill.category === "magic" ? true : false,
                         fix ?? 0, armor_pierce ?? 0
                     );
-                    applyDamage(target, damage, effect.category !== "magic");
+                    applyDamage(target, damage, skill.category !== "magic");
                 }
             } else if (effect.type === "heal") {
                 for (const target of targets) {
@@ -1963,7 +2087,7 @@ function battleExecCommand() {
                     const heal = calculateDiceHeal(
                         actor, target,
                         effect.dice, effect.sides, effect.flat,
-                        effect.category === "magic" ? true : false,
+                        skill.category === "magic" ? true : false,
                         effect.fix ?? 0
                     );
                     target.hp = Math.min(target.maxHp, target.hp + heal);
@@ -1974,7 +2098,7 @@ function battleExecCommand() {
                     if (isDead(target)) {
                         continue;
                     }
-                    const is_magic = effect.category === "magic";
+                    const is_magic = skill.category === "magic";
                     const is_success = calculateDiceChance(
                         actor, target, effect.stateId,
                         effect.dice, effect.sides, effect.flat,
@@ -1985,7 +2109,7 @@ function battleExecCommand() {
                         const turn = effect.turn;
                         // 魔法なら持続増減
                         if (is_magic) {
-                            turn *= magicRate(attacker.int);
+                            turn *= magicRate(actor.intel);
                             turn = Math.floor(turn);
                         }
                         addBattleStatus(effect.stateId, target, turn);
@@ -2000,7 +2124,7 @@ function battleExecCommand() {
                     if (!target.battle_status.some(s => s.type === effect.stateId)) {
                         continue;
                     }
-                    const is_magic = effect.category === "magic";
+                    const is_magic = skill.category === "magic";
                     const is_success = calculateDiceChance(
                         actor, target, effect.stateId,
                         effect.dice, effect.sides, effect.flat,
@@ -2016,7 +2140,7 @@ function battleExecCommand() {
                     if (!isDead(target)) {
                         continue;
                     }
-                    const is_magic = effect.category === "magic";
+                    const is_magic = skill.category === "magic";
                     const is_success = calculateDiceChance(
                         actor, target, "dead",
                         effect.dice, effect.sides, effect.flat,
@@ -2164,42 +2288,43 @@ function battleTurnEnd() {
 
 /**
  * 戦闘終了処理
- * @param {boolean} is_victory 
+ * @param {boolean} isVictory 
  */
-function battleResult(is_victory) {
+function battleResult(isVictory) {
     gameState.battle.phase = "result";// ログパネル描画
-    if (is_victory) {
+    if (isVictory) {
         // 勝利時にリザルトを組み立ててセット
-        const total_money = gameState.battle.enemies.reduce((acc, enemy) => acc + enemy.money, 0);
-        const total_exp = gameState.battle.enemies.reduce((acc, enemy) => acc + enemy.exp, 0);
-        const total_rank_exp = gameState.battle.enemies.reduce((acc, enemy) => acc + Math.floor(enemy.exp / 100) + 1, 0);
+        const totalMoney = gameState.battle.enemies.reduce((acc, enemy) => acc + enemy.money, 0);
+        const totalExp = gameState.battle.enemies.reduce((acc, enemy) => acc + enemy.exp, 0);
+        const totalRankExp = gameState.battle.enemies.reduce((acc, enemy) => acc + Math.floor(enemy.exp / 100) + 1, 0);
 
         // 経験値加算処理
         const level_ups = [];
         const rank_ups = [];
-        for (const unit of player.party) {
-            const mod_levels = addExp(unit, total_exp);
+        for (const unit of player.party.filter(unit => !isDead(unit))) {
+            const mod_levels = addExp(unit, totalExp);
             if (mod_levels) {
                 level_ups.push(mod_levels)
             }
-            const mod_ranks = addRankExp(unit, total_rank_exp);
-            if (mod_ranks) {
-                rank_ups.push(mod_ranks)
+            const modRanks = addRankExp(unit, totalRankExp);
+            if (modRanks) {
+                rank_ups.push(modRanks)
             }
         }
 
         const drop_items = rollDropItems(gameState.battle.enemies);
         gameState.battle.result = {
-            is_victory: true,
-            exp: total_exp,
-            gold: total_money,
+            isVictory: true,
+            exp: totalExp,
+            rankExp: totalRankExp,
+            gold: totalMoney,
             items: drop_items ?? null,
             levelUps: level_ups ?? null,
             rankUps: rank_ups ?? null,
         };
         gameState.battle.phase = "result";
     } else {
-        gameState.battle.result.is_victory = false;
+        gameState.battle.result.isVictory = false;
     }
 }
 
@@ -2345,7 +2470,7 @@ async function battleEnd() {
     moveScreen(SCREENS.mainGameScreen);
     gameState.explore.phase = "idle";
     const result = gameState.battle.result;
-    if (result.is_victory) {
+    if (result.isVictory) {
         const enemy_name = gameState.battle.enemies[0].name + (gameState.battle.enemies.length === 1 ? "" : "たち");
         addMessage(`${enemy_name}を倒した！`);
         addMessage(`${result.gold}Gを手に入れた！`);
@@ -2695,11 +2820,11 @@ function revive(target, heal, is_allow_zero = false) {
 
 /**
  * 魔法のpowerに乗ずる値をintから計算する
- * @param {number} int 
+ * @param {number} intel
  * @returns 
  */
-function magicRate(int) {
-    const t = int / 999;
+function magicRate(intel) {
+    const t = intel / 999;
     return 0.5 + 2.5 * Math.pow(t, 0.7);
 }
 

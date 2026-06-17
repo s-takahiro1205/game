@@ -30,15 +30,15 @@ export const JOBS = {
         ],
         rankBonuses: [// ランクボーナス
             {
+                rank: 1,
+                learnSkills: ["slash"]
+            },
+            {
                 rank: 2,
                 status: {
                     maxHp: 5,
                     attack: 3,
                 }
-            },
-            {
-                rank: 3,
-                learnSkills: ["slash"]
             },
             {
                 rank: 5,
@@ -87,15 +87,15 @@ export const JOBS = {
         ],
         rankBonuses: [
             {
+                rank: 1,
+                learnSkills: ["fire"]
+            },
+            {
                 rank: 2,
                 status: {
                     maxMp: 5,
                     intel: 3,
                 }
-            },
-            {
-                rank: 3,
-                learnSkills: ["fire"]
             },
             {
                 rank: 5,
@@ -112,6 +112,63 @@ export const JOBS = {
                     maxMp: 25,
                     intel: 5,
                     speed: 3,
+                }
+            }
+        ]
+    },
+    priest: {
+        id: "priest",
+        name: "僧侶",
+        grade: 1,
+        maxRank: 10,
+        rateExp: 1.0,
+        unlockConditions: [
+            {
+                type: "level",
+                value: 1
+            }
+        ],
+        growthRates: {// 成長率補正 165 魔法職は1割増し
+            maxHp: 50,
+            maxMp: 80,
+            attack: 0,
+            armor: 10,
+            speed: 20,
+            intel: 30,
+            dex: 10,
+            size: 0,
+        },
+        equipTypes: [
+            "wand",
+            "stuff",
+        ],
+        rankBonuses: [
+            {
+                rank: 1,
+                learnSkills: ["heal"]
+            },
+            {
+                rank: 2,
+                status: {
+                    maxMp: 5,
+                    intel: 3,
+                }
+            },
+            {
+                rank: 5,
+                learnSkills: ["poi-cure"],
+                status: {
+                    maxMp: 10,
+                    intel: 8,
+                }
+            },
+            {
+                rank: 10,
+                learnSkills: ["ra-heal"],
+                status: {
+                    maxMp: 20,
+                    intel: 5,
+                    armor: 3,
                 }
             }
         ]

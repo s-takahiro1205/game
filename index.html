@@ -283,7 +283,7 @@ html, body {
 .base-btn-badge.gold-badge { background: var(--gold-dim); color: #1a0c00; }
 
 /* 探索ボタン（大・横幅フル） */
-#btn-explore {
+#base-btn-explore {
     grid-column: 1 / -1;
     flex-direction: row;
     padding: 14px 20px;
@@ -292,16 +292,16 @@ html, body {
     min-height: auto; gap: 14px;
     box-shadow: 0 2px 12px rgba(200,96,32,0.3);
 }
-#btn-explore::before {
+#base-btn-explore::before {
     background: linear-gradient(90deg, transparent, rgba(248,160,32,0.4), transparent);
 }
-#btn-explore:active {
+#base-btn-explore:active {
     border-color: var(--gold);
     box-shadow: 0 0 20px rgba(248,160,32,0.4);
 }
-#btn-explore .base-btn-icon { font-size: 32px; }
-#btn-explore .base-btn-label { font-size: 16px; letter-spacing: 3px; color: var(--gold); }
-#btn-explore .base-btn-sub { font-size: 10px; color: #c88050; text-align: left; }
+#base-btn-explore .base-btn-icon { font-size: 32px; }
+#base-btn-explore .base-btn-label { font-size: 16px; letter-spacing: 3px; color: var(--gold); }
+#base-btn-explore .base-btn-sub { font-size: 10px; color: #c88050; text-align: left; }
 
 /* ステータス帯 */
 #base-footer {
@@ -458,7 +458,7 @@ html, body {
             </div>
 
             <div id="base-grid">
-            <div class="base-btn" onclick="goSub('inn')">
+            <div class="base-btn" id="base-btn-mansion">
                 <span class="base-btn-icon">🏥</span>
                 <span class="base-btn-label">待機所</span>
                 <span class="base-btn-sub">HP/MP回復<br>状態異常治癒</span>
@@ -470,7 +470,7 @@ html, body {
                 <span class="base-btn-sub">アイテム預け入れ<br>引き出し</span>
                 <span class="base-btn-badge gold-badge">32/50</span>
             </div>
-            <div class="base-btn" onclick="goSub('job')">
+            <div class="base-btn" id="base-btn-change-job">
                 <span class="base-btn-icon">⚗️</span>
                 <span class="base-btn-label">転職</span>
                 <span class="base-btn-sub">クラスチェンジ<br>スキル引継ぎ</span>
@@ -620,6 +620,7 @@ html, body {
                 <section class="result-section">
                     <h3>獲得</h3>
                     <p id="result-exp">経験値: <span></span></p>
+                    <p id="result-rank-exp">ランク経験値: <span></span></p>
                     <p id="result-gold">ゴールド: <span></span>G</p>
                 </section>
 

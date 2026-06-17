@@ -3,7 +3,7 @@
 import { player, gameState, useItem, equip, unequip, getUsableList, getRequiredExp, getRequiredRankExp } from './game.js';
 import { loadGame } from './save.js';
 import { JOBS } from './data/jobs.js';
-import { SCREENS, BATTLE_STATUSES, TARGET_TYPE_EXTRACTOR } from './const.js';
+import { SCREENS, LABEL, BATTLE_STATUSES, TARGET_TYPE_EXTRACTOR } from './const.js';
 
 // DOM Elements
 // TODO:精査してね
@@ -362,15 +362,6 @@ function renderMenuEquip() {
  */
 function formatItemEffect(item) {
     const parts = [];
-    // TODO: ここに置いてんじゃねーよバカ
-    const LABEL = {
-        maxHp: "最大HP", maxMp: "最大MP", attack: "攻撃力", armor: "防御力", speed: "速度", intel: "知能", dex: "器用", size: "体格" , multi_action: "行動回数",
-        poizon: "毒", paralyze: "麻痺", sleep: "眠り", stan: "スタン", blind: "盲目", seal: "魔封じ", bind: "捕縛",
-        alive_enemy_all: "敵全員", alive_enemy_random: "ランダムな敵1体", alive_enemy_one: "敵1体", dead_enemy_all: "戦闘不能中の敵全員", dead_enemy_random: "戦闘不能中のランダムな敵1体", dead_enemy_one: "戦闘不能中の敵1体",
-        alive_ally_all: "味方全員", alive_ally_random: "ランダムな味方1体", alive_ally_one: "味方1体", dead_ally_all: "戦闘不能中の味方全員", dead_ally_random: "戦闘不能中のランダムな味方1体", dead_ally_one: "戦闘不能中の味方1体",
-        alive_all: "全員", alive_random: "ランダムな1体", alive_one: "1体", dead_all: "戦闘不能中の全員", dead_random: "戦闘不能中のランダムな1体", dead_one: "戦闘不能中の1体",
-    };
-
     if (item.effects && item.effects.length > 0) {
         parts.push(`対象 ${LABEL[item.use_target_type]}`)
         const diceLabelFun = (ef) => {return ef.fix ? ef.fix : ef.dice + "D" + ef.sides + "+" + ef.flat};
@@ -533,7 +524,7 @@ function renderResultPanel() {
     if (!r) return;
 
     // 敗北時
-    if (!gameState.battle.result.is_victory) {
+    if (!gameState.battle.result.isVictory) {
         resultTitle.innerHTML = "パーティーは全滅した…";
     } else {
         resultTitle.innerHTML = "⚔️ 戦闘勝利！";
@@ -541,6 +532,7 @@ function renderResultPanel() {
 
     // EXP/Gold
     document.querySelector('#result-exp span').textContent = r.exp ?? 0;
+    document.querySelector('#result-rank-exp span').textContent = r.rankExp ?? 0;
     document.querySelector('#result-gold span').textContent = r.gold ?? 0;
 
     // 獲得アイテム

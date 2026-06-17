@@ -132,6 +132,8 @@ export const SKILLS = [
             }
         ]
     },
+
+    // 治癒魔法
     {
         id: "heal",
         name: "ヒール",
@@ -152,6 +154,55 @@ export const SKILLS = [
                 dice: 5,
                 sides: 6,
                 flat: 10,
+                fix: 0,
+            }
+        ]
+    },
+    {
+        id: "poi-cure",
+        name: "ポイキュア",
+        cost: {
+            mp: 3
+        },
+        target_type: "poizoned_ally_one",
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: true,
+        },
+        category: "magic",
+        type: "heal",
+        effects: [
+            {
+                type: "recover_state",
+                stateId: "poizon",
+                dice: 0,
+                sides: 0,
+                flat: 0,
+                fix: 100,
+            },
+        ]
+    },
+    {
+        id: "ra-heal",
+        name: "ラヒール",
+        cost: {
+            mp: 6
+        },
+        target_type: "damaged_ally_one",
+        usableIn: {
+            home: false,
+            explore: true,
+            battle: true,
+        },
+        category: "magic",
+        type: "heal",
+        effects: [
+            {
+                type: "heal",
+                dice: 7,
+                sides: 12,
+                flat: 20,
                 fix: 0,
             }
         ]

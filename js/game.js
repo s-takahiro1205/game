@@ -2106,7 +2106,7 @@ function battleExecCommand() {
                         effect.fix ?? 0
                     );
                     if (is_success) {
-                        const turn = effect.turn;
+                        let turn = effect.turn;
                         // 魔法なら持続増減
                         if (is_magic) {
                             turn *= magicRate(actor.intel);

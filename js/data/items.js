@@ -32,6 +32,34 @@
 export const ITEMS = [
     // 消費アイテム
     {
+        id: "noraml_herb",
+        name: "薬草",
+        description: "いたって普通の薬草。すりつぶして傷口に塗るとわずかに傷が治る。",
+        category: "consumable",
+        price: 100,
+        effects: [
+            {
+                type: "heal",
+                dice: 0,
+                sides: 0,
+                flat: 0,
+                fix: 20,
+                text: "薬草を使った。HPが20回復した！"
+            }
+        ],
+        usableIn: {
+            home: false,
+            explore: true,
+            battle: true,
+        },
+        uses: 2,
+        use_type: "heal",
+        use_target_type: "damaged_ally_one",
+        stat_modifier: null,
+        equip_type: null,
+        uuid: "",
+    },
+    {
         id: "potion_of_decay",
         name: "朽ちた回復薬",
         description: "古びた瓶に入った、不気味な色合いの薬。飲むとわずかに活力が戻る。",
@@ -199,7 +227,7 @@ export const ITEMS = [
         uuid: "",
     },
     {
-        id: "potion_of_poizon",
+        id: "potion_of_poison",
         name: "バルサグの毒粉",
         description: "南部地方に生える植物の花粉。多量に吸うと全身に激しい痛みが走る。",
         category: "consumable",
@@ -207,7 +235,7 @@ export const ITEMS = [
         effects: [
             {
                 type: "add_state",
-                stateId: "poizon",
+                stateId: "poison",
                 dice: 0,
                 sides: 0,
                 flat: 0,
@@ -294,7 +322,7 @@ export const ITEMS = [
         effects: [
             {
                 type: "recover_state",
-                stateId: "poizon",
+                stateId: "poison",
                 dice: 0,
                 sides: 0,
                 flat: 0,

@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Event UI</title>
+<style>
+/* ══════════════════════════════════
+   Reset & Root（既存共通変数）
+══════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:       #1e1608;
+  --panel:    #2c1f0e;
+  --panel2:   #3a2a14;
+  --panel3:   #4a3820;
+  --border:   #6a4e28;
+  --border2:  #4a3820;
+  --text:     #f0d890;
+  --text-sub: #a08858;
+  --text-dim: #6a5030;
+  --parch:    #c8a96e;
+  --parch-dk: #8a6535;
+  --paper:    #f0e0b0;
+  --gold:     #f8c030;
+  --gold-dim: #c89020;
+  --hp-red:   #f03868;
+  --mp-blue:  #38a8f8;
+  --green:    #50d870;
+  --red:      #e85858;
+  --teal:     #40d0b8;
+  --yellow:   #f8d040;
+  --purple:   #c060f0;
+}
+html, body {
+  height: 100%; background: var(--bg);
+  overflow: hidden;
+  font-family: 'Hiragino Kaku Gothic ProN','Noto Sans JP',system-ui,sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+#app {
+  width: 100%; max-width: 430px;
+  height: 100dvh; margin: 0 auto;
+  display: flex; flex-direction: column;
+  position: relative; overflow: hidden;
+}
+
+/* ══════════════════════════════════
+   イベントヘッダー
+══════════════════════════════════ */
+#event-header {
+  flex: 0 0 auto;
+  background: var(--panel);
+  border-bottom: 2px solid var(--border);
+  padding: 7px 12px;
+  display: flex; align-items: center; gap: 10px;
+  position: relative; z-index: 10;
+}
+#event-back-btn {
+  width: 30px; height: 30px;
+  background: var(--panel2); border: 1px solid var(--border);
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; cursor: pointer; color: var(--text);
+  flex: 0 0 auto; transition: background .12s;
+}
+#event-back-btn:active { background: var(--panel3); }
+#event-header-center { flex: 1; min-width: 0; }
+#event-type-badge {
+  display: inline-block;
+  font-size: 9px; font-weight: bold;
+  padding: 2px 8px; border-radius: 10px;
+  letter-spacing: 1px; margin-bottom: 3px;
+}
+#event-title {
+  font-size: 14px; font-weight: bold;
+  color: var(--text); letter-spacing: 1px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* イベントタイプ別バッジカラー */
+.et-battle  { background:#3a1010; color:#f07070; border:1px solid #7a3030; }
+.et-elite   { background:#3a2800; color:var(--gold); border:1px solid var(--gold-dim); }
+.et-dungeon { background:#281040; color:#c060f0; border:1px solid #6030a0; }
+.et-rest    { background:#103028; color:var(--teal); border:1px solid #206858; }
+.et-shop    { background:#1a2a10; color:var(--green); border:1px solid #308040; }
+.et-event   { background:#2a1a08; color:var(--parch); border:1px solid var(--parch-dk); }
+.et-treasure{ background:#302010; color:var(--yellow); border:1px solid #807030; }
+.et-trap    { background:#301818; color:#f09060; border:1px solid #804030; }
+
+/* フロアラベル（右） */
+#event-floor-label {
+  font-size: 10px; color: var(--text-dim);
+  letter-spacing: 1px; flex: 0 0 auto;
+}
+
+/* ══════════════════════════════════
+   イラストエリア
+══════════════════════════════════ */
+#event-illust {
+  flex: 0 0 auto;
+  position: relative;
+  overflow: hidden;
+  /* 高さは画面の約35% */
+  height: 34vh; min-height: 160px; max-height: 240px;
+}
+
+/* 羊皮紙テクスチャ背景 */
+#event-illust-bg {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 90% 70% at 50% 35%, rgba(255,255,255,.1) 0%, transparent 65%),
+    radial-gradient(circle at 10% 85%, rgba(0,0,0,.25) 0%, transparent 40%),
+    radial-gradient(circle at 90% 15%, rgba(0,0,0,.2) 0%, transparent 35%),
+    linear-gradient(170deg, #c8a850 0%, #b09040 35%, #8a7028 70%, #6a5018 100%);
+}
+/* ページ端の破れ・汚れ */
+#event-illust-bg::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(circle at 5% 10%,  rgba(0,0,0,.3) 0%, transparent 20%),
+    radial-gradient(circle at 95% 90%, rgba(0,0,0,.25) 0%, transparent 18%),
+    radial-gradient(circle at 50% 50%, rgba(0,0,0,.0) 0%, rgba(0,0,0,.08) 100%);
+}
+/* 下部グラデ（テキストエリアへの溶け込み） */
+#event-illust-bg::after {
+  content: '';
+  position: absolute; bottom: 0; left: 0; right: 0; height: 40%;
+  background: linear-gradient(0deg, var(--bg) 0%, transparent 100%);
+}
+
+/* メインイラスト絵文字 */
+#event-illust-main {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 2;
+}
+#event-main-emoji {
+  font-size: 90px; line-height: 1;
+  filter: drop-shadow(0 4px 16px rgba(0,0,0,.7));
+  transition: opacity .4s, transform .4s;
+}
+
+/* サブ絵文字（背景演出） */
+.event-sub-emoji {
+  position: absolute;
+  font-size: 28px; opacity: .18;
+  filter: blur(1px);
+  pointer-events: none; z-index: 1;
+}
+
+/* イベントタイトル（イラスト下部オーバーレイ） */
+#event-illust-title {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 8px 14px 6px;
+  z-index: 3;
+  display: flex; align-items: flex-end; justify-content: space-between;
+}
+#event-illust-scene-label {
+  font-size: 10px; color: rgba(200,169,110,.7);
+  letter-spacing: 2px; text-transform: uppercase;
+  font-family: 'Hiragino Mincho ProN','Yu Mincho',serif;
+}
+#event-illust-turn {
+  font-size: 9px; color: var(--text-dim);
+  background: rgba(0,0,0,.5); border-radius: 10px;
+  padding: 2px 8px;
+}
+
+/* ══════════════════════════════════
+   状況テキストエリア
+══════════════════════════════════ */
+#event-narrative-wrap {
+  flex: 0 0 auto;
+  position: relative;
+  margin: 0 12px;
+  background: rgba(12,8,2,.75);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 10px 13px 8px;
+  backdrop-filter: blur(4px);
+  /* イラストに少し被せる */
+  margin-top: -14px;
+  z-index: 5;
+}
+/* 羊皮紙風トップライン */
+#event-narrative-wrap::before {
+  content: '';
+  position: absolute; top: 0; left: 12px; right: 12px; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--parch-dk), transparent);
+}
+
+#event-narrative-text {
+  font-size: 12px; color: var(--text); line-height: 1.85;
+  letter-spacing: .4px;
+  /* テキストアニメ用 */
+  min-height: 52px;
+}
+#event-narrative-text .nt-em    { color: var(--gold); font-weight: bold; }
+#event-narrative-text .nt-warn  { color: var(--hp-red); }
+#event-narrative-text .nt-good  { color: var(--green); }
+#event-narrative-text .nt-skill { color: var(--teal); }
+
+/* 続き▼インジケータ */
+#narrative-next {
+  text-align: right;
+  font-size: 11px; color: var(--parch-dk);
+  margin-top: 4px;
+  animation: blink 1s step-end infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+/* ══════════════════════════════════
+   選択肢エリア
+══════════════════════════════════ */
+#event-choices-wrap {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 10px 12px 20px;
+  display: flex; flex-direction: column; gap: 7px;
+}
+#event-choices-wrap::-webkit-scrollbar { width: 3px; }
+#event-choices-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* 選択肢ラベル */
+#choices-label {
+  font-size: 9px; color: var(--parch-dk);
+  letter-spacing: 2px; text-transform: uppercase;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border2);
+  display: flex; align-items: center; gap: 6px;
+  flex: 0 0 auto;
+}
+#choices-label::before { content: '◆'; font-size: 7px; }
+
+/* 選択肢ボタン */
+.choice-btn {
+  width: 100%;
+  background: var(--panel2); border: 1px solid var(--border2);
+  border-radius: 9px; padding: 11px 14px;
+  display: flex; align-items: center; gap: 10px;
+  cursor: pointer; text-align: left; position: relative; overflow: hidden;
+  transition: border-color .15s, background .12s, transform .12s;
+}
+/* 光沢ライン */
+.choice-btn::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(248,192,48,.15), transparent);
+}
+.choice-btn:active { transform: scale(.98); background: var(--panel3); }
+
+/* ホバー・選択状態 */
+.choice-btn:not(.disabled):not(.selected):hover { border-color: var(--gold-dim); }
+.choice-btn.selected {
+  border-color: var(--gold);
+  background: rgba(248,192,48,.07);
+  box-shadow: 0 0 10px rgba(248,192,48,.15);
+}
+
+/* アイコン枠 */
+.choice-icon {
+  width: 36px; height: 36px; border-radius: 8px;
+  background: var(--panel3); border: 1px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 19px; flex: 0 0 auto;
+  transition: background .15s;
+}
+.choice-btn.selected .choice-icon { background: rgba(248,192,48,.12); border-color: var(--gold-dim); }
+
+/* テキスト */
+.choice-body { flex: 1; min-width: 0; }
+.choice-label {
+  font-size: 13px; font-weight: bold; color: var(--text);
+  letter-spacing: .5px; margin-bottom: 3px;
+}
+.choice-desc {
+  font-size: 10px; color: var(--text-sub); line-height: 1.5;
+}
+
+/* 条件バッジ */
+.choice-req {
+  font-size: 8px; font-weight: bold;
+  padding: 2px 7px; border-radius: 10px;
+  letter-spacing: .5px; flex: 0 0 auto;
+  white-space: nowrap;
+}
+.req-ok   { background:#103028; color:var(--teal);  border:1px solid #206858; }
+.req-item { background:#302010; color:var(--yellow); border:1px solid #807030; }
+.req-gold { background:#302800; color:var(--gold);   border:1px solid var(--gold-dim); }
+.req-stat { background:#1a1040; color:#8080f0;        border:1px solid #4040a0; }
+
+/* 無効選択肢 */
+.choice-btn.disabled {
+  opacity: .35; cursor: not-allowed; pointer-events: none;
+}
+.choice-btn.disabled .choice-label { color: var(--text-dim); }
+
+/* 結果表示バッジ（選択後） */
+.choice-result {
+  position: absolute; top: 6px; right: 8px;
+  font-size: 8px; font-weight: bold;
+  padding: 2px 7px; border-radius: 10px;
+}
+.result-good { background:#103020; color:var(--green); border:1px solid #308040; }
+.result-bad  { background:#3a1010; color:var(--red);   border:1px solid #7a2020; }
+
+/* ══════════════════════════════════
+   デモ切り替えバー（開発用）
+══════════════════════════════════ */
+#demo-bar {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 430px;
+  background: rgba(12,8,2,.92);
+  border-top: 1px solid var(--border2);
+  padding: 6px 8px 10px;
+  display: flex; gap: 5px; z-index: 100;
+  backdrop-filter: blur(6px);
+}
+.demo-switch {
+  flex: 1; padding: 5px 2px;
+  background: var(--panel2); border: 1px solid var(--border2);
+  border-radius: 6px; font-size: 9px; color: var(--text-sub);
+  cursor: pointer; text-align: center; letter-spacing: .3px;
+  transition: background .12s, border-color .12s;
+}
+.demo-switch.active { background: var(--gold-dim); border-color: var(--gold); color: #1a0c00; font-weight: bold; }
+.demo-switch:active { opacity: .7; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ヘッダー -->
+  <div id="event-header">
+    <div id="event-back-btn">←</div>
+    <div id="event-header-center">
+      <div id="event-type-badge" class="et-event">EVENT</div>
+      <div id="event-title">謎めいた祭壇</div>
+    </div>
+    <div id="event-floor-label">B2F</div>
+  </div>
+
+  <!-- イラストエリア -->
+  <div id="event-illust">
+    <div id="event-illust-bg"></div>
+    <!-- サブ絵文字（背景演出） -->
+    <span class="event-sub-emoji" style="top:12%;left:8%">✨</span>
+    <span class="event-sub-emoji" style="top:20%;right:10%">🌿</span>
+    <span class="event-sub-emoji" style="bottom:28%;left:14%">💎</span>
+    <span class="event-sub-emoji" style="bottom:22%;right:8%">⚗️</span>
+    <!-- メイン絵文字 -->
+    <div id="event-illust-main">
+      <span id="event-main-emoji">🔮</span>
+    </div>
+    <!-- 下部ラベル -->
+    <div id="event-illust-title">
+      <span id="event-illust-scene-label">廃墟の回廊 B2F</span>
+      <span id="event-illust-turn">探索中</span>
+    </div>
+  </div>
+
+  <!-- 状況テキスト -->
+  <div id="event-narrative-wrap">
+    <div id="event-narrative-text"></div>
+    <div id="narrative-next">▼ タップで続く</div>
+  </div>
+
+  <!-- 選択肢 -->
+  <div id="event-choices-wrap">
+    <div id="choices-label">行動を選択</div>
+    <div id="choices-list"></div>
+  </div>
+
+</div>
+
+<!-- デモ切り替えバー -->
+<div id="demo-bar">
+  <div class="demo-switch active" onclick="loadEvent('altar')">🔮 祭壇</div>
+  <div class="demo-switch" onclick="loadEvent('elite')">💀 精鋭</div>
+  <div class="demo-switch" onclick="loadEvent('treasure')">💰 宝箱</div>
+  <div class="demo-switch" onclick="loadEvent('rest')">🏕️ 休憩</div>
+  <div class="demo-switch" onclick="loadEvent('shop')">🛒 商人</div>
+  <div class="demo-switch" onclick="loadEvent('trap')">⚠️ 罠</div>
+</div>
+
+<script>
+/* ══════════════════════════════════
+   イベントデータ定義
+══════════════════════════════════ */
+const EVENTS = {
+
+  altar: {
+    typeLabel: 'イベント', typeCls: 'et-event',
+    title: '謎めいた祭壇',
+    emoji: '🔮',
+    subEmojis: [
+      {e:'✨',top:'12%',left:'8%'},
+      {e:'🌿',top:'20%',right:'10%'},
+      {e:'💎',bottom:'28%',left:'14%'},
+      {e:'⚗️',bottom:'22%',right:'8%'},
+    ],
+    paperTone: 'linear-gradient(170deg,#c8a850 0%,#b09040 35%,#8a7028 70%,#6a5018 100%)',
+    narrative: `薄暗い回廊の奥、<span class="nt-em">古代の祭壇</span>が佇んでいる。\n刻まれた文字は判読できないが、中央の水晶が<span class="nt-skill">淡い光</span>を放っている。\n触れれば何かが起きるだろう——よいことか、悪いことかは、わからない。`,
+    hasNext: false,
+    choices: [
+      { icon:'🙏', label:'祭壇に手を触れる',      desc:'未知の力に身を委ねる。結果は運次第。',              req:null, disabled:false },
+      { icon:'🔍', label:'文字を解読する',          desc:'知力が高ければ何かわかるかもしれない。',            req:{type:'stat', label:'知力 8 以上'}, disabled:false },
+      { icon:'💎', label:'捧げ物をする',            desc:'所持品を供える。何か見返りがあるかも。',            req:{type:'item', label:'宝石 ×1'}, disabled:false },
+      { icon:'🪙', label:'硬貨を投げ入れる',        desc:'50Gを捧げてご加護を求める。',                      req:{type:'gold', label:'50G'}, disabled:false },
+      { icon:'📖', label:'記録だけ残す',             desc:'写本に記録し、先へ進む。リスクなし。',              req:null, disabled:false },
+      { icon:'🚶', label:'そのまま立ち去る',         desc:'関わらずに先へ進む。',                              req:null, disabled:false },
+    ],
+  },
+
+  elite: {
+    typeLabel: '精鋭戦闘', typeCls: 'et-elite',
+    title: '鬼将軍 ソルグリム',
+    emoji: '⚔️',
+    subEmojis: [
+      {e:'🛡️',top:'10%',left:'5%'},
+      {e:'🔥',top:'15%',right:'8%'},
+      {e:'💀',bottom:'30%',left:'10%'},
+      {e:'🩸',bottom:'20%',right:'12%'},
+    ],
+    paperTone: 'linear-gradient(170deg,#8a2010 0%,#6a1808 40%,#4a1006 70%,#2a0802 100%)',
+    narrative: `行く手を<span class="nt-warn">鬼将軍 ソルグリム</span>が塞いだ。\n戦場を渡り歩いた歴戦の猛者。その眼光は、百人の兵を震え上がらせたと言われる。\n<span class="nt-warn">逃げる道はない</span>——戦うしかない。`,
+    hasNext: false,
+    choices: [
+      { icon:'⚔️', label:'正面から戦う',            desc:'全力で迎え撃つ。報酬は最大になる。',                req:null, disabled:false },
+      { icon:'🎯', label:'弱点を狙って攻める',       desc:'器用さがあれば致命傷を与えられる。',                req:{type:'stat', label:'器用 10 以上'}, disabled:false },
+      { icon:'🧪', label:'ポーションを使って戦う',   desc:'戦闘前にHP回復して臨む。',                          req:{type:'item', label:'ポーション ×1'}, disabled:false },
+      { icon:'💨', label:'隙を見て撤退する',         desc:'経験値・報酬なし。HPダメージを受ける可能性あり。',  req:null, disabled:false },
+      { icon:'🤝', label:'取引を申し込む',           desc:'鬼将軍が応じるとは思えない……。',                   req:null, disabled:true },
+    ],
+  },
+
+  treasure: {
+    typeLabel: '宝物庫', typeCls: 'et-treasure',
+    title: '封印された宝物庫',
+    emoji: '💰',
+    subEmojis: [
+      {e:'🗝️',top:'12%',left:'8%'},
+      {e:'💎',top:'18%',right:'10%'},
+      {e:'⚗️',bottom:'28%',left:'14%'},
+      {e:'📜',bottom:'22%',right:'8%'},
+    ],
+    paperTone: 'linear-gradient(170deg,#c8a020 0%,#a08010 40%,#806008 70%,#604808 100%)',
+    narrative: `重厚な石扉の奥に、<span class="nt-em">宝物庫</span>が眠っている。\n扉には複雑な<span class="nt-skill">魔法錠</span>が施されており、正しい手段がなければ開かない。\n力ずくで破れば罠が発動するかもしれない——慎重に判断しよう。`,
+    hasNext: false,
+    choices: [
+      { icon:'🗝️', label:'鍵で開ける',              desc:'古い鍵を使う。確実に中身を入手できる。',            req:{type:'item', label:'古い鍵 ×1'}, disabled:false },
+      { icon:'🔓', label:'錠前を解錠する',           desc:'器用さがあれば鍵なしで開けられる。',                req:{type:'stat', label:'器用 12 以上'}, disabled:false },
+      { icon:'💥', label:'力ずくで破壊する',         desc:'罠発動の可能性あり。HPを消耗するかも。',            req:null, disabled:false },
+      { icon:'🔮', label:'魔法で解錠する',           desc:'魔力が高ければ魔法錠を解除できる。',                req:{type:'stat', label:'魔力 10 以上'}, disabled:true },
+      { icon:'📝', label:'構造を記録して立ち去る',   desc:'今回は諦め、情報だけ持ち帰る。',                    req:null, disabled:false },
+    ],
+  },
+
+  rest: {
+    typeLabel: '休憩所', typeCls: 'et-rest',
+    title: '隠された野営地',
+    emoji: '🏕️',
+    subEmojis: [
+      {e:'🌙',top:'10%',left:'6%'},
+      {e:'⭐',top:'16%',right:'8%'},
+      {e:'🌿',bottom:'28%',left:'12%'},
+      {e:'🔥',bottom:'24%',right:'10%'},
+    ],
+    paperTone: 'linear-gradient(170deg,#1a3820 0%,#142c18 40%,#0e2010 70%,#081408 100%)',
+    narrative: `岩陰に<span class="nt-good">隠された野営地</span>を発見した。\n焚き火の跡と毛布が残っており、しばらく前まで誰かが使っていたようだ。\n安全なこの場所で、パーティは一息つくことができる。`,
+    hasNext: false,
+    choices: [
+      { icon:'❤️', label:'全員で休息する',           desc:'全員のHP・MPを大幅に回復する。',                    req:null, disabled:false },
+      { icon:'🍞', label:'食料を消費して栄養補給',   desc:'食料を使い、回復量を増やす。',                      req:{type:'item', label:'非常食 ×2'}, disabled:false },
+      { icon:'📚', label:'スキルを習得する',         desc:'休息中にスキルを磨く。経験値を消費。',               req:{type:'stat', label:'EXP 100 以上'}, disabled:false },
+      { icon:'🔭', label:'周囲を偵察する',           desc:'先のフロアの情報を得る。回復なし。',                 req:null, disabled:false },
+      { icon:'⏩', label:'休まず先へ進む',            desc:'HP/MPは回復しない。',                               req:null, disabled:false },
+    ],
+  },
+
+  shop: {
+    typeLabel: '商人', typeCls: 'et-shop',
+    title: '旅の商人 ガーゴロ',
+    emoji: '🛖',
+    subEmojis: [
+      {e:'🪙',top:'10%',left:'6%'},
+      {e:'🧪',top:'18%',right:'9%'},
+      {e:'⚔️',bottom:'30%',left:'12%'},
+      {e:'📦',bottom:'22%',right:'10%'},
+    ],
+    paperTone: 'linear-gradient(170deg,#2a3820 0%,#1e2c14 40%,#141e0e 70%,#0a1208 100%)',
+    narrative: `「いらっしゃい、旅のお方！<span class="nt-em">ガーゴロの店</span>へようこそ。」\n小柄な商人が荷車の後ろから顔を出した。\n品揃えは豊富——懐具合と相談しながら選ぼう。`,
+    hasNext: false,
+    choices: [
+      { icon:'🛒', label:'商品を購入する',           desc:'所持金でアイテムを買う。',                          req:{type:'gold', label:'所持金 30G 以上'}, disabled:false },
+      { icon:'💰', label:'アイテムを売る',            desc:'不要な所持品を換金する。',                          req:null, disabled:false },
+      { icon:'🔄', label:'アイテムを交換する',        desc:'特定のアイテムと交換取引をする。',                  req:{type:'item', label:'魔石 ×1'}, disabled:false },
+      { icon:'💬', label:'情報を買う',               desc:'100Gで次のフロアの情報を得る。',                    req:{type:'gold', label:'100G'}, disabled:false },
+      { icon:'🤝', label:'何も買わず立ち去る',       desc:'「また来てくれよな！」',                            req:null, disabled:false },
+    ],
+  },
+
+  trap: {
+    typeLabel: '罠部屋', typeCls: 'et-trap',
+    title: '魔法罠の間',
+    emoji: '⚠️',
+    subEmojis: [
+      {e:'💥',top:'10%',left:'6%'},
+      {e:'🩸',top:'18%',right:'9%'},
+      {e:'⚡',bottom:'30%',left:'12%'},
+      {e:'☠️',bottom:'22%',right:'10%'},
+    ],
+    paperTone: 'linear-gradient(170deg,#3a1808 0%,#2a1004 40%,#1a0802 70%,#0e0402 100%)',
+    narrative: `一歩踏み出した瞬間、床の<span class="nt-warn">魔法陣が光った</span>。\n罠だ——発動する前に、何らかの手を打たなければならない。\n焦りは禁物。<span class="nt-warn">正しい判断</span>が求められる。`,
+    hasNext: false,
+    choices: [
+      { icon:'🔍', label:'罠を解除する',             desc:'器用さで魔法罠を無効化。成功すれば報酬あり。',       req:{type:'stat', label:'器用 8 以上'}, disabled:false },
+      { icon:'🛡️', label:'盾で防御して突破する',    desc:'防御力で被ダメージを軽減しながら進む。',             req:null, disabled:false },
+      { icon:'🔮', label:'魔法で罠を打ち消す',       desc:'魔力が高ければ罠を消せる。',                        req:{type:'stat', label:'魔力 8 以上'}, disabled:true },
+      { icon:'💨', label:'素早く駆け抜ける',         desc:'速度が高ければ罠を回避できる。',                    req:{type:'stat', label:'速度 10 以上'}, disabled:false },
+      { icon:'💥', label:'あえて発動させる',         desc:'全力で受け止める。HP大幅減の代わりに罠が消滅。',     req:null, disabled:false },
+      { icon:'🚶', label:'来た道を引き返す',         desc:'罠を避けて別ルートを探す。',                        req:null, disabled:false },
+    ],
+  },
+};
+
+/* ══════════════════════════════════
+   レンダリング
+══════════════════════════════════ */
+let currentEventKey = 'altar';
+let selectedChoice  = null;
+
+const REQ_TYPE_LABEL = { stat:'stat', item:'item', gold:'gold', ok:'達成' };
+
+function loadEvent(key) {
+  currentEventKey = key;
+  selectedChoice  = null;
+  const ev = EVENTS[key];
+  if (!ev) return;
+
+  // デモスイッチ更新
+  document.querySelectorAll('.demo-switch').forEach(b => b.classList.remove('active'));
+  event && event.currentTarget && event.currentTarget.classList.add('active');
+  // キーで探して更新
+  document.querySelectorAll('.demo-switch').forEach(b => {
+    if (b.getAttribute('onclick').includes(`'${key}'`)) b.classList.add('active');
+  });
+
+  // ヘッダー
+  const badge = document.getElementById('event-type-badge');
+  badge.textContent = ev.typeLabel;
+  badge.className   = `et-${key}` in {'et-battle':1,'et-elite':1,'et-dungeon':1,'et-rest':1,'et-shop':1,'et-event':1,'et-treasure':1,'et-trap':1}
+    ? ev.typeCls : ev.typeCls;
+  document.getElementById('event-title').textContent = ev.title;
+
+  // イラスト
+  document.getElementById('event-illust-bg').style.background = [
+    'radial-gradient(ellipse 90% 70% at 50% 35%,rgba(255,255,255,.1) 0%,transparent 65%)',
+    'radial-gradient(circle at 10% 85%,rgba(0,0,0,.25) 0%,transparent 40%)',
+    ev.paperTone
+  ].join(',');
+
+  // サブ絵文字
+  document.querySelectorAll('.event-sub-emoji').forEach((el,i) => {
+    const s = ev.subEmojis[i];
+    if (!s) { el.style.display='none'; return; }
+    el.style.display = '';
+    el.textContent = s.e;
+    el.style.top    = s.top    || '';
+    el.style.left   = s.left   || '';
+    el.style.right  = s.right  || '';
+    el.style.bottom = s.bottom || '';
+    if (!s.top)    el.style.removeProperty('top');
+    if (!s.left)   el.style.removeProperty('left');
+    if (!s.right)  el.style.removeProperty('right');
+    if (!s.bottom) el.style.removeProperty('bottom');
+  });
+
+  const emojiEl = document.getElementById('event-main-emoji');
+  emojiEl.style.opacity   = '0';
+  emojiEl.style.transform = 'scale(.8)';
+  setTimeout(() => {
+    emojiEl.textContent    = ev.emoji;
+    emojiEl.style.opacity  = '1';
+    emojiEl.style.transform= 'scale(1)';
+  }, 60);
+
+  // ナラティブ
+  document.getElementById('event-narrative-text').innerHTML =
+    ev.narrative.replace(/\n/g, '<br>');
+  document.getElementById('narrative-next').style.display =
+    ev.hasNext ? '' : 'none';
+
+  // 選択肢
+  renderChoices(ev.choices);
+}
+
+function renderChoices(choices) {
+  const list = document.getElementById('choices-list');
+  list.innerHTML = '';
+  choices.forEach((c, i) => {
+    const div = document.createElement('div');
+    div.className = `choice-btn${c.disabled ? ' disabled' : ''}`;
+    div.id = `choice-${i}`;
+
+    let reqHtml = '';
+    if (c.req) {
+      const cls = { stat:'req-stat', item:'req-item', gold:'req-gold', ok:'req-ok' }[c.req.type] || 'req-ok';
+      reqHtml = `<span class="choice-req ${cls}">${c.req.label}</span>`;
+    }
+
+    div.innerHTML = `
+      <div class="choice-icon">${c.icon}</div>
+      <div class="choice-body">
+        <div class="choice-label">${c.label}</div>
+        ${c.desc ? `<div class="choice-desc">${c.desc}</div>` : ''}
+      </div>
+      ${reqHtml}
+    `;
+
+    if (!c.disabled) {
+      div.addEventListener('click', () => selectChoice(i, c));
+    }
+    list.appendChild(div);
+  });
+}
+
+function selectChoice(i, c) {
+  // 選択済みを解除
+  document.querySelectorAll('.choice-btn').forEach(b => {
+    b.classList.remove('selected');
+    const r = b.querySelector('.choice-result');
+    if (r) r.remove();
+  });
+
+  const btn = document.getElementById(`choice-${i}`);
+  btn.classList.add('selected');
+  selectedChoice = i;
+
+  // 結果演出（デモ）
+  const resultEl = document.createElement('div');
+  resultEl.className = 'choice-result result-good';
+  resultEl.textContent = '▶ 実行';
+  btn.appendChild(resultEl);
+}
+
+/* 初期表示 */
+loadEvent('altar');
+</script>
+</body>
+</html>

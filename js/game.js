@@ -1,13 +1,13 @@
 // ゲームロジック・状態管理・メインループ
 
 import { saveGame, loadGame, deleteSaveData } from './save.js';
+import { MAPS, EVENTS, EVENT_TABLES, ITEM_TABLES, MONSTER_GROUPS, ENCOUNTER_TABLES } from './data/maps.js';
 import { ITEMS } from './data/items.js';
 import { ENEMIES } from './data/enemies.js';
 import { SKILLS } from './data/skills.js';
 import { JOBS } from './data/jobs.js';
-import { NORMAL_EVENTS, BENEFIT_EVENTS, DANGER_EVENTS, MILESTONE_EVENTS_DATA, EVENTS, generateRandomEvent } from './data/events.js';
 import { scheduleRender } from './render.js';
-import { SCREENS, BATTLE_STATUSES, DEBUFF_STATUS_MODIFIERS, SELECT_TARGET_TYPE, TARGET_TYPE_EXTRACTOR, isDead } from './const.js';
+import { LABEL, SCREENS, SUB_SCREENS, BATTLE_STATUSES, DEBUFF_STATUS_MODIFIERS, SELECT_TARGET_TYPE, TARGET_TYPE_EXTRACTOR, isDead } from './const.js';
 
 // ============================================================================
 // 1. グローバル変数とDOM要素
@@ -41,6 +41,19 @@ import { SCREENS, BATTLE_STATUSES, DEBUFF_STATUS_MODIFIERS, SELECT_TARGET_TYPE, 
  * @property {object | null} stat_modifier - 増減ステータス（例: { attack: +5, armor: +2 }）
  * @property {"weapon" | "armor" | "shield" | "accessory" | null} equip_type - 装備種別
  */
+
+// ops["gte"](player.level, value)など
+const ops = {
+    gt:  (a, b) => a > b,
+    gte: (a, b) => a >= b,
+    lt:  (a, b) => a < b,
+    lte: (a, b) => a <= b,
+    eq:  (a, b) => a === b,
+    neq: (a, b) => a !== b,
+};
+
+// 任意のミリ秒を止めるやつ
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Proxy用描画付きセット
 const setAndRender = (target, prop, value) => {
@@ -89,13 +102,28 @@ const unit_base = {
 };
 
 export let player = new Proxy({
-        position: 0,
-        currentEventCompleted: false, // 現在のマスでのイベントが完了したか
-        savedEventCategory: null, // セーブされたイベントのカテゴリ
-        savedEventIndex: null,    // セーブされたイベントのインデックス
+        day: 0,
         money: 0,
         item_slot: [],// 最大20
-        party: [new Proxy(unit_base, {set: setAndRender})],// 最大4
+        party: [],// 最大4
+        explore: { //proxyを剥がしているのはsaveできなくなるため dirtyで反映かな
+            mapId: "lostForest",// 現在マップのid
+            map: [[]],// マップ入場時のランダム生成タイルデータ保存
+            floor: 10,// 現在位置の階層
+            line: 5,// 現在位置の列
+            phase: "actionExec",//[nodeExec｜clear｜lose]
+            event: {
+                eventId: "",// 
+                node: "",// 現在どのノードを処理中か
+                data: {},// ノードごとの必要データ&#26684;納
+                phase: "",// waitingChoiceSelect｜exec｜complete
+                choices: [],
+            },
+            achievement: {// 活動実績
+                mapClear: {},//id: {count, firstDay}
+                defeatedMonsters: {},//id: {count, firstDay}
+            }
+        },
     },
     {
         set: setAndRender
@@ -103,13 +131,16 @@ export let player = new Proxy({
 
 // ゲーム管理用Proxyオブジェクト
 export const gameState = new Proxy({
+        is_debug_mode: false,//デバッグ時に直打ち
         // 強制描画用フラグ
         dirty: false,
         // ページ制御
-        currentScreen: null,
+        screen: null,
+        subScreen: null,
         // // モーダル（currentPageと独立して重なる）
         openModal: null,// null | "menu" | "item_discard",
         menuTab: "status",// "status" | "items" | "equipments",
+        selectExploreMap: null,
 
         // 探索画面
         explore: new Proxy({
@@ -137,7 +168,6 @@ export const gameState = new Proxy({
         }, {set: setAndRender}),
 
         // ログ系
-        exploreLog: [],
         combatLog: [],
         backLog: [],// {type, text}
     },
@@ -171,7 +201,8 @@ const startAdventureButton = document.getElementById("start-adventure-button");
 
 // base
 const baseBtnChangeJob = document.getElementById("base-btn-change-job");
-baseBtnChangeJob.addEventListener("click", () => {
+baseBtnChangeJob.addEventListener("click", async () => {
+    await sleep(100);
     player.party.forEach(unit => {
         const result = changeJob(unit, unit.currentJob === "warrior" ? "mage" : (unit.currentJob === "mage" ? "priest" : "warrior"));
         const job = JOBS[result.after];
@@ -206,18 +237,18 @@ baseBtnMansion.addEventListener("click", () => {
     if (partyCount === 3) {
         jobId = "warrior";
         unit.name = "センシ";
-        unit.maxHp = 30;
+        unit.maxHp = 45;
         unit.maxMp = 0;
         unit.attack = 25;
         unit.armor = 3;
-        unit.speed = 1;
+        unit.speed = 2;
         unit.intel = 3;
-        unit.dex = 10;
-        unit.size = 5;
+        unit.dex = 12;
+        unit.size = 8;
     } else if (partyCount === 2) {
         jobId = "mage";
         unit.name = "マホウツカイ";
-        unit.maxHp = 15;
+        unit.maxHp = 23;
         unit.maxMp = 30;
         unit.attack = 3;
         unit.armor = 0;
@@ -228,7 +259,7 @@ baseBtnMansion.addEventListener("click", () => {
     } else if (partyCount === 1) {
         jobId = "priest";
         unit.name = "ソウリョ";
-        unit.maxHp = 20;
+        unit.maxHp = 28;
         unit.maxMp = 20;
         unit.attack = 1;
         unit.armor = 0;
@@ -265,27 +296,80 @@ baseBtnMansion.addEventListener("click", () => {
     saveGame(player);
 
 });
-const baseBtnExplore = document.getElementById("base-btn-explore");
-baseBtnExplore.addEventListener("click", () => {
-    showMainGameScreen();
+const baseBtnSelectExploreMap = document.getElementById("base-btn-select-explore-map");
+baseBtnSelectExploreMap.addEventListener("click", async () => {
+    await sleep(100);
+    showSelectExploreMap();
+});
+const baseSelectExploreMapGrid = document.getElementById("base-select-explore-map-grid");
+baseSelectExploreMapGrid.addEventListener("click", async (e) => {
+    const choice = e.target.closest('.base-btn');
+    if (!choice) return;
+    await sleep(100);
+    onSelectExploreMap(choice.dataset.mapId);
+});
+const baseSelectExploreMapScreenBack = document.getElementById("base-select-explore-map-screen-back");
+baseSelectExploreMapScreenBack.addEventListener("click", async () => {
+    await sleep(100);
+    backSubScreen();
 });
 
-// explore
-const mainGameScreen = document.getElementById(SCREENS.mainGameScreen);
-const currentPositionSpan = document.getElementById("current-position");
-const playerDisplayName = document.getElementById("player-display-name");
-const playerHpText = document.getElementById("player-hp-text");
-const playerAttackSpan = document.getElementById("player-attack");
-const playerArmorSpan = document.getElementById("player-armor");
-const playerSpeedSpan = document.getElementById("player-speed");
-const playerIntelSpan = document.getElementById("player-intel");
-const playerDexSpan = document.getElementById("player-dex");
-const playerSizeSpan = document.getElementById("player-size");
-const gameMessage = document.getElementById("game-message");
-const choicesContainer = document.getElementById("choices-container");
-const advanceButton = document.getElementById("advance-button");
-const attackButton = document.getElementById("attack-button");
-const menuButton = document.getElementById("menu-button");
+const exploreTileGrid = document.getElementById("explore-tile-grid");
+exploreTileGrid.addEventListener("click", async (e) => {
+    const choice = e.target.closest('.base-btn');
+    if (!choice || !choice.classList.contains("highlight")) return;
+    await sleep(100);
+    await onSelectExploreTile(parseInt(choice.dataset.floor), parseInt(choice.dataset.line));
+});
+
+const exploreClearBack = document.getElementById("explore-clear-back");
+const exploreGameOverBack = document.getElementById("explore-game-over-back");
+exploreClearBack.addEventListener("click", async (e) => {
+    await sleep(100);
+    const mapName = MAPS[player.explore.mapId].name;
+    player.explore = null;
+    // 初クリアなら実績を追加
+    if (!player.achievement.mapClear[player.explore.mapId]) {
+        player.achievement.mapClear[player.explore.mapId] = {
+            count: 1,
+            firstDay: player.day
+        };
+    } else {
+        player.achievement.mapClear[player.explore.mapId].count += 1;
+    }
+    moveScreen(SCREENS.baseScreen);
+    showToast(`${mapName}を制覇した！`);
+});
+exploreGameOverBack.addEventListener("click", async (e) => {
+    await sleep(100);
+    player.explore = null;
+    moveScreen(SCREENS.baseScreen);
+    showToast(`全滅した…`);
+});
+
+// 探索イベント選択肢ボタン
+const exploreChoicesList = document.getElementById("explore-choices-list");
+exploreChoicesList.addEventListener("click", async (e) => {
+    const choice = e.target.closest('.explore-choice-btn');
+    if (!choice || choice.classList.contains("disable")) return;
+
+    // いったん1回選択で実行にしとく
+    await sleep(100);
+    player.explore.event.data.unitId = choice.dataset.unitId ?? null;
+
+    await resolveEventNode(choice.dataset.next);
+    return;
+
+    // 単一選択肢か2回選択で実行
+    if (player.explore.event.choices.length === 1 || player.explore.event.choice === choice.dataset.next) {
+        await sleep(100);
+        player.explore.event.data.unitId = choice.dataset?.unitId ?? null;
+        await resolveEventNode(choice.dataset.next);
+        return;
+    }
+    player.explore.event.choice = choice.dataset.next;
+});
+
 
 const battleMessage = document.getElementById("battle-message");
 const alertPanel = document.getElementById("alert-panel");
@@ -294,21 +378,6 @@ const itemPanel = document.getElementById("item-panel");
 const skillPanel = document.getElementById("skill-panel");
 const targetPanel = document.getElementById("target-panel");
 const battleEndButton = document.getElementById("battle-end");
-
-// アイテム破棄モーダル用DOM要素
-const discardItemModal = document.getElementById("discard-item-modal");
-const discardCloseButton = document.querySelector(".discard-close-button");
-const discardItemList = document.getElementById("discard-item-list");
-const discardSelectedItemButton = document.getElementById("discard-selected-item-button");
-
-let selectedItemToDiscardIndex = -1; // 破棄するアイテムのインデックス
-let itemToAcquireAfterDiscard = null; // 破棄後に取得するアイテム
-
-
-const gameOverScreen = document.getElementById(SCREENS.gameOverScreen);
-const backToTitleFromGameOverButton = document.getElementById("back-to-title-from-gameover");
-
-const clearScreen = document.getElementById(SCREENS.clearScreen);
 
 // Debug Elements
 const debugPanel = document.getElementById("debug-panel");
@@ -338,54 +407,7 @@ const debugGameStateButton = document.getElementById("debug-game-state-button");
  */
 function debugTriggerEvent(eventCategory, eventIndex) {
     let eventData = null;
-    let eventId = player.position;
 
-    switch (eventCategory) {
-        case "NORMAL":
-            if (NORMAL_EVENTS[eventIndex]) {
-                eventData = { ...NORMAL_EVENTS[eventIndex], type: "normal" };
-            }
-            break;
-        case "BENEFIT":
-            if (BENEFIT_EVENTS[eventIndex]) {
-                eventData = { ...BENEFIT_EVENTS[eventIndex], type: "benefit" };
-            }
-            break;
-        case "DANGER":
-            if (DANGER_EVENTS[eventIndex]) {
-                eventData = { ...DANGER_EVENTS[eventIndex], type: "danger" };
-            }
-            break;
-        case "MILESTONE":
-            // MILESTONE_EVENTS_DATAはオブジェクトなので、キーでアクセス
-            const milestoneKeys = Object.keys(MILESTONE_EVENTS_DATA);
-            if (milestoneKeys[eventIndex]) {
-                const key = milestoneKeys[eventIndex];
-                eventData = { ...MILESTONE_EVENTS_DATA[key], type: "milestone" };
-                eventId = parseInt(key); // マイルストーンイベントはIDをそのマイルストーンのマスに設定
-            }
-            break;
-    }
-
-    if (eventData) {
-        // イベントIDを現在のプレイヤー位置に設定
-        const triggeredEvent = {
-            id: eventId,
-            type: eventData.type,
-            title: eventData.title,
-            text: eventData.text,
-            effects: eventData.effects || null,
-            enemyIds: eventData.enemyIds,
-            isMilestone: eventData.type === "milestone",
-            choices: eventData.choices || null
-        };
-        addMessage(`デバッグ: イベント「${triggeredEvent.title}」を強制実行します！`, false);
-        displayCurrentEvent(triggeredEvent);
-        player.position = eventId; // プレイヤー位置も更新
-        saveGame(player);
-    } else {
-        addMessage("デバッグ: 指定されたイベントが見つかりませんでした。", false);
-    }
 }
 
 /**
@@ -452,7 +474,7 @@ async function debugChangeJob() {
         return;
     }
     const unit_id = debugJobUnitSelect.value;
-    const unit = player.party.find(unit => unit.id === unit_id);
+    const unit = getPartyUnitById(unit_id);
     if (!unit_id || !unit) {
         addMessage("デバッグ: ユニットを選択してください。", false);
         return;
@@ -522,13 +544,30 @@ const backToTitleFromClearButton = document.getElementById("back-to-title-from-c
 
 /**
  * スクリーンを移動する
- * @param {string} screen_id 
+ * @param {string} screenId 
+ * @param {string} subScreenId
  */
-function moveScreen(screen_id) {
-    if (!SCREENS[screen_id.replace(/-([a-z])/g, (match, letter) => letter.toUpperCase())]) {
-        throw new Error(`Unknown screen: ${screen_id}`);
+function moveScreen(screenId, subScreenId = null) {
+    if (!SCREENS[screenId.replace(/-([a-z])/g, (match, letter) => letter.toUpperCase())]) {
+        throw new Error(`Unknown screen: ${screenId}`);
     }
-    gameState.currentScreen = screen_id;
+    if (subScreenId !== null && !SUB_SCREENS[subScreenId.replace(/-([a-z])/g, (match, letter) => letter.toUpperCase())]) {
+        throw new Error(`Unknown screen: ${subScreenId}`);
+    }
+    // 別画面から拠点への帰還なら全回復
+    if (player.screen !== screenId && screenId === SCREENS.baseScreen) {
+        systemHealAll();
+    }
+    gameState.screen = screenId;
+    gameState.subScreen = subScreenId ?? screenId;
+}
+
+/**
+ * サブスクリーンからメインスクリーンに戻る
+ */
+function backSubScreen() {
+    gameState.subScreen = null;
+    moveScreen(gameState.screen);
 }
 
 
@@ -569,91 +608,428 @@ function showCharacterCreationScreen() {
 /**
  * 探索画面を表示する
  */
-function showMainGameScreen() {
-    // デバッグ用設定
-    if (player.party.some(unit => unit.name === "デバッグ")) {
-        gameState.is_debug_mode = true;
-        populateDebugEnemySelect(); // デバッグ用敵選択を初期化
-        populateDebugEventSelects(); // デバッグイベント選択を初期化
-        populateDebugItemSelect(); // デバッグ用アイテム選択を初期化
-        populateDebugJobSelect(); // デバッグ用アイテム選択を初期化
+function showSelectExploreMap() {
+    gameState.selectExploreMap = new Proxy({}, {set: setAndRender});
+    const unlockMaps = [];
+    for (const map in MAPS) {
+        // TODO: 解放条件のチェック
+        unlockMaps.push(MAPS[map]);
     }
+    gameState.selectExploreMap.mapList = unlockMaps;
+    moveScreen(SCREENS.baseScreen, SUB_SCREENS.baseSelectExploreMapScreen);
+}
 
-    moveScreen(SCREENS.mainGameScreen);
-    gameState.explore.phase = "idle";
+/**
+ * 探索マップ選択イベントハンドラ
+ */
+function onSelectExploreMap(mapId) {
+    if (!MAPS[mapId]) {
+        throw new Error(`Unknown map: ${mapId}`);
+    }
+    gameState.selectExploreMap.mapId = mapId;
+    // TODO: 本当は選択マップの詳細を出すけどいったんそのまま出発
+    startExplore();
+}
 
-    // ロード時にイベントが未完了だった場合は再発火
-    if (!player.currentEventCompleted && player.savedEventCategory && player.savedEventIndex !== null) {
-        const event = getEventFromSavedData(player.savedEventCategory, player.savedEventIndex);
-        if (event) {
-            displayCurrentEvent(event);
-        } else {
-            console.error("Saved event not found:", player.savedEventCategory, player.savedEventIndex);
-            // フォールバックとして、現在の位置のイベントを再生成するか、エラーメッセージを表示する
-            // 今回はエラーメッセージを表示し、進むボタンを有効にする
-            addMessage("セーブされたイベントが見つかりませんでした。先に進んでください。", false);
-            gameState.explore.phase = "idle";
-            player.currentEventCompleted = true; // イベントが見つからない場合は完了とみなす
+/**
+ * 探索マップ選択却下イベントハンドラ
+ */
+function onSelectCancelExploreMap(e) {
+    gameState.selectExploreMap.mapId = null;
+}
+
+/**
+ * 探索マップ出発
+ */
+function startExplore() {
+    const mapId = gameState.selectExploreMap.mapId;
+    player.day += 1;// TODO: マップの遠さとか作ってもいいかもね
+    player.explore = {}
+    player.explore.phase = "init";
+    player.explore.mapId = mapId;
+    player.explore.map = generateMapData(MAPS[mapId])
+    player.explore.floor = -1;// データ的には配列のインデックスに合わせる　描画が頑張れ
+    player.explore.line = Math.floor(MAPS[mapId].tileCount / 2);
+    moveScreen(SCREENS.exploreScreen);
+    player.explore.phase = "waitingTileSelect";
+    saveGame(player);
+}
+
+/**
+ * イベントタイル選択ハンドラ
+ */
+async function onSelectExploreTile(floor, line) {
+    player.explore.phase = "tileSelect";
+    player.explore.event = {};
+    const eventId = getEventForType(player.explore.mapId, player.explore.map[floor][line])
+    player.explore.floor = floor;
+    player.explore.line = line;
+    player.explore.event.eventId = eventId;
+    moveScreen(SCREENS.exploreScreen, SUB_SCREENS.exploreEventScreen);//tileselectanime ありなら待つ
+    await resolveEventNode(EVENTS[player.explore.event.eventId]["start"]) 
+}
+
+/**
+ * イベントタイプ取得
+ */
+function getEventForType(mapId, type) {
+    switch (type) {
+        case "enemy": return "battle";
+        case "eliteEnemy": return "eliteEnemy";
+        case "boss": return "boss";
+        case "event": {
+            return weightedRandom(EVENT_TABLES[MAPS[mapId].eventTableId]);
         }
-    } else if (!player.currentEventCompleted) {
-        // savedEventCategoryやsavedEventIndexがない場合（古いセーブデータなど）
-        // またはマス0でイベントが未完了の場合
-        const event = EVENTS[player.position];
-        displayCurrentEvent(event);
+        case "adventurer": return "adventurer";
+        case "rest": return "rest";
     }
 }
 
 /**
- * 保存されたカテゴリとインデックスからイベントオブジェクトを再構築する
- * @param {string} category - イベントカテゴリ (例: "NORMAL", "BENEFIT", "DANGER", "MILESTONE")
- * @param {number} index - カテゴリ内のイベントのインデックス
- * @returns {object|null} 再構築されたEventCellオブジェクト、または見つからない場合はnull
+ * イベントノード実行
  */
-function getEventFromSavedData(category, index) {
-    let eventData = null;
-    let eventType = category.toLowerCase(); // EventCellのtypeは小文字
+async function resolveEventNode(nodeId) {
+    const mapDef = MAPS[player.explore.mapId];
+    const node = EVENTS[player.explore.event.eventId].nodes[nodeId];
+    player.explore.event.node = node;
+    player.explore.event.phase = "init";
+    player.explore.event.choices = null;
+    player.explore.event.choice = null;
+    player.explore.event.beforeData = player.explore.event.data ?? {};
+    player.explore.event.data = {message: []};
 
-    switch (category) {
-        case "NORMAL":
-            if (NORMAL_EVENTS[index]) {
-                eventData = NORMAL_EVENTS[index];
-            }
-            break;
-        case "BENEFIT":
-            if (BENEFIT_EVENTS[index]) {
-                eventData = BENEFIT_EVENTS[index];
-            }
-            break;
-        case "DANGER":
-            if (DANGER_EVENTS[index]) {
-                eventData = DANGER_EVENTS[index];
-            }
-            break;
-        case "MILESTONE":
-            const milestoneKeys = Object.keys(MILESTONE_EVENTS_DATA);
-            if (milestoneKeys[index]) {
-                const key = milestoneKeys[index];
-                eventData = MILESTONE_EVENTS_DATA[key];
-                eventType = "milestone"; // マイルストーンイベントのtypeは"milestone"
-            }
-            break;
+    // 単体対象のノードは対象選択を実施
+    if (node.data?.targetType === "single" && !player.explore.event.beforeData.unitId) {
+        player.explore.event.choices = [];
+        for (const unit of player.party) {
+            player.explore.event.choices.push({
+                text: `${unit.name}`,
+                desc: `Lv${unit.level} HP ${unit.hp}/${unit.maxHp} MP ${unit.mp}/${unit.maxMp}`,
+                next: nodeId,
+                unitId: unit.id,
+                // TODO: 配列化とか判定メソッド化とかして
+                disabled: node.data.targetTerm === "alive" && isDead(unit)
+            });
+        }
+        player.explore.phase = "waitingChoiceSelect";
+        gameState.dirty = true;
+        return;
     }
 
-    if (eventData) {
-        return {
-            id: player.position, // 現在のプレイヤー位置をIDとする
-            type: eventType,
-            title: eventData.title,
-            text: eventData.text,
-            effects: eventData.effects || null,
-            enemyIds: eventData.enemyIds,
-            isMilestone: category === "MILESTONE",
-            choices: eventData.choices || null,
-            eventCategory: category, // 保存用にカテゴリとインデックスをEventCell自体にも含める
-            eventIndex: index
-        };
+    let next = null;
+    switch (node.type) {
+        case "battle": {
+            const monsterGroupId = node.fixGroup ?? weightedRandom(ENCOUNTER_TABLES[mapDef.encounterTableId]);
+            player.explore.event.data.enemyIds = MONSTER_GROUPS[monsterGroupId];
+            player.explore.event.data.winNode = node.win;
+            player.explore.event.data.loseNode = node.lose;
+            player.explore.phase = "battle"
+            await battleInit(player.explore.event.data.enemyIds.map(id => getEnemyById(id)));
+            break;
+        } case "eliteEnemy": {
+            const monsterGroupId = node.fixGroup ?? weightedRandom(ENCOUNTER_TABLES[mapDef.eliteEncounterTableId]);
+            player.explore.event.data.enemyIds = MONSTER_GROUPS[monsterGroupId];
+            player.explore.event.data.winNode = node.win;
+            player.explore.event.data.loseNode = node.lose;
+            player.explore.phase = "battle"
+            await battleInit(player.explore.event.data.enemyIds.map(id => getEnemyById(id)));
+            break;
+        } case "boss": {
+            const monsterGroupId = node.fixGroup ?? weightedRandom(ENCOUNTER_TABLES[mapDef.bossEncounterTableId]);
+            player.explore.event.data.enemyIds = MONSTER_GROUPS[monsterGroupId];
+            player.explore.event.data.winNode = node.win;
+            player.explore.event.data.loseNode = node.lose;
+            player.explore.phase = "battle"
+            await battleInit(player.explore.event.data.enemyIds.map(id => getEnemyById(id)));
+            break;
+        } case "adventurer": {
+        //     // TODO: 実装
+        //     player.explore.event = {};
+        //     player.explore.phase = "waitingTileSelect";
+        //     moveScreen(SCREENS.exploreScreen);
+        //     battleInit(player.explore.event.data.enemyIds.map(id => getEnemyById(id)));
+
+            next = "end";
+            break;
+        } case "choice": {
+            // TODO: 条件判定して有効でないものにはdisabled付与
+            player.explore.event.choices = node.choices.map(choice => {
+                choice.disabled = choice.condition ? checkChoiceCondition(choice.condition) : false;
+                return choice;
+            });
+            player.explore.phase = "waitingChoiceSelect";
+            break;
+        } case "lottery": {
+            // player.explore.event.data.message = player.explore.event.beforeData?.message ?? [];
+            next = weightedRandom(node.data);
+            break;
+        } case "message": {
+            player.explore.event.choices = node.choices;
+            player.explore.phase = "waitingChoiceSelect";
+            break;
+        } case "heal": {
+            player.explore.event.data.message = player.explore.event.beforeData?.message ?? [];
+            const unitIds = player.explore.event.beforeData.unitId
+                ? [player.explore.event.beforeData.unitId]
+                : player.party.map(unit => unit.id);
+            for (const unitId of unitIds) {
+                const unit = getPartyUnitById(unitId);
+                let heal = 0;
+                heal += calculateDiceHeal(
+                    unit, unit,
+                    node.data.dice, node.data.sides, node.data.flat,
+                    false, 0
+                );
+                if (node.data.ref) {
+                    heal += Math.floor(unit[node.data.ref] * (node.data.rate / 100));
+                }
+                if (unit.maxHp !== unit.hp && heal > 0) {
+                    player.explore.event.data.message.push(`${unit.name}のHPが${heal}回復した。`);
+                }
+                unit.hp = Math.min(unit.maxHp, unit.hp + heal);
+            }
+            next = node.next;
+            break;
+        } case "mpHeal": {
+            player.explore.event.data.message = player.explore.event.beforeData?.message ?? [];
+            const unitIds = player.explore.event.beforeData.unitId
+                ? [player.explore.event.beforeData.unitId]
+                : player.party.map(unit => unit.id);
+            for (const unitId of unitIds) {
+                const unit = getPartyUnitById(unitId);
+                let heal = 0;
+                heal += calculateDiceHeal(
+                    unit, unit,
+                    node.data.dice, node.data.sides, node.data.flat,
+                    false, 0
+                );
+                if (node.data.ref) {
+                    heal += Math.floor(unit[node.data.ref] * (node.data.rate / 100));
+                }
+                if (unit.maxMp !== unit.mp && heal > 0) {
+                    player.explore.event.data.message.push(`${unit.name}のMPが${heal}回復した。`);
+                }
+                unit.mp = Math.min(unit.maxMp, unit.mp + heal);
+            }
+            next = node.next;
+            break;
+        } case "damage": {
+            player.explore.event.data.message = player.explore.event.beforeData?.message ?? [];
+            const unitIds = player.explore.event.beforeData.unitId
+                ? [player.explore.event.beforeData.unitId]
+                : player.party.map(unit => unit.id);
+            for (const unitId of unitIds) {
+                const unit = getPartyUnitById(unitId);
+                let damage = 0;
+                damage += calculateDiceDamage(
+                    unit, unit,
+                    node.data.dice, node.data.sides, node.data.flat,
+                    false, 1// 守備貫通
+                );
+                if (node.data.ref) {
+                    damage += Math.floor(unit[node.data.ref] * (node.data.rate / 100));
+                }
+                player.explore.event.data.message.push(`${unit.name}は${damage}のダメージを受けた。`);
+                unit.hp = Math.max(0, unit.hp - damage);
+            }
+            next = node.next;
+            break;
+        } case "mpDamage": {
+            player.explore.event.data.message = player.explore.event.beforeData?.message ?? [];
+            const unitIds = player.explore.event.beforeData.unitId
+                ? [player.explore.event.beforeData.unitId]
+                : player.party.map(unit => unit.id);
+            for (const unitId of unitIds) {
+                const unit = getPartyUnitById(unitId);
+                let damage = 0;
+                damage += calculateDiceDamage(
+                    unit, unit,
+                    node.data.dice, node.data.sides, node.data.flat,
+                    false, 1// 守備貫通
+                );
+                if (node.data.ref) {
+                    damage += Math.floor(unit[node.data.ref] * (node.data.rate / 100));
+                }
+                player.explore.event.data.message.push(`${unit.name}のMPは${heal}減った。`);
+                unit.mp = Math.max(0, unit.mp - damage);
+            }
+            next = node.next;
+            break;
+        } case "statusMod": {
+            player.explore.event.data.message = player.explore.event.beforeData?.message ?? [];
+            const unitIds = player.explore.event.beforeData.unitId
+                ? [player.explore.event.beforeData.unitId]
+                : player.party.map(unit => unit.id);
+            for (const unitId of unitIds) {
+                const unit = getPartyUnitById(unitId);
+                let point = 0;
+                point += calculateDiceHeal(
+                    unit, unit,
+                    node.data.dice, node.data.sides, node.data.flat,
+                    false, 0
+                );
+                if (node.data.ref) {
+                    point += Math.floor(unit[node.data.ref] * (node.data.rate / 100));
+                }
+                player.explore.event.data.message.push(`${unit.name}の${LABEL[node.data.key]}が${point}${point < 0 ? "下がった。" : "上がった。"}`);
+                unit[node.data.key] = Math.max(0, unit[node.data.key] + point);
+            }
+            next = node.next;
+            break;
+        } case "getExp": {
+            player.explore.event.data.message = player.explore.event.beforeData?.message ?? [];
+            const unitIds = player.explore.event.beforeData.unitId
+                ? [player.explore.event.beforeData.unitId]
+                : player.party.map(unit => unit.id);
+            for (const unitId of unitIds) {
+                const unit = getPartyUnitById(unitId);
+                let point = 0;
+                point += calculateDiceHeal(
+                    unit, unit,
+                    node.data.dice, node.data.sides, node.data.flat,
+                    false, 0
+                );
+                if (node.data.ref) {
+                    point += Math.floor(unit[node.data.ref] * (node.data.rate / 100));
+                }
+                const mod_levels = addExp(unit, point);
+                if (mod_levels) {
+                    // TODO: レベルアップウィンドウを出してもいいかもね
+                    player.explore.event.data.message.push(`${JSON.stringify(mod_levels)}`);
+                }
+            }
+            next = node.next;
+            break;
+        } case "getRankExp": {
+            player.explore.event.data.message = player.explore.event.beforeData?.message ?? [];
+            const unitIds = player.explore.event.beforeData.unitId
+                ? [player.explore.event.beforeData.unitId]
+                : player.party.map(unit => unit.id);
+            for (const unitId of unitIds) {
+                const unit = getPartyUnitById(unitId);
+                let point = 0;
+                point += calculateDiceHeal(
+                    unit, unit,
+                    node.data.dice, node.data.sides, node.data.flat,
+                    false, 0
+                );
+                if (node.data.ref) {
+                    point += Math.floor(unit[node.data.ref] * (node.data.rate / 100));
+                }
+                const modRanks = addRankExp(unit, point);
+                if (modRanks) {
+                    // TODO: ランクアップウィンドウを出してもいいかもね
+                    player.explore.event.data.message.push(`${JSON.stringify(modRanks)}`);
+                }
+            }
+            next = node.next;
+            break;
+        } case "getItem": {
+            player.explore.event.data.message = player.explore.event.beforeData?.message ?? [];
+            for (let i = 0; i < node.data.count; i++){
+                const itemId = node.data.id ?? weightedRandom(ITEM_TABLES[mapDef.itemTableId]);
+                const item = getItemById(itemId);
+                await acquireItem(item);
+                player.explore.event.data.message.push(`${item.name}を手に入れた！`);
+            }
+            next = node.next;
+            break;
+        } case "end": {
+            player.explore.event = {};
+            player.explore.phase = "waitingTileSelect";
+            moveScreen(SCREENS.exploreScreen);
+            break;
+        } case "gameOver": {
+            player.explore.event = {};
+            player.explore.phase = "gameOver";
+            moveScreen(SCREENS.exploreScreen, SUB_SCREENS.exploreGameOverScreen);
+            break;
+        } case "clear": {
+            player.explore.event = {};
+            player.explore.phase = "clear";
+            moveScreen(SCREENS.exploreScreen, SUB_SCREENS.exploreClearScreen);
+            break;
+        } default: {
+            throw new Error(`Unknown Node Type: ${node.type}`);
+        }
     }
-    return null;
+    gameState.dirty = true;
+    saveGame(player);
+    if (next) {
+        await resolveEventNode(next);
+    }
+}
+
+/**
+ * 選択肢のconditionsをチェックしdisabledかを返す
+ * @param {*} condition
+ * @return {boolean}
+ */
+function checkChoiceCondition(condition) {
+    let isDisabled = false;
+    for (const key in condition) {
+        const obj = condition[key];
+        const op = Object.keys(obj)[0];
+        const value = obj[op];
+        switch (key) {
+            case "partyCount": {
+                isDisabled = !ops[op](player.party.length, value);
+                console.log(1, isDisabled, player.party.length, value)
+                break;
+            } case "level": {
+                isDisabled = !player.party.some(unit => ops[op](unit.level, value));
+                console.log(isDisabled)
+                break;
+            } default: {
+                throw new Error(`Unknown condition key: ${key}`);
+            }
+        }
+        if (isDisabled) {
+            return true;
+        }
+    }
+    return false
+}
+
+/**
+ * 各種ルールオブジェクト{キー:重み}からランダムにキーを取り出す
+ * @param rules
+ * @returns {string}
+ */
+function weightedRandom(rules) {
+    let total = 0;
+    for (const key in rules) {
+        total += rules[key];
+    }
+    let r = Math.random() * total;
+    for (const key in rules) {
+        r -= rules[key];
+        if (r < 0) {
+            return key;
+        }
+    }
+}
+
+/**
+ * マップ定義からマップタイルデータを生成する
+ * @param mapDef
+ * @returns {(string)[][]}
+ */
+function generateMapData(mapDef) {
+    const mapData = Array.from(
+        { length: mapDef.floorCount },
+        () => Array.from({ length: mapDef.tileCount }, () => weightedRandom(mapDef.tileGenRules))
+    );
+    // 固定タイルを追加
+    for (const [rowIndex, values] of Object.entries(mapDef.fixFloors)) {
+        const row = Number(rowIndex) - 1; // 1始まりなら -1
+        values.forEach((value, col) => {
+            if (value !== null) {
+                mapData[row][col] = value;
+            }
+        });
+    }
+    return mapData;
 }
 
 // ============================================================================
@@ -714,11 +1090,6 @@ document.querySelectorAll('.character-creation-stat-minus').forEach(btn => {
  * プレイヤーオブジェクトを初期化する
  */
 function initializePlayer() {
-    player.position = 0;
-    player.currentEventCompleted = false;
-    player.savedEventCategory = null;
-    player.savedEventIndex = null;
-
     const unit = new Proxy(structuredClone(unit_base), {set: setAndRender});
     unit.name = playerNameInput.value || "名もなき探訪者";
 
@@ -791,53 +1162,13 @@ function getStatus(chara, property) {
  * @returns {Promise<boolean>} アイテムが正常に取得された場合はtrue、諦めた場合はfalseを返すPromise
  */
 async function acquireItem(item) {
-    if (player.item_slot.length < 20) {
+    if (player.item_slot.length < 50) {
         item.uuid = self.crypto.randomUUID();
         player.item_slot.push(item);
-        addMessage(`${item.name} を手に入れた！`);
+        // showToast(`${item.name} を手に入れた！`);
         return true;
     } else {
-        addMessage("アイテムスロットが満杯です（20/20）。");
-        addMessage("アイテムの取得を諦めますか、それとも何かを捨てて取得しますか？");
-
-        return new Promise(resolve => {
-            // 選択肢ボタンを生成
-            choicesContainer.innerHTML = '';
-            choicesContainer.classList.remove("hidden");
-
-            const giveUpButton = document.createElement("button");
-            giveUpButton.textContent = "諦める";
-            giveUpButton.classList.add("choice-button");
-            giveUpButton.addEventListener("click", () => {
-                choicesContainer.innerHTML = '';
-                choicesContainer.classList.add("hidden");
-                addMessage("アイテムの取得を諦めました。");
-                // saveGame(player);
-                resolve(false); // 諦めた
-            });
-            choicesContainer.appendChild(giveUpButton);
-
-            const discardButton = document.createElement("button");
-            discardButton.textContent = "捨てて取得する";
-            discardButton.classList.add("choice-button");
-            discardButton.addEventListener("click", async () => {
-                choicesContainer.innerHTML = '';
-                choicesContainer.classList.add("hidden");
-                itemToAcquireAfterDiscard = item; // 破棄後に取得するアイテムを保存
-                const discarded = await openDiscardItemModal(); // 破棄モーダルを開く
-                if (discarded) {
-                    // 破棄が成功したら、保存しておいたアイテムを取得
-                    player.item_slot.push(itemToAcquireAfterDiscard);
-                    addMessage(`${itemToAcquireAfterDiscard.name} を手に入れた！`);
-                    resolve(true); // 取得成功
-                } else {
-                    addMessage("アイテムの破棄をキャンセルしました。アイテムの取得を諦めます。");
-                    resolve(false); // 破棄をキャンセルしたため、取得も諦める
-                }
-                itemToAcquireAfterDiscard = null; // 使用済みなのでクリア
-            });
-            choicesContainer.appendChild(discardButton);
-        });
+        // showToast(`持ち物がいっぱいだ！`);
     }
 }
 
@@ -993,153 +1324,14 @@ function addMessage(message, append = true) {
     // ログを退避する
     if (!append) {
         gameState.backLog.push(
-            ...(gameState.exploreLog.map(text => ({type: "explore", text}))),
             ...(gameState.combatLog.map(text => ({type: "explore", text})))
         );
-        gameState.exploreLog = [];
         gameState.combatLog = [];
     }
 
-    if (gameState.currentScreen === SCREENS.mainGameScreen) {
-        gameState.exploreLog.push(message);
-    } else if (gameState.currentScreen === SCREENS.battleScreen) {
-        gameState.combatLog.push(message);
-    }
+    gameState.combatLog.push(message);
     gameState.dirty = true;
 }
-
-/**
- * 選択肢ボタンを描画する
- * @param {Array<Object>} choices - 選択肢の配列。各要素は { text: string, next: Object, effects: Array<Object> } の形式。
- * @param {Object} event - イベント本体
- */
-function renderChoices(choices, event) {
-    choicesContainer.innerHTML = ''; // 既存の選択肢をクリア
-
-    if (!choices || choices.length === 0) {
-        choicesContainer.classList.add("hidden"); // 選択肢がない場合は非表示
-        return;
-    }
-
-    choicesContainer.classList.remove("hidden"); // 選択肢がある場合は表示
-
-    choices.forEach((choice, index) => {
-        const button = document.createElement("button");
-        button.textContent = choice.text;
-        button.classList.add("choice-button"); // スタイリング用のクラスを追加
-        button.dataset.choiceIndex = index; // 選択肢のインデックスをデータ属性として保存
-
-        // 条件チェック
-        if (choice.condition) {
-            if (!checkCondition(choice.condition)) {
-                button.disabled = true;
-                button.classList.add("disabled-choice"); // グレーアウト用のクラス
-            }
-        }
-
-        button.addEventListener("click", async () => {
-            // 無効化されているボタンはクリックしても何もしない
-            if (button.disabled) {
-                return;
-            }
-
-            // 1. そのchoiceのeffectを適用する
-            addMessage(choice.outcomeText);
-            if (choice.effects) {
-                for (const ef of choice.effects) {
-                    await applyEffect(ef);
-                }
-            }
-
-            // 2. choicesボタン群を非表示にする
-            choicesContainer.innerHTML = '';
-            choicesContainer.classList.add("hidden");
-
-            // 3. nextEventがあるならば続けて処理
-            const nextEvent = resolveNext(choice.next, event);
-            if (nextEvent !== null) {
-                displayCurrentEvent(nextEvent);
-            } else {
-                if (player.position !== 100) {
-                    // 選択肢が選ばれたので、現在のイベントは完了
-                    player.currentEventCompleted = true;
-                    gameState.explore.phase = "idle";
-                }
-                saveGame(player); // 選択肢処理後にセーブ
-            }
-        });
-        choicesContainer.appendChild(button);
-    });
-}
-
-/**
- * 選択肢のnext処理
- * @param next
- * @param currentEvent
- * @returns {Event}
- */
-function resolveNext(next, currentEvent) {
-    if (next === undefined || next === null) return null;
-    if (next === "SELF") return currentEvent;
-
-    if (next.type === "random_branch") {
-        const roll = Math.random();
-        let cumulative = 0;
-        for (const branch of next.branches) {
-            cumulative += branch.probability;
-            if (roll <= cumulative) {
-                return branch.event === "SELF" ? currentEvent : branch.event;
-            }
-        }
-    }
-
-    return next;  // 通常のEventCell
-}
-
-/**
- * 現在のプレイヤー位置のイベントを表示し、UIを更新する
- * @param {Object} event - 現在のEventCellオブジェクト
- */
-function displayCurrentEvent(event) {
-    addMessage(`--- ${event.title} ---`, false); // 既存メッセージをクリアして表示
-    addMessage(event.text);
-
-    gameState.explore.phase = "event_resolve";
-    player.currentEventCompleted = false; // イベント処理開始時に未完了にリセット
-    player.savedEventCategory = event.eventCategory || null;
-    player.savedEventIndex = event.eventIndex !== undefined ? event.eventIndex : null;
-
-    choicesContainer.innerHTML = ''; // 念のためクリア
-    choicesContainer.classList.add("hidden"); // 念のため非表示に
-
-    if (event.choices && event.choices.length > 0) {
-        gameState.explore.phase = "choice_waiting";
-        renderChoices(event.choices, event);
-        // player.currentEventCompleted は false のまま
-    } else if (event.enemyIds) {
-        setTimeout(
-            battleInit.bind(null, event.enemyIds.map(id => getEnemyById(id)))
-        , 100);
-        // player.currentEventCompleted は false のまま
-    } else if (event.effects) {
-        for (const ef of event.effects) {
-            applyEffect(ef);
-        }
-        player.currentEventCompleted = true; // 効果イベントは即座に完了
-    } else {
-        player.currentEventCompleted = true; // 何もないマスは即座に完了
-    }
-
-    // ゲーム終了判定
-    checkGameEnd();
-
-    // 探索状態に戻す判定 敗北かクリアでなくイベント完了なら待機に戻す
-    if (player.position !== 100 && player.currentEventCompleted) {
-        gameState.explore.phase = "idle";
-    }
-    saveGame(player); // イベント処理後にセーブ
-}
-
 
 /**
  * デバッグ用の敵選択ドロップダウンを生成する
@@ -1164,65 +1356,65 @@ function populateDebugEnemySelect() {
  * デバッグ用のイベントカテゴリとインデックス選択ドロップダウンを生成する
  */
 function populateDebugEventSelects() {
-    // カテゴリ選択の初期化
-    debugEventCategorySelect.innerHTML = '';
-    const categories = ["-- カテゴリを選択 --", "NORMAL", "BENEFIT", "DANGER", "MILESTONE"];
-    categories.forEach(category => {
-        const option = document.createElement("option");
-        option.value = category === "-- カテゴリを選択 --" ? "" : category;
-        option.textContent = category;
-        debugEventCategorySelect.appendChild(option);
-    });
+    // // カテゴリ選択の初期化
+    // debugEventCategorySelect.innerHTML = '';
+    // const categories = ["-- カテゴリを選択 --", "NORMAL", "BENEFIT", "DANGER", "MILESTONE"];
+    // categories.forEach(category => {
+    //     const option = document.createElement("option");
+    //     option.value = category === "-- カテゴリを選択 --" ? "" : category;
+    //     option.textContent = category;
+    //     debugEventCategorySelect.appendChild(option);
+    // });
 
-    // インデックス選択の初期化
-    debugEventIndexSelect.innerHTML = '';
-    const defaultIndexOption = document.createElement("option");
-    defaultIndexOption.value = "";
-    defaultIndexOption.textContent = "-- イベントを選択 --";
-    debugEventIndexSelect.appendChild(defaultIndexOption);
+    // // インデックス選択の初期化
+    // debugEventIndexSelect.innerHTML = '';
+    // const defaultIndexOption = document.createElement("option");
+    // defaultIndexOption.value = "";
+    // defaultIndexOption.textContent = "-- イベントを選択 --";
+    // debugEventIndexSelect.appendChild(defaultIndexOption);
 
-    // カテゴリ選択が変更されたときのイベントリスナー
-    debugEventCategorySelect.addEventListener("change", () => {
-        const selectedCategory = debugEventCategorySelect.value;
-        debugEventIndexSelect.innerHTML = '';
-        debugEventIndexSelect.appendChild(defaultIndexOption.cloneNode(true));
+    // // カテゴリ選択が変更されたときのイベントリスナー
+    // debugEventCategorySelect.addEventListener("change", () => {
+    //     const selectedCategory = debugEventCategorySelect.value;
+    //     debugEventIndexSelect.innerHTML = '';
+    //     debugEventIndexSelect.appendChild(defaultIndexOption.cloneNode(true));
 
-        let eventsToPopulate = [];
-        switch (selectedCategory) {
-            case "NORMAL":
-                eventsToPopulate = NORMAL_EVENTS;
-                break;
-            case "BENEFIT":
-                eventsToPopulate = BENEFIT_EVENTS;
-                break;
-            case "DANGER":
-                eventsToPopulate = DANGER_EVENTS;
-                break;
-            case "MILESTONE":
-                // MILESTONE_EVENTS_DATAはオブジェクトなので、values()で配列に変換
-                eventsToPopulate = Object.values(MILESTONE_EVENTS_DATA);
-                break;
-        }
+    //     let eventsToPopulate = [];
+    //     switch (selectedCategory) {
+    //         case "NORMAL":
+    //             eventsToPopulate = NORMAL_EVENTS;
+    //             break;
+    //         case "BENEFIT":
+    //             eventsToPopulate = BENEFIT_EVENTS;
+    //             break;
+    //         case "DANGER":
+    //             eventsToPopulate = DANGER_EVENTS;
+    //             break;
+    //         case "MILESTONE":
+    //             // MILESTONE_EVENTS_DATAはオブジェクトなので、values()で配列に変換
+    //             eventsToPopulate = Object.values(MILESTONE_EVENTS_DATA);
+    //             break;
+    //     }
 
-        eventsToPopulate.forEach((eventData, index) => {
-            const option = document.createElement("option");
-            option.value = index;
-            option.textContent = eventData.title;
-            debugEventIndexSelect.appendChild(option);
-        });
-    });
+    //     eventsToPopulate.forEach((eventData, index) => {
+    //         const option = document.createElement("option");
+    //         option.value = index;
+    //         option.textContent = eventData.title;
+    //         debugEventIndexSelect.appendChild(option);
+    //     });
+    // });
 }
 
 /**
  * デバッグ: 指定した敵と戦闘を開始する
  * @param {string} enemyId
  */
-function debugStartCombat(enemyId) {
+async function debugStartCombat(enemyId) {
     if (!enemyId) {
         addMessage("敵が選択されていません。", false);
         return;
     }
-    if (gameState.currentScreen === SCREENS.battleScreen) {
+    if (gameState.screen === SCREENS.battleScreen) {
         addMessage("すでに戦闘中です。", false);
         return;
     }
@@ -1230,10 +1422,8 @@ function debugStartCombat(enemyId) {
     const enemyToFight = getEnemyById(enemyId);
     if (enemyToFight) {
         addMessage(`デバッグ: ${enemyToFight.name} との戦闘を開始します！`, false);
-        setTimeout(
-            // TODO: 正式な複数体デバッグ
-            battleInit.bind(null, [enemyToFight, structuredClone(enemyToFight)])
-        , 100);
+        await sleep(500);
+        await battleInit([enemyToFight, structuredClone(enemyToFight)]);
     } else {
         addMessage(`デバッグ: 敵「${enemyName}」が見つかりませんでした。`, false);
     }
@@ -1281,333 +1471,178 @@ function closeMenuModal() {
 /**
  * 使用ボタンのイベント
  */
-export async function useItem(_) {
-        // TODO: 戦闘中と共通化したいね。。無理か
-        const targets = [player.party[0]]; 
-        const actor = player.party[0]; 
-        for (const effect of this.item.effects) {
-            if (effect.type === "damage") {
-                for (const target of targets) {
-                    const damage = calculateDiceDamage(
-                        actor, target,
-                        effect.dice, effect.sides, effect.flat,
-                        false,
-                        effect.fix ?? 0, effect.armor_pierce ?? 0
-                    );
-                    applyDamage(target, damage, false)
-                }
-            } else if (effect.type === "heal") {
-                for (const target of targets) {
-                    const heal = calculateDiceHeal(
-                        actor, target,
-                        effect.dice, effect.sides, effect.flat,
-                        false,
-                        effect.fix ?? 0
-                    );
-                    target.hp = Math.min(target.maxHp, target.hp + heal);
-                    addMessage(`${target.name} は ${heal} 回復した！`);
-                }
-            } else if (effect.type === "add_state") {
-                for (const target of targets) {
-                    const is_success = calculateDiceChance(
-                        actor, target, effect.stateId,
-                        effect.dice, effect.sides, effect.flat,
-                        false,
-                        effect.fix ?? 0
-                    );
-                    if (is_success) {
-                        const turn = effect.turn;
-                        addBattleStatus(effect.stateId, target, turn);
-                    }
-                }
-            } else if (effect.type === "recover_state") {
-                for (const target of targets) {
-                    // その状態異常になっているか
-                    if (!target.battle_status.some(s => s.type === effect.stateId)) {
-                        continue;
-                    }
-                    const is_success = calculateDiceChance(
-                        actor, target, effect.stateId,
-                        effect.dice, effect.sides, effect.flat,
-                        false,
-                        effect.fix ?? 0
-                    );
-                    if (is_success) {
-                        recoverBattleStatus(effect.stateId, target)
-                    }
-                }
-            } else if (effect.type === "revive") {
-                for (const target of targets) {
-                    // その状態異常になっているか
-                    if (!target.battle_status.some(s => s.type === "dead")) {
-                        continue;
-                    }
-                    const is_success = calculateDiceChance(
-                        actor, target, "dead",
-                        effect.dice, effect.sides, effect.flat,
-                        false,
-                        effect.fix ?? 0
-                    );
-                    if (is_success) {
-                        revive(target, effect.heal)
-                    }
-                }
-            } else if (effect.type === "stat_change") {
-                for (const target of targets) {
-                    const mod = calculateDiceHeal(
-                        actor, target,
-                        effect.dice, effect.sides, effect.flat,
-                        false,
-                        effect.fix ?? 0
-                    );
-                    target[effect.stat] += mod;
-                    addMessage(`${target.name} の ${effect.stat} が ${mod} ` + (mod > 0 ? "上がった！" : "下がった！"));
-                }
-            }
-        }
+// export async function useItem(_) {
+//         // TODO: 戦闘中と共通化したいね。。無理か
+//         const targets = [player.party[0]]; 
+//         const actor = player.party[0]; 
+//         for (const effect of this.item.effects) {
+//             if (effect.type === "damage") {
+//                 for (const target of targets) {
+//                     const damage = calculateDiceDamage(
+//                         actor, target,
+//                         effect.dice, effect.sides, effect.flat,
+//                         false,
+//                         effect.fix ?? 0, effect.armor_pierce ?? 0
+//                     );
+//                     applyDamage(target, damage, false)
+//                 }
+//             } else if (effect.type === "heal") {
+//                 for (const target of targets) {
+//                     const heal = calculateDiceHeal(
+//                         actor, target,
+//                         effect.dice, effect.sides, effect.flat,
+//                         false,
+//                         effect.fix ?? 0
+//                     );
+//                     target.hp = Math.min(target.maxHp, target.hp + heal);
+//                     addMessage(`${target.name} は ${heal} 回復した！`);
+//                 }
+//             } else if (effect.type === "add_state") {
+//                 for (const target of targets) {
+//                     const is_success = calculateDiceChance(
+//                         actor, target, effect.stateId,
+//                         effect.dice, effect.sides, effect.flat,
+//                         false,
+//                         effect.fix ?? 0
+//                     );
+//                     if (is_success) {
+//                         const turn = effect.turn;
+//                         addBattleStatus(effect.stateId, target, turn);
+//                     }
+//                 }
+//             } else if (effect.type === "recover_state") {
+//                 for (const target of targets) {
+//                     // その状態異常になっているか
+//                     if (!target.battle_status.some(s => s.type === effect.stateId)) {
+//                         continue;
+//                     }
+//                     const is_success = calculateDiceChance(
+//                         actor, target, effect.stateId,
+//                         effect.dice, effect.sides, effect.flat,
+//                         false,
+//                         effect.fix ?? 0
+//                     );
+//                     if (is_success) {
+//                         recoverBattleStatus(effect.stateId, target)
+//                     }
+//                 }
+//             } else if (effect.type === "revive") {
+//                 for (const target of targets) {
+//                     // その状態異常になっているか
+//                     if (!target.battle_status.some(s => s.type === "dead")) {
+//                         continue;
+//                     }
+//                     const is_success = calculateDiceChance(
+//                         actor, target, "dead",
+//                         effect.dice, effect.sides, effect.flat,
+//                         false,
+//                         effect.fix ?? 0
+//                     );
+//                     if (is_success) {
+//                         revive(target, effect.heal)
+//                     }
+//                 }
+//             } else if (effect.type === "stat_change") {
+//                 for (const target of targets) {
+//                     const mod = calculateDiceHeal(
+//                         actor, target,
+//                         effect.dice, effect.sides, effect.flat,
+//                         false,
+//                         effect.fix ?? 0
+//                     );
+//                     target[effect.stat] += mod;
+//                     addMessage(`${target.name} の ${effect.stat} が ${mod} ` + (mod > 0 ? "上がった！" : "下がった！"));
+//                 }
+//             }
+//         }
 
-    // 無制限でないものは使用回数を減らす
-    if (this.item.uses) {
-        this.item.uses -= 1;
-    }
-    if (this.item.uses !== null && this.item.uses <= 0) {
-        player.item_slot = player.item_slot.filter(i => i !== this.item);
-        const msg = `${this.item.name} を使い切った！`;
-        addMessage(msg);
-        showToast(msg);
-    } else {
-        const msg = `${this.item.name} を使用した！`;
-        addMessage(msg);
-        showToast(msg);
-    }
+//     // 無制限でないものは使用回数を減らす
+//     if (this.item.uses) {
+//         this.item.uses -= 1;
+//     }
+//     if (this.item.uses !== null && this.item.uses <= 0) {
+//         player.item_slot = player.item_slot.filter(i => i !== this.item);
+//         const msg = `${this.item.name} を使い切った！`;
+//         addMessage(msg);
+//         showToast(msg);
+//     } else {
+//         const msg = `${this.item.name} を使用した！`;
+//         addMessage(msg);
+//         showToast(msg);
+//     }
 
-    gameState.dirty = true;
-    saveGame(player);
-}
+//     gameState.dirty = true;
+//     saveGame(player);
+// }
 
-/**
- * 装備ボタンのイベント
- * TODO: キャラ指定対応
- */
-export function equip(_) {
-    // 1. 同タイプチェックを先に
-    const sameType = player.party[0].equipment_slot.some(e => e.equip_type === this.item.equip_type);
-    if (sameType) {
-        showToast(`すでに${this.item.equip_type}を装備しています`);
-        return;
-    }
+// /**
+//  * 装備ボタンのイベント
+//  * TODO: キャラ指定対応
+//  */
+// export function equip(_) {
+//     // 1. 同タイプチェックを先に
+//     const sameType = player.party[0].equipment_slot.some(e => e.equip_type === this.item.equip_type);
+//     if (sameType) {
+//         showToast(`すでに${this.item.equip_type}を装備しています`);
+//         return;
+//     }
 
-    // 2. 枠数チェック
-    if (player.party[0].equipment_slot.length >= 5) {
-        showToast("装備枠が一杯です");
-        return;
-    }
+//     // 2. 枠数チェック
+//     if (player.party[0].equipment_slot.length >= 5) {
+//         showToast("装備枠が一杯です");
+//         return;
+//     }
 
-    // 3. stat_modifierをプレイヤーに反映
-    if (this.item.stat_modifier) {
-        Object.entries(this.item.stat_modifier).forEach(([stat, val]) => {
-            player.party[0][stat] += val;
-        });
-    }
+//     // 3. stat_modifierをプレイヤーに反映
+//     if (this.item.stat_modifier) {
+//         Object.entries(this.item.stat_modifier).forEach(([stat, val]) => {
+//             player.party[0][stat] += val;
+//         });
+//     }
 
-    player.party[0].equipment_slot.push(this.item);
-    player.item_slot = player.item_slot.filter(i => i !== this.item);
+//     player.party[0].equipment_slot.push(this.item);
+//     player.item_slot = player.item_slot.filter(i => i !== this.item);
 
-    const equipMsg = `${this.item.name}を装備した`;
-    addMessage(equipMsg);
-    showToast(equipMsg);
-    gameState.dirty = true;
-    saveGame(player);
-}
+//     const equipMsg = `${this.item.name}を装備した`;
+//     addMessage(equipMsg);
+//     showToast(equipMsg);
+//     gameState.dirty = true;
+//     saveGame(player);
+// }
 
-/**
- * 装備解除ボタンのイベント
- */
-export function unequip(_) {
-    // 1. アイテム枠チェック
-    if (player.item_slot.length >= 20) {
-        // addMessage("アイテム枠が一杯で外せません");
-        showToast("アイテム枠が一杯で外せません");
-        return;
-    }
+// /**
+//  * 装備解除ボタンのイベント
+//  */
+// export function unequip(_) {
+//     // 1. アイテム枠チェック
+//     if (player.item_slot.length >= 20) {
+//         // addMessage("アイテム枠が一杯で外せません");
+//         showToast("アイテム枠が一杯で外せません");
+//         return;
+//     }
 
-    // 2. stat_modifierを戻す
-    if (this.item.stat_modifier) {
-        Object.entries(this.item.stat_modifier).forEach(([stat, val]) => {
-            player.party[0][stat] -= val;
-        });
-        if (player.party[0].hp > player.party[0].maxHp) {
-            player.party[0].hp = player.party[0].maxHp;
-        }
-        if (player.party[0].mp > player.party[0].maxMp) {
-            player.party[0].mp = player.party[0].maxMp;
-        }
-    }
+//     // 2. stat_modifierを戻す
+//     if (this.item.stat_modifier) {
+//         Object.entries(this.item.stat_modifier).forEach(([stat, val]) => {
+//             player.party[0][stat] -= val;
+//         });
+//         if (player.party[0].hp > player.party[0].maxHp) {
+//             player.party[0].hp = player.party[0].maxHp;
+//         }
+//         if (player.party[0].mp > player.party[0].maxMp) {
+//             player.party[0].mp = player.party[0].maxMp;
+//         }
+//     }
 
-    player.item_slot.push(this.item);
-    player.party[0].equipment_slot = player.party[0].equipment_slot.filter(i => i !== this.item);
+//     player.item_slot.push(this.item);
+//     player.party[0].equipment_slot = player.party[0].equipment_slot.filter(i => i !== this.item);
 
-    const unequipMsg = `${this.item.name}を外した`;
-    addMessage(unequipMsg);
-    showToast(unequipMsg);
-    gameState.dirty = true;
-    saveGame(player);
-}
-
-// ============================================================================
-// 5. ゲームループ (「進む」ボタン押下時)
-async function advance() {
-    if (player.position === 100) return;
-
-    // 現在のマスでのイベントが未完了の場合、先に進めない
-    if (player.position > 0 && !player.currentEventCompleted) {
-        addMessage("現在のイベントを完了するまで先に進めません！", false);
-        return;
-    }
-
-    gameState.explore.phase = "rolling";
-
-    // 1. ダイスロール
-    const roll = Math.ceil(Math.random() * 6);
-    addMessage(`🎲 ${roll}が出た！`, false); // 既存メッセージをクリアしてダイス結果を表示
-
-    // 2. プレイヤー位置更新
-    const oldPosition = player.position;
-    let targetPosition = oldPosition + roll;
-    let newPosition = targetPosition;
-
-    const milestones = [20, 50, 80, 100];
-    for (const milestone of milestones) {
-        if (oldPosition < milestone && milestone <= targetPosition) {
-            newPosition = milestone;
-            break;
-        }
-    }
-    player.position = Math.min(newPosition, 100);
-    player.currentEventCompleted = false;
-
-    // 3. ダイス演出テキスト表示
-    await new Promise(resolve => setTimeout(() => {
-        addMessage(`${roll}マス進む（現在: ${player.position}マス）`);
-        resolve();
-    }, 1000)); // 1.5秒後にイベントテキストを追記
-
-    // 4. イベント取得と処理
-    let event;
-    if (MILESTONE_EVENTS_DATA[player.position]) {
-        // マイルストーンイベントはEVENTS配列から直接取得
-        event = EVENTS[player.position];
-    } else if (player.position === 0) {
-        // スタート地点もEVENTS配列から直接取得
-        event = EVENTS[0];
-    } else {
-        // それ以外のマスでは新しいランダムイベントを生成
-        const randomEventResult = generateRandomEvent(player.position);
-        event = randomEventResult.event;
-        // 生成されたイベントのカテゴリとインデックスをプレイヤーに保存
-        player.savedEventCategory = randomEventResult.category;
-        player.savedEventIndex = randomEventResult.index;
-    }
-
-    console.log("Current event:", event);
-    displayCurrentEvent(event);
-}
-
-/**
- * 効果をプレイヤーに適用する
- * TODO: 対象指定
- * @param {Effect} effect - 適用する効果オブジェクト
- */
-async function applyEffect(effect) {
-    let value = 0;
-    const list = player.party.filter(unit => !isDead(unit));
-    // ランダム
-    let unit = list[Math.floor(Math.random() * list.length)];
-
-    switch (effect.type) {
-        case "heal":
-            value = resolveValue(effect, unit);
-            unit.hp = Math.min(unit.hp + value, unit.maxHp);
-            addMessage(`${value} HP回復した！`);
-            break;
-        case "damage":
-            value = resolveValue(effect, unit);
-            const actualDamage = calculateDamage(value, 0);// イベントはアーマー無視
-            applyDamage(unit, actualDamage);
-            break;
-        case "stat_change":
-            value = resolveValue(effect, unit);
-            unit[effect.stat] = Math.max(0, unit[effect.stat] + value);
-            if (value > 0) {
-                addMessage(`${effect.stat} が ${value} 上がった！`);// TODO: effect.statに応じたラベル表示
-            } else {
-                addMessage(`${effect.stat} が ${Math.abs(value)} 下がった！`);// TODO: effect.statに応じたラベル表示
-            }
-            break;
-        case "dice_check":
-            const roll = Math.ceil(Math.random() * 6);
-            addMessage(`🎲 ダイスロール！ ${roll} が出た！ (成功閾値: ${effect.success_threshold})`);
-
-            if (roll >= effect.success_threshold) {
-                addMessage("ダイスロール成功！");
-                if (effect.success_effect) {
-                    // TODO: effectsにするか決断
-                    addMessage(effect.success_effect.text);
-                    await applyEffect(effect.success_effect); // 成功時の効果を適用
-                }
-            } else {
-                addMessage("ダイスロール失敗...");
-                if (effect.fail_effect) {
-                    addMessage(effect.fail_effect.text);
-                    await applyEffect(effect.fail_effect); // 失敗時の効果を適用
-                }
-            }
-            break;
-        case "acquire_item":
-            const item = getItemById(effect.item_id);
-            await acquireItem(item);
-            break;
-        case "money_change":
-            player.money = Math.max(0, player.money + effect.value);
-            if (effect.value >= 0) {
-                addMessage(`${effect.value}G を得た！`);
-            } else {
-                addMessage(`${Math.abs(effect.value)}G 支払った。`);
-            }
-            break;
-        case "random_item": {
-            const count = effect.count ?? 1;
-            const pool = ITEMS;
-            for (let i = 0; i < count; i++) {
-                const randomItem = getItemById(pool[Math.floor(Math.random() * pool.length)].id);
-                await acquireItem(randomItem);
-            }
-            break;
-        }
-    }
-    checkGameEnd(); // 効果適用後にゲーム終了判定
-}
-
-/**
- * イベントの効果量を計算して返す
- * @param effect - イベントの効果
- * @param unit - キャラクター
- * @returns {number} イベントの効果量
- */
-function resolveValue(effect, unit) {
-    if (effect.min !== undefined && effect.max !== undefined) {
-        return Math.floor(Math.random() * (effect.max - effect.min + 1)) + effect.min;
-    }
-    if (effect.rate !== undefined && effect.rate_reference !== undefined) {
-        const base = unit[effect.rate_reference];
-        return Math.ceil(base * effect.rate);
-    }
-    if (effect.value !== undefined) {
-        return effect.value;
-    }
-    console.warn("effect has no valid value definition:", effect);
-    return 0;
-}
+//     const unequipMsg = `${this.item.name}を外した`;
+//     addMessage(unequipMsg);
+//     showToast(unequipMsg);
+//     gameState.dirty = true;
+//     saveGame(player);
+// }
 
 /**
  * IDをキーにアイテムデータをマスタから取得してクローンを返す
@@ -1875,7 +1910,7 @@ function checkCondition(condition) {
  * 戦闘開始前の準備
  * @param {Array} enemies 
  */
-function battleInit(enemies) {
+async function battleInit(enemies) {
     gameState.battle = new Proxy({
         party: player.party,
         enemies: enemies.map(enemy => 
@@ -1896,20 +1931,18 @@ function battleInit(enemies) {
     gameState.battle.phase = "start";
 
     for (const enemy of gameState.battle.enemies) {
-        setTimeout(() => {
-            addMessage(`${enemy.name}が現れた！`);
-        }, 100);
+        await sleep(100);
+        addMessage(`${enemy.name}が現れた！`);
     }
 
-    setTimeout(() => {
-        battleTurnStart();// ターン開始処理実行
-    }, 1000);
+    await sleep(1000);
+    await battleTurnStart();// ターン開始処理実行
 }
 
 /**
  * ターン開始
  */
-function battleTurnStart() {
+async function battleTurnStart() {
     gameState.battle.turn++;
     gameState.battle.phase = "turn_start";
     addMessage("　");
@@ -1925,15 +1958,14 @@ function battleTurnStart() {
         Array(unit.multi_action ?? 1).fill(unit)
     );
 
-    setTimeout(() => {
-        battleExecOrder();// 行動決定処理実行
-    }, 1000);
+    await sleep(1000);
+    await battleExecOrder();// 行動決定処理実行
 }
 
 /**
  * 次のオーダーキャラを処理
  */
-function battleExecOrder() {
+async function battleExecOrder() {
     console.log(2);
     // 勝敗判定
     // TODO: 戦闘不能判定をメソッド化したほうがいい ダメージ処理でマイナスにならないように
@@ -1952,7 +1984,7 @@ function battleExecOrder() {
 
     // 全員行動済みならターン終了処理
     if (gameState.battle.turnOrder.length === 0) {
-        battleTurnEnd();
+        await battleTurnEnd();
         return;
     }
 
@@ -1963,41 +1995,56 @@ function battleExecOrder() {
 
     // 麻痺等のスタン状態や戦闘不能なら次へ TODO: 行動不能判定
     if (gameState.battle.actor_stan || isDead(gameState.battle.actor)) {
-        battleExecCommand();
+        await battleExecCommand();
         return;
     }
 
     if (gameState.battle.party.includes(gameState.battle.actor)) {
         gameState.battle.phase = "command_waiting";// コマンドパネル描画
     } else {
-        // TODO ランダムに敵の行動を決定
-        const enemy_actions = [
-            "attack", "attack", "attack", "guard",
-            // TODO: とりあえず
-            ...(gameState.battle.actor.skill_list)
-        ];
-        const enemy_action = enemy_actions[Math.floor(Math.random() * enemy_actions.length)];
-        if (enemy_action === "attack") {
-            gameState.battle.pendingCommand = new Proxy({act: "attack", actDetail: null, targets: [gameState.battle.party[Math.floor(Math.random() * gameState.battle.party.length)].id]}, {set: setAndRender});
-        } else if (enemy_action === "guard") {
-            gameState.battle.pendingCommand = new Proxy({act: "guard", actDetail: null, targets: [gameState.battle.actor.id]}, {set: setAndRender});
-        } else {
-            const skill = getSkillById(enemy_action);
-            let units = TARGET_TYPE_EXTRACTOR[skill.target_type](gameState.battle.enemies, gameState.battle.party, gameState.battle.actor);
-            // 選択が必要な種別の場合、対象をランダムに選択
-            if (SELECT_TARGET_TYPE.includes(skill.target_type)) {
-                units = [units[Math.floor(Math.random() * units.length)]];
-            }
-            gameState.battle.pendingCommand = new Proxy({act: "skill", actDetail: enemy_action, targets: units.map(unit => unit.id)}, {set: setAndRender});
+        gameState.battle.pendingCommand = decideEnemyActionAndTarget(gameState.battle.actor);
+        await battleExecCommand();
+    }
+}
+
+/**
+ * 敵の行動をランダムに決定
+ * @param {Object} actor 
+ * @returns 
+ */
+function decideEnemyActionAndTarget(actor) {
+    // TODO ランダムに敵の行動を決定
+    const enemyActions = [
+        "attack", "attack", "attack", "guard",
+        // TODO: とりあえず
+        ...(gameState.battle.actor.skill_list)
+    ];
+    const enemyAction = enemyActions[Math.floor(Math.random() * enemyActions.length)];
+    const aliveParty = gameState.battle.party.filter(unit => !isDead(unit))
+    if (enemyAction === "attack") {
+        return new Proxy({act: "attack", actDetail: null, targets: [
+            aliveParty[Math.floor(Math.random() * aliveParty.length)].id
+        ]}, {set: setAndRender});
+    } else if (enemyAction === "guard") {
+        return new Proxy({act: "guard", actDetail: null, targets: [actor.id]}, {set: setAndRender});
+    } else {
+        const skill = getSkillById(enemyAction);
+        let units = TARGET_TYPE_EXTRACTOR[skill.target_type](gameState.battle.enemies, gameState.battle.party, actor);
+        // 選択が必要な種別の場合、対象をランダムに選択
+        if (SELECT_TARGET_TYPE.includes(skill.target_type)) {
+            units = [units[Math.floor(Math.random() * units.length)]];
         }
-        battleExecCommand();
+        if (!units) {
+            return decideEnemyActionAndTarget(actor);
+        }
+        return new Proxy({act: "skill", actDetail: enemyAction, targets: units.map(unit => unit.id)}, {set: setAndRender});
     }
 }
 
 /**
  * コマンド効果処理
  */
-function battleExecCommand() {
+async function battleExecCommand() {
     console.log(3);
     addMessage("　");
     gameState.battle.phase = "exec";// ログや演出のパネル描画
@@ -2260,30 +2307,33 @@ function battleExecCommand() {
     down_chara_list.forEach(unit => advanceTimeline(unit.id));
 
     gameState.battle.pendingCommand = new Proxy({}, {set: setAndRender});
-    setTimeout(() => {
-        battleFinishCommand();// 行動終了処理実行
-    }, 100);
+
+    await sleep(100);
+    await battleFinishCommand();// 行動終了処理実行
 }
 
 /**
  * コマンド効果終了処理
  */
-function battleFinishCommand() {
+async function battleFinishCommand() {
     console.log(4);
     applyBatleStatus("act_after", gameState.battle.actor);
     gameState.battle.actor = null;
     gameState.battle.actor_stan = null;
     // 次の行動につなぐ
-    setTimeout(battleExecOrder, 750);
+    await sleep(750);
+    await battleExecOrder();
 }
 
 /**
  * ターン終了処理
  */
-function battleTurnEnd() {
+async function battleTurnEnd() {
     console.log(5);
     gameState.battle.phase = "pending";// ログパネル描画
-    setTimeout(battleTurnStart, 750);
+    
+    await sleep(750);
+    await battleTurnStart();
 }
 
 /**
@@ -2333,7 +2383,7 @@ function battleResult(isVictory) {
  * @param {*} e 
  * @returns 
  */
-function onActSelect(e) {
+async function onActSelect(e) {
     const choice = e.target.closest('.cmd');
     if (!choice) return;
 
@@ -2347,7 +2397,7 @@ function onActSelect(e) {
         if (aliveEnemies.length === 1) {
             gameState.battle.pendingCommand.actDetail = null;
             gameState.battle.pendingCommand.targets = [aliveEnemies[0].id];
-            battleExecCommand();
+            await battleExecCommand();
             return;
         }
         // TODO:こうげき選択かつactorの攻撃タイプが全体かランダムのとき
@@ -2355,7 +2405,7 @@ function onActSelect(e) {
         // 防御なら自身を対象に行動
         gameState.battle.pendingCommand.actDetail = null;
         gameState.battle.pendingCommand.targets = [gameState.battle.actor.id];
-        battleExecCommand();
+        await battleExecCommand();
         return;
     } else if (act === "skill" && getUsableList(gameState.battle.actor.skill_list, "battle").length === 0) {
         gameState.battle.alert = "使用できるスキルがありません";
@@ -2371,7 +2421,7 @@ function onActSelect(e) {
  * @param {*} e 
  * @returns 
  */
-function onActDetailItemSelect(e) {
+async function onActDetailItemSelect(e) {
     const choice = e.target.closest('.cmd');
     if (!choice) return;
 
@@ -2395,7 +2445,7 @@ function onActDetailItemSelect(e) {
     if (!SELECT_TARGET_TYPE.includes(item.use_target_type)
         || units.length === 1) {
         gameState.battle.pendingCommand.targets = units.map(unit => unit.id);
-        battleExecCommand();
+        await battleExecCommand();
         return;
     }
 }
@@ -2405,7 +2455,7 @@ function onActDetailItemSelect(e) {
  * @param {*} e 
  * @returns 
  */
-function onActDetailSkillSelect(e) {
+async function onActDetailSkillSelect(e) {
     const choice = e.target.closest('.cmd');
     if (!choice) return;
 
@@ -2435,7 +2485,7 @@ function onActDetailSkillSelect(e) {
     if (!SELECT_TARGET_TYPE.includes(skill.target_type)
         || units.length === 1) {
         gameState.battle.pendingCommand.targets = units.map(unit => unit.id);
-        battleExecCommand();
+        await battleExecCommand();
         return;
     }
 }
@@ -2445,7 +2495,7 @@ function onActDetailSkillSelect(e) {
  * @param {*} e 
  * @returns 
  */
-function onTargetSelect(e) {
+async function onTargetSelect(e) {
     const choice = e.target.closest('.cmd');
     if (!choice) return;
 
@@ -2460,20 +2510,15 @@ function onTargetSelect(e) {
         }
     }
     gameState.battle.pendingCommand.targets = [targets];
-    battleExecCommand();
+    await battleExecCommand();
 }
 
 /**
  * 戦闘画面から戻る処理
  */
 async function battleEnd() {
-    moveScreen(SCREENS.mainGameScreen);
-    gameState.explore.phase = "idle";
     const result = gameState.battle.result;
     if (result.isVictory) {
-        const enemy_name = gameState.battle.enemies[0].name + (gameState.battle.enemies.length === 1 ? "" : "たち");
-        addMessage(`${enemy_name}を倒した！`);
-        addMessage(`${result.gold}Gを手に入れた！`);
         player.money += result.gold;
         player.currentEventCompleted = true; // 戦闘イベント完了
 
@@ -2481,8 +2526,8 @@ async function battleEnd() {
             await acquireItem(item);
         }
     }
-    checkGameEnd();
-    saveGame(player); // 戦闘勝利後にセーブ
+    await resolveEventNode(result.isVictory ? player.explore.event.data.winNode : player.explore.event.data.loseNode);
+    gameState.battle = null;
 }
 
 /**
@@ -2880,42 +2925,20 @@ function getAliveUnits(list) {
  * @param {string} id 
  * @returns {Proxy}
  */
+function getPartyUnitById(id) {
+    return player.party.find(unit => unit.id === id)
+}
+
+/**
+ * IDから対象キャラを取得
+ * @param {string} id 
+ * @returns {Proxy}
+ */
 function getUnitById(id) {
     return gameState.battle.party.find(unit => unit.id === id) ||
         gameState.battle.enemies.find(unit => unit.id === id);
 }
 
-
-// ============================================================================
-// 7. ゲーム終了判定
-// ============================================================================
-function checkGameEnd() {
-    if (getAliveUnits(player.party).length === 0) {
-        systemHealAll();
-        player.position = 0;
-        player.currentEventCompleted = false;
-        player.savedEventCategory = null;
-        player.savedEventIndex = null;
-
-        addMessage("HPが0になった... あなたの冒険はここで終わった...");
-        saveGame(player);
-        setTimeout(moveScreen(SCREENS.gameOverScreen), 10);
-        return true;
-    }
-
-    if (player.position === 100 && player.currentEventCompleted) {
-        systemHealAll();
-        player.position = 0;
-        player.currentEventCompleted = false;
-        player.savedEventCategory = null;
-        player.savedEventIndex = null;
-        addMessage("暁の番人を打ち破り、あなたは新たな夜明けを迎えた！");
-        saveGame(player);
-        setTimeout(moveScreen(SCREENS.clearScreen), 10);
-        return true;
-    }
-    return false;
-}
 
 // ============================================================================
 // 8. イベントリスナー
@@ -2925,7 +2948,7 @@ newGameButton.addEventListener("click", () => {
     showCharacterCreationScreen();
 });
 
-loadGameButton.addEventListener("click", () => {
+loadGameButton.addEventListener("click", async () => {
     const savedData = loadGame();
     if (savedData) {
         player = new Proxy(savedData.player, {
@@ -2933,11 +2956,15 @@ loadGameButton.addEventListener("click", () => {
         });
         gameState.dirty = true;
         // 探索中なら探索画面へ
-        // TODO: 雑判定
-        if (player.position !== 0) {
-            showMainGameScreen();
-            addMessage("セーブデータをロードしました。冒険を再開します.");
-        } else {
+        if (player.explore.phase === "waitingTileSelect") {
+            moveScreen(SCREENS.exploreScreen);
+            showToast("探索を再開します。");
+        } else if (player.explore.phase === "waitingChoiceSelect") {
+            moveScreen(SCREENS.exploreScreen, SUB_SCREENS.exploreEventScreen);
+        } else if (player.explore.phase === "battle") {
+            await battleInit(player.explore.event.data.enemyIds.map(id => getEnemyById(id)));
+        } else if (player.explore.phase === "gameOver" || player.explore.phase === "clear") {
+            player.explore = null;
             moveScreen(SCREENS.baseScreen);
             showToast("おかえりなさい！");
         }
@@ -2957,23 +2984,8 @@ sizeAllocationInput.addEventListener("input", updateAllocationDisplay);
 
 startAdventureButton.addEventListener("click", () => {
     initializePlayer();
-    showMainGameScreen();
-    addMessage("新たな冒険が始まります！");
-});
-
-advanceButton.addEventListener("click", advance);
-// attackButton.addEventListener("click", attack);
-
-backToTitleFromGameOverButton.addEventListener("click", () => {
-    // 全滅後は拠点に戻る
     moveScreen(SCREENS.baseScreen);
-    showToast("全滅した…");
-});
-
-backToTitleFromClearButton.addEventListener("click", () => {
-    // クリア時はセーブデータを削除しないが、タイトルに戻る
-    moveScreen(SCREENS.baseScreen);
-    showToast("クリア！");
+    showToast(`はじめまして！ ${player.party[0].name}`);
 });
 
 debugTriggerEventButton.addEventListener("click", () => {
@@ -2986,9 +2998,9 @@ debugTriggerEventButton.addEventListener("click", () => {
     }
 });
 
-debugStartCombatButton.addEventListener("click", () => {
+debugStartCombatButton.addEventListener("click", async () => {
     const enemyId = debugEnemySelect.value;
-    debugStartCombat(enemyId);
+    await debugStartCombat(enemyId);
 });
 
 debugAcquireItemButton.addEventListener("click", debugAcquireItem);
@@ -3003,20 +3015,6 @@ debugBackLogButton.addEventListener("click", () => {console.log(gameState)});
 debugPanelToggle.addEventListener("click", () => {
     debugPanelContent.classList.toggle("hidden");
     debugToggleIcon.classList.toggle("open");
-});
-
-// メニューボタンのイベントリスナー
-menuButton.addEventListener("click", openMenuModal);
-
-// モーダルの閉じるボタンのイベントリスナー
-document.querySelector("#menu-modal .close-button").addEventListener("click", closeMenuModal);
-
-// タブボタンのイベントリスナー
-document.querySelectorAll(".tab-button").forEach(button => {
-    button.addEventListener("click", (event) => {
-        const tab = event.target.dataset.tab;
-        gameState.menuTab = tab;
-    });
 });
 
 // ============================================================================

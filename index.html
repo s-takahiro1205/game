@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
     <title>暁の探訪者</title>
+    <link rel=”icon" href="assets/favicon.ico">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 <style>
@@ -12,8 +13,9 @@
 ══════════════════════════════════ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-    /* --bg:         #1e1608; */
     --bg:         #1a1a2e;
+    --bg-explore:  #1a1a2e;
+    --bg-battle:  #1e1608;
     --bg-warm:    #f5ead0;
     --panel:      #2c1f0e;
     --panel2:     #3a2a14;
@@ -56,14 +58,26 @@ html, body {
     height: 100dvh; margin: 0 auto;
     position: relative; overflow: hidden;
 }
-.screen {
+.screen, .sub-screen {
     position: absolute; inset: 0;
     display: flex; flex-direction: column;
     transition: transform 0.32s cubic-bezier(.4,0,.2,1), opacity 0.28s;
     will-change: transform;
 }
-.screen.hidden-right { transform: translateX(100%); }
-.screen.hidden-left  { transform: translateX(-28%); opacity: 0.35; }
+/* .sub-screen.hidden-right { transform: translateX(100%); }
+.sub-screen.hidden-left  { transform: translateX(-28%); opacity: 0.35; } */
+
+.sub-screen.close {
+    transform: translateX(100%);
+    transition:transform .20s ease;
+}
+.sub-screen.open {
+    transform: translateX(0);
+}
+.sub-screen.fade-in {
+    transition: none;
+    animation: fadeIn 1s ease-in-out;
+}
 
 /* ══════════════════════════════════
     共通ヘッダー (HUD)
@@ -106,7 +120,7 @@ html, body {
 .hud-stat.day  { color: var(--text); letter-spacing: 1px; }
 .hud-btns { display: flex; gap: 4px; }
 .hud-icon-btn {
-    width: 28px; height: 28px;
+    width: 64px; height: 28px;
     background: var(--panel2); border: 1px solid var(--border);
     border-radius: 6px;
     display: flex; align-items: center; justify-content: center;
@@ -210,7 +224,6 @@ html, body {
     border: 1px solid var(--border);
     border-radius: 6px;
     padding: 6px 12px;
-    margin-bottom: 12px;
     display: flex; align-items: center; gap: 8px;
     backdrop-filter: blur(4px);
 }
@@ -227,6 +240,7 @@ html, body {
     gap: 0.5em;
     padding: 0 14px;
     flex: 0 0 auto;
+    margin-top: 12px;
 }
 
 /* 各拠点ボタン */
@@ -257,6 +271,10 @@ html, body {
     border-color: var(--gold-dim);
     box-shadow: 0 0 10px rgba(248,192,48,0.15);
 }
+.base-btn.disabled {
+    filter: grayscale(25%) brightness(0.75);
+    cursor: none;
+}
 .base-btn.danger { border-color: #8a3020; }
 .base-btn.danger:active { box-shadow: 0 0 12px rgba(232,88,88,0.25); }
 
@@ -269,6 +287,12 @@ html, body {
 .base-btn-sub {
     font-size: 9px; color: var(--text-dim);
     text-align: center; line-height: 1.3;
+}
+.base-btn-only-label {
+    min-height: 66px;
+}
+.base-btn-only-label .base-btn-label {
+    font-size: 16px; font-weight: bold;
 }
 
 /* バッジ */
@@ -304,10 +328,11 @@ html, body {
 #base-btn-explore .base-btn-sub { font-size: 10px; color: #c88050; text-align: left; }
 
 /* ステータス帯 */
-#base-footer {
+.base-footer {
     position: relative; z-index: 2;
     width: calc(100% - 24px);
-    margin-top: 12px;
+    margin-top: auto;
+    margin-bottom: 2em;
     display: flex; gap: 6px;
 }
 .base-footer-stat {
@@ -324,6 +349,317 @@ html, body {
 .base-footer-val.gold  { color: var(--gold); }
 .base-footer-val.green { color: var(--green); }
 .base-footer-val.red   { color: var(--red); }
+.base-footer-stat.base-btn-only-label   { padding: 22px 0; }
+
+
+/* ══════════════════════════════════
+    マップ選択画面
+══════════════════════════════════ */
+.base-screen { background: var(--bg); }
+.explore-screen { background: var(--bg--explore); }
+.battle-screen { background: var(--bg--battle); }
+
+/* 拠点系画面背景エリア */
+.base-stage {
+    flex: 1 1 auto;
+    position: relative; overflow: hidden;
+    /* 城壁・石畳風グラデーション */
+    background:
+        linear-gradient(180deg,
+        #2a1e0e 0%,
+        #3a2a12 30%,
+        #4a3818 55%,
+        #3a2a12 75%,
+        #2a1e0e 100%);
+    display: flex; flex-direction: column;
+    align-items: center;
+}
+
+/* 装飾：石畳タイルパターン */
+.base-stage::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+        repeating-linear-gradient(0deg,   transparent, transparent 31px, rgba(0,0,0,0.18) 31px, rgba(0,0,0,0.18) 32px),
+        repeating-linear-gradient(90deg,  transparent, transparent 47px, rgba(0,0,0,0.12) 47px, rgba(0,0,0,0.12) 48px);
+    pointer-events: none;
+}
+/* 装飾：横長の光 */
+.base-stage::after {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+        radial-gradient(ellipse 90% 40% at 50% 42%, rgba(248,192,48,0.07) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 30% at 50% 100%, rgba(0,0,0,0.5) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+/* 拠点名バナー */
+.base-banner {
+    position: relative; z-index: 2;
+    text-align: center;
+    padding: 16px 0 10px;
+}
+.base-banner-title {
+    font-size: 20px; font-weight: bold;
+    color: var(--gold);
+    letter-spacing: 6px;
+    text-shadow: 0 0 20px rgba(248,192,48,0.4), 0 2px 4px rgba(0,0,0,0.8);
+    font-family: 'Hiragino Mincho ProN', 'Yu Mincho', serif;
+}
+.base-banner-sub {
+    font-size: 10px; color: var(--parch);
+    letter-spacing: 3px; margin-top: 3px;
+    opacity: 0.7;
+}
+
+/* メニューグリッド */
+.base-grid {
+    position: relative; z-index: 2;
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5em;
+    padding: 0 14px;
+    flex: 0 0 auto;
+    margin-top: 12px;
+}
+
+/* 探索ボタン（大・横幅フル） */
+.base-btn-wide {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    padding: 14px 20px;
+    background: linear-gradient(135deg, #3a1a04, #6a3010, #3a1a04);
+    border-color: #c86020;
+    min-height: auto; gap: 14px;
+    box-shadow: 0 2px 12px rgba(200,96,32,0.3);
+}
+.base-btn-wide::before {
+    background: linear-gradient(90deg, transparent, rgba(248,160,32,0.4), transparent);
+}
+.base-btn-wide:active {
+    border-color: var(--gold);
+    box-shadow: 0 0 20px rgba(248,160,32,0.4);
+}
+.base-btn-wide .base-btn-icon { font-size: 32px; }
+.base-btn-wide .base-btn-label { font-size: 16px; letter-spacing: 3px; color: var(--gold); }
+.base-btn-wide .base-btn-sub { font-size: 10px; color: #c88050; text-align: left; }
+
+
+/* ══════════════════════════════════
+    探索イベント画面
+══════════════════════════════════ */
+/* ══════════════ ヘッダー ══════════════ */
+#explore-event-header {
+    flex: 0 0 auto;
+    background: var(--panel);
+    border-bottom: 2px solid var(--border);
+    padding: 7px 12px;
+    min-height: 4em;
+    display: flex; align-items: center; gap: 10px;
+    position: relative; z-index: 10;
+}
+#explore-event-header>:first-child {
+    margin: 0 auto;
+    text-align: center;
+}
+#explore-event-title {
+    font-size: 20px; font-weight: bold;
+    color: var(--text); letter-spacing: 1px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* フロアラベル（右） */
+#explore-event-floor-label {
+    font-size: 14px; color: var(--text-dim);
+    letter-spacing: 1px; flex: 0 0 auto;
+}
+
+/* ══════════════ イラストエリア ══════════════ */
+#explore-event-illust {
+    flex: 0 0 auto;
+    position: relative;
+    overflow: hidden;
+    /* 高さは画面の約35% */
+    height: 34vh; min-height: 160px; max-height: 240px;
+}
+
+/* 羊皮紙テクスチャ背景 */
+#explore-event-illust-bg {
+    position: absolute; inset: 0;
+    background:
+        radial-gradient(ellipse 90% 70% at 50% 35%, rgba(255,255,255,.1) 0%, transparent 65%),
+        radial-gradient(circle at 10% 85%, rgba(0,0,0,.25) 0%, transparent 40%),
+        radial-gradient(circle at 90% 15%, rgba(0,0,0,.2) 0%, transparent 35%),
+        linear-gradient(170deg, #c8a850 0%, #b09040 35%, #8a7028 70%, #6a5018 100%);
+}
+/* ページ端の破れ・汚れ */
+#explore-event-illust-bg::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+        radial-gradient(circle at 5% 10%,  rgba(0,0,0,.3) 0%, transparent 20%),
+        radial-gradient(circle at 95% 90%, rgba(0,0,0,.25) 0%, transparent 18%),
+        radial-gradient(circle at 50% 50%, rgba(0,0,0,.0) 0%, rgba(0,0,0,.08) 100%);
+}
+/* 下部グラデ（テキストエリアへの溶け込み） */
+#explore-event-illust-bg::after {
+    content: '';
+    position: absolute; bottom: 0; left: 0; right: 0; height: 40%;
+    background: linear-gradient(0deg, var(--bg) 0%, transparent 100%);
+}
+
+/* メインイラスト絵文字 */
+#explore-event-illust-main {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 2;
+}
+#explore-event-main-emoji {
+    font-size: 90px; line-height: 1;
+    filter: drop-shadow(0 4px 16px rgba(0,0,0,.7));
+    transition: opacity .4s, transform .4s;
+}
+
+/* サブ絵文字（背景演出） */
+.explore-event-sub-emoji {
+    position: absolute;
+    font-size: 28px; opacity: .18;
+    filter: blur(1px);
+    pointer-events: none; z-index: 1;
+}
+
+/* イベントタイトル（イラスト下部オーバーレイ） */
+#explore-event-illust-map-title {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 8px 14px 6px;
+    z-index: 3;
+    display: flex; align-items: flex-end; justify-content: space-between;
+}
+#explore-event-illust-map-title-label {
+    font-size: 10px; color: rgba(200,169,110,.7);
+    letter-spacing: 2px; text-transform: uppercase;
+    font-family: 'Hiragino Mincho ProN','Yu Mincho',serif;
+}
+
+/* ══════════════ イラストエリア ══════════════ */
+#explore-event-narrative-wrap {
+    flex: 0 0 auto;
+    position: relative;
+    margin: 0 12px;
+    background: rgba(12,8,2,.75);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 10px 13px 8px;
+    backdrop-filter: blur(4px);
+    z-index: 5;
+}
+/* 羊皮紙風トップライン */
+#explore-event-narrative-wrap::before {
+    content: '';
+    position: absolute; top: 0; left: 12px; right: 12px; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--parch-dk), transparent);
+}
+
+#explore-event-narrative-text {
+    font-size: 12px; color: var(--text); line-height: 1.85;
+    letter-spacing: .4px;
+    min-height: 52px;
+}
+#explore-event-narrative-text .nt-em    { color: var(--gold); font-weight: bold; }
+#explore-event-narrative-text .nt-warn  { color: var(--hp-red); }
+#explore-event-narrative-text .nt-good  { color: var(--green); }
+#explore-event-narrative-text .nt-skill { color: var(--teal); }
+
+/* ══════════════ 選択肢エリア ══════════════ */
+#explore-event-choices-wrap {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 10px 12px 20px;
+    display: flex; flex-direction: column; gap: 7px;
+}
+#explore-event-choices-wrap::-webkit-scrollbar { width: 3px; }
+#explore-event-choices-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+#explore-choices-list {
+    display: grid;
+    gap: 0.5em;
+}
+
+/* 選択肢ラベル */
+#explore-choices-label {
+    font-size: 9px; color: var(--parch-dk);
+    letter-spacing: 2px; text-transform: uppercase;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border2);
+    display: flex; align-items: center; gap: 6px;
+    flex: 0 0 auto;
+}
+#explore-choices-label::before { content: '◆'; font-size: 7px; }
+
+/* 選択肢ボタン */
+.explore-choice-btn {
+    width: 100%;
+    background: var(--panel2); border: 1px solid var(--border2);
+    border-radius: 9px; padding: 11px 14px;
+    display: flex; align-items: center; gap: 10px;
+    cursor: pointer; text-align: left; position: relative; overflow: hidden;
+    transition: border-color .15s, background .12s, transform .12s;
+}
+/* 光沢ライン */
+.explore-choice-btn::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(248,192,48,.15), transparent);
+}
+.explore-choice-btn:active { transform: scale(.98); background: var(--panel3); }
+
+/* ホバー・選択状態 */
+.explore-choice-btn:not(.disabled):not(.selected):hover { border-color: var(--gold-dim); }
+.explore-choice-btn.selected {
+    border-color: var(--gold);
+    background: rgba(248,192,48,.07);
+    box-shadow: 0 0 10px rgba(248,192,48,.15);
+}
+
+/* アイコン枠 */
+/* .explore-choice-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: var(--panel3); border: 1px solid var(--border2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 19px; flex: 0 0 auto;
+    transition: background .15s;
+}
+.explore-choice-btn.selected .explore-choice-icon { background: rgba(248,192,48,.12); border-color: var(--gold-dim); } */
+
+/* テキスト */
+.explore-choice-body { flex: 1; min-width: 0; }
+.explore-choice-label {
+    font-size: 13px; font-weight: bold; color: var(--text);
+    letter-spacing: .5px; margin-bottom: 3px;
+}
+.explore-choice-desc {
+    font-size: 10px; color: var(--text-sub); line-height: 1.5;
+}
+
+/* 条件バッジ */
+.explore-choice-req {
+    font-size: 8px; font-weight: bold;
+    padding: 2px 7px; border-radius: 10px;
+    letter-spacing: .5px; flex: 0 0 auto;
+    white-space: nowrap;
+}
+.req-ok   { background:#103028; color:var(--teal);  border:1px solid #206858; }
+.req-item { background:#302010; color:var(--yellow); border:1px solid #807030; }
+.req-gold { background:#302800; color:var(--gold);   border:1px solid var(--gold-dim); }
+.req-stat { background:#1a1040; color:#8080f0;        border:1px solid #4040a0; }
+
+/* 無効選択肢 */
+.explore-choice-btn.disabled {
+    opacity: .35; cursor: not-allowed; pointer-events: none;
+}
+.explore-choice-btn.disabled .explore-choice-label { color: var(--text-dim); }
+
 </style>
 </head>
 <body>
@@ -415,8 +751,8 @@ html, body {
             alert(sub)
         }
     </script>
-    <div id="base-screen" class="screen">
-        <!-- HUD（共通） -->
+    <div id="base-screen" class="screen hidden">
+        <!-- HUD（共通） TODO: 動的生成 -->
         <div class="hud" id="base-hud">
             <div class="hud-main">
                 <div class="hud-char-icon" onclick="toggleParty('base')">⚔️</div>
@@ -445,95 +781,172 @@ html, body {
             </div>
         </div>
 
-        <!-- 拠点ステージ -->
+        <!-- 拠点 -->
         <div id="base-stage">
             <div id="base-banner">
-            <div id="base-banner-title">ラグナ砦</div>
-            <div id="base-banner-sub">── RAGUNA FORTRESS ──</div>
+                <div id="base-banner-title">ラグナ砦</div>
+                <div id="base-banner-sub">── RAGUNA FORTRESS ──</div>
             </div>
 
             <div id="base-notice">
-            <span id="base-notice-icon">📋</span>
-            <div id="base-notice-text"><strong>新しい依頼</strong>が3件掲示されています。ガルドスは<strong>治療が必要</strong>です。</div>
+                <span id="base-notice-icon">📋</span>
+                <div id="base-notice-text"><strong>新しい依頼</strong>が3件掲示されています。ガルドスは<strong>治療が必要</strong>です。</div>
             </div>
 
             <div id="base-grid">
-            <div class="base-btn" id="base-btn-mansion">
-                <span class="base-btn-icon">🏥</span>
-                <span class="base-btn-label">待機所</span>
-                <span class="base-btn-sub">HP/MP回復<br>状態異常治癒</span>
-                <span class="base-btn-badge rs-bad">要治療</span>
-            </div>
-            <div class="base-btn" onclick="goSub('storage')">
-                <span class="base-btn-icon">📦</span>
-                <span class="base-btn-label">倉庫</span>
-                <span class="base-btn-sub">アイテム預け入れ<br>引き出し</span>
-                <span class="base-btn-badge gold-badge">32/50</span>
-            </div>
-            <div class="base-btn" id="base-btn-change-job">
-                <span class="base-btn-icon">⚗️</span>
-                <span class="base-btn-label">転職</span>
-                <span class="base-btn-sub">クラスチェンジ<br>スキル引継ぎ</span>
-            </div>
-            <div class="base-btn" onclick="goSub('shop')">
-                <span class="base-btn-icon">🛒</span>
-                <span class="base-btn-label">ショップ</span>
-                <span class="base-btn-sub">武器・道具<br>購入・売却</span>
-                <span class="base-btn-badge new">NEW</span>
-            </div>
-            <div class="base-btn" onclick="goSub('board')">
-                <span class="base-btn-icon">📋</span>
-                <span class="base-btn-label">依頼板</span>
-                <span class="base-btn-sub">クエスト受諾<br>報告</span>
-                <span class="base-btn-badge">3</span>
-            </div>
-            <!-- 探索ボタン（全幅） -->
-            <div class="base-btn highlight" id="base-btn-explore">
-                <!-- onclick="goSub('explore-confirm')" -->
-                <span class="base-btn-icon">🗺️</span>
-                <div>
-                <div class="base-btn-label">探索へ出発</div>
-                <div class="base-btn-sub">現在地：廃墟の回廊 B2F</div>
+                <div class="base-btn" id="base-btn-mansion">
+                    <span class="base-btn-icon">🏥</span>
+                    <span class="base-btn-label">待機所</span>
+                    <span class="base-btn-sub">HP/MP回復<br>状態異常治癒</span>
+                    <span class="base-btn-badge rs-bad">要治療</span>
+                </div>
+                <div class="base-btn" onclick="goSub('storage')">
+                    <span class="base-btn-icon">📦</span>
+                    <span class="base-btn-label">倉庫</span>
+                    <span class="base-btn-sub">アイテム預け入れ<br>引き出し</span>
+                    <span class="base-btn-badge gold-badge">32/50</span>
+                </div>
+                <div class="base-btn" id="base-btn-change-job">
+                    <span class="base-btn-icon">⚗️</span>
+                    <span class="base-btn-label">転職</span>
+                    <span class="base-btn-sub">クラスチェンジ<br>スキル引継ぎ</span>
+                </div>
+                <div class="base-btn" onclick="goSub('shop')">
+                    <span class="base-btn-icon">🛒</span>
+                    <span class="base-btn-label">ショップ</span>
+                    <span class="base-btn-sub">武器・道具<br>購入・売却</span>
+                    <span class="base-btn-badge new">NEW</span>
+                </div>
+                <div class="base-btn" onclick="goSub('board')">
+                    <span class="base-btn-icon">📋</span>
+                    <span class="base-btn-label">依頼板</span>
+                    <span class="base-btn-sub">クエスト受諾<br>報告</span>
+                    <span class="base-btn-badge">3</span>
+                </div>
+                <!-- 探索ボタン（全幅） -->
+                <div class="base-btn base-btn-wide highlight" id="base-btn-select-explore-map">
+                    <span class="base-btn-icon">🗺️</span>
+                    <div>
+                        <div class="base-btn-label">探索へ出発</div>
+                        <!-- <div class="base-btn-sub">現在地：廃墟の回廊 B2F</div> -->
+                    </div>
                 </div>
             </div>
+
+            <div class="base-footer">
+                <div class="base-footer-stat">
+                    <span class="base-footer-label">所持金</span>
+                    <span class="base-footer-val gold">🪙 136</span>
+                </div>
+                <div class="base-footer-stat">
+                    <span class="base-footer-label">パーティ状態</span>
+                    <span class="base-footer-val red">🔴 要治療</span>
+                </div>
+                <div class="base-footer-stat">
+                    <span class="base-footer-label">進行日数</span>
+                    <span class="base-footer-val">D + 4</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Base Select Explore Map Screen -->
+    <div id="base-select-explore-map-screen" class="base-screen sub-screen close">
+        <div class="hud base-hud">
+            <div class="hud-main" onclick="alert('base')">
+                <div class="hud-stats">
+                    <div class="hud-stat gold">🪙 136</div>
+                    <div class="hud-stat day">Day4</div>
+                </div>
+                <div style="flex:1"></div>
+                    <div class="hud-btns">
+                        <div class="hud-icon-btn">☰</div>
+                    </div>
+                </div>
+                <div class="party-panel" id="party-panel-base">
+                <div class="party-grid" id="party-grid-base"></div>
+            </div>
+        </div>
+        <div class="base-banner">
+            <div class="base-banner-title">探索マップ選択</div>
+            <div class="base-banner-sub">── 行きたいマップを選択してください ──</div>
+        </div>
+        <div class="base-stage">
+            <div class="base-grid" id="base-select-explore-map-grid">
             </div>
 
-            <div id="base-footer">
-            <div class="base-footer-stat">
-                <span class="base-footer-label">所持金</span>
-                <span class="base-footer-val gold">🪙 136</span>
-            </div>
-            <div class="base-footer-stat">
-                <span class="base-footer-label">パーティ状態</span>
-                <span class="base-footer-val red">🔴 要治療</span>
-            </div>
-            <div class="base-footer-stat">
-                <span class="base-footer-label">進行日数</span>
-                <span class="base-footer-val">D + 4</span>
-            </div>
+            <div class="base-footer">
+                <div class="base-footer-stat base-btn base-btn-only-label" id="base-select-explore-map-screen-back">
+                    <span class="base-btn-label">戻る</span>
+                </div><div class="base-footer-stat"></div><!-- 幅調整用 -->
             </div>
         </div>
     </div>
 
     <!-- Explore Screen -->
-    <div id="main-game-screen" class="game-screen hidden">
-        <div class="player-status">
-            <p><span id="player-display-name"></span></p>
-            <div class="hp-bar-container">
-                <div id="game-hp-bar-fill" class="hp-bar-fill"><span id="player-hp-text"></span></div>
+    <div id="explore-screen" class="explore-screen screen hidden">
+        <div class="base-banner">
+            <div class="base-banner-title" id="explore-map-title"></div>
+            <div class="base-banner-sub"></div>
+        </div>
+        <div class="base-stage">
+            <div class="base-grid" id="explore-tile-grid">
+            </div>
+
+        </div>
+    </div>
+    <!-- Explore Event Screen -->
+    <div id="explore-event-screen" class="explore-screen sub-screen fade-in hidden">
+        <!-- ヘッダー -->
+        <div id="explore-event-header">
+            <div>
+                <div id="explore-event-title"></div>
+                <div id="explore-event-floor-label"></div>
             </div>
         </div>
-
-        <div id="game-message" class="game-message"></div>
-        <div id="choices-container" class="choices-container hidden"></div>
-
-        <div class="game-controls">
-            <button id="advance-button" class="button">進む</button>
+        <!-- イラストエリア -->
+        <div id="explore-event-illust">
+            <div id="explore-event-illust-bg"></div>
+            <!-- サブ絵文字（背景演出） -->
+            <span class="explore-event-sub-emoji"></span>
+            <span class="explore-event-sub-emoji"></span>
+            <span class="explore-event-sub-emoji"></span>
+            <span class="explore-event-sub-emoji"></span>
+            <!-- メイン絵文字 -->
+            <div id="explore-event-illust-main">
+                <span id="explore-event-main-emoji"></span>
+            </div>
+            <!-- 下部ラベル -->
+            <div id="explore-event-illust-map-title">
+                <span   span id="explore-event-illust-map-title-label"></span>
+            </div>
         </div>
+        <!-- 状況テキスト -->
+        <div id="explore-event-narrative-wrap">
+            <div id="explore-event-narrative-text"></div>
+        </div>
+        <!-- 選択肢 -->
+        <div id="explore-event-choices-wrap">
+            <div id="explore-choices-label">行動を選択</div>
+            <div id="explore-choices-list"></div>
+        </div>
+    </div>
+    
+    <!-- Explore Game Over Screen fade-inつきサブはhidden -->
+    <div id="explore-game-over-screen" class="explore-screen sub-screen fade-in hidden" style="margin-top: 95%;">
+        <h2>パーティーは全滅した</h2>
+        <button id="explore-game-over-back" class="button">帰還する</button>
+    </div>
+
+    <!-- Explore Clear Screen -->
+    <div id="explore-clear-screen" class="explore-screen sub-screen fade-in hidden" style="margin-top: 95%;">
+        <h1>マップ制覇！</h1>
+        <p>あなたは を制覇しました！</p>
+        <button id="explore-clear-back" class="button">帰還する</button>
     </div>
 
     <!-- Battle Screen -->
-    <div id="battle-screen" class="game-screen hidden">
+    <div id="battle-screen" class="game-screen battle-screen hidden">
         <!-- 敵1~8 -->
         <section id="enemy-panel">
             <!-- 例 <div class="enemy-card" data-id="a6sd4a6s4a6s4da68d">
@@ -647,92 +1060,8 @@ html, body {
         </div>
     </div>
 
-    <!-- Menu Button -->
-    <button id="menu-button" class="button hidden">メニュー</button>
-
     <!-- Toast Notification -->
     <div id="toast"></div>
-
-    <div id="game-over-screen" class="game-screen hidden">
-        <h2>パーティーは全滅した</h2>
-        <button id="back-to-title-from-gameover" class="button">帰還する</button>
-    </div>
-
-    <!-- Clear Screen -->
-    <div id="clear-screen" class="game-screen hidden">
-        <h1>マップ制覇！</h1>
-        <p>あなたは世界の真実を解き明かし、新たな夜明けを迎えました！</p>
-        <button id="back-to-title-from-clear" class="button">帰還する</button>
-    </div>
-
-    <!-- Menu Modal -->
-    <div id="menu-modal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>メニュー</h2>
-                <span class="close-button">&times;</span>
-            </div>
-            <div class="modal-tabs">
-                <button class="tab-button active" data-tab="status">ステータス</button>
-                <button class="tab-button" data-tab="items">アイテム</button>
-                <button class="tab-button" data-tab="equipments">装備</button>
-            </div>
-            <div class="modal-body">
-                <div id="status-tab" class="tab-content active">
-                    <!-- ステータス表示エリア -->
-                    <div class="player-stats-display">
-                        <p>現在地: <span></span></p>
-                        <p>所持金: <span id="modal-player-money"></span>G</p>
-                        <p>名前: <span id="modal-player-name"></span></p>
-                        <p>HP: <span id="modal-player-hp"></span>/<span id="modal-player-max-hp"></span></p>
-                        <p>MP: <span id="modal-player-mp"></span>/<span id="modal-player-max-mp"></span></p>
-                        <p>攻撃力: <span id="modal-player-attack"></span></p>
-                        <p>防御力: <span id="modal-player-armor"></span></p>
-                        <p>速度: <span id="modal-player-speed"></span></p>
-                        <p>知能: <span id="modal-player-intel"></span></p>
-                        <p>器用: <span id="modal-player-dex"></span></p>
-                        <p>体格: <span id="modal-player-size"></span></p>
-                        <p>行動回数: <span id="modal-player-multi-action"></span></p>
-                        <p>習得スキル: <span></span></p>
-                    </div>
-                </div>
-                <div id="items-tab" class="tab-content hidden">
-                    <!-- アイテム表示エリア -->
-                    <div class="item-grid">
-                        <!-- アイテムはここに動的に追加される -->
-                    </div>
-                </div>
-                <div id="equipment-tab" class="tab-content hidden">
-                    <!-- 装備表示エリア -->
-                    <div class="equipment-slots">
-                        <!-- 装備はここに動的に追加される -->
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <!-- ボタン表示エリア -->
-                <div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Item Discard Modal -->
-    <div id="discard-item-modal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>アイテムを捨てる</h2>
-                <span class="close-button discard-close-button">&times;</span>
-            </div>
-            <div class="modal-body">
-                <p>新しいアイテムを取得するために、どれか一つアイテムを捨ててください。</p>
-                <div id="discard-item-list" class="item-grid">
-                    <!-- 捨てるアイテムリストはここに動的に追加される -->
-                </div>
-                <button id="discard-selected-item-button" class="button" disabled>選択したアイテムを捨てる</button>
-            </div>
-        </div>
-    </div>
 
     <!-- Debug Panel -->
     <div id="debug-panel" class="debug-panel hidden">

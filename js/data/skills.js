@@ -89,10 +89,10 @@ export const SKILLS = [
             {
                 type: "add_state",
                 stateId: "paralyze",
-                dice: 2,
-                sides: 20,
-                flat: 5,
-                fix: 0,
+                dice: 0,
+                sides: 0,
+                flat: 0,
+                fix: 40,
                 turn: 5,
             }
         ]
@@ -124,10 +124,10 @@ export const SKILLS = [
             {
                 type: "add_state",
                 stateId: "paralyze",
-                dice: 2,
-                sides: 20,
-                flat: 5,
-                fix: 0,
+                dice: 0,
+                sides: 0,
+                flat: 0,
+                fix: 25,
                 turn: 5,
             }
         ]
@@ -164,7 +164,7 @@ export const SKILLS = [
         cost: {
             mp: 3
         },
-        target_type: "poizoned_ally_one",
+        target_type: "poisoned_ally_one",
         usableIn: {
             home: false,
             explore: false,
@@ -175,7 +175,7 @@ export const SKILLS = [
         effects: [
             {
                 type: "recover_state",
-                stateId: "poizon",
+                stateId: "poison",
                 dice: 0,
                 sides: 0,
                 flat: 0,
@@ -228,8 +228,8 @@ export const SKILLS = [
                 type: "damage",
                 element: "physical",
                 dice: 0,
-                sides: 5,
-                flat: 5,
+                sides: 3,
+                flat: 7,
                 fix: 0,// 固定ダメージ
                 armor_pierce: 0,// 装甲貫通率
             },
@@ -254,8 +254,8 @@ export const SKILLS = [
                 type: "damage",
                 element: "physical",
                 dice: 0,
-                sides: 8,
-                flat: 12,
+                sides: 5,
+                flat: 15,
                 fix: 0,
                 armor_pierce: 0,
             },
@@ -280,8 +280,8 @@ export const SKILLS = [
                 type: "damage",
                 element: "physical",
                 dice: 0,
-                sides: 5,
-                flat: 5,
+                sides: 3,
+                flat: 7,
                 fix: 0,
                 armor_pierce: 0,
             }
@@ -303,5 +303,86 @@ export const SKILLS = [
         category: "special",
         type: "support",
         effects: []
+    },
+    {
+        id: "bite",
+        name: "かみつき",
+        cost: {},
+        target_type: "alive_enemy_one",
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: true,
+        },
+        category: "combat",
+        type: "attack",// ボタンの色分け専用
+        effects: [
+            {
+                type: "damage",
+                element: "physical",
+                dice: 0,
+                sides: 2,
+                flat: 2,
+                fix: 0,// 固定ダメージ
+                armor_pierce: 0,// 装甲貫通率
+            },
+        ]
+    },
+    {
+        id: "poison-bite",
+        name: "毒かみつき",
+        cost: {},
+        target_type: "alive_enemy_one",
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: true,
+        },
+        category: "combat",
+        type: "attack",// ボタンの色分け専用
+        effects: [
+            {
+                type: "damage",
+                element: "physical",
+                dice: 0,
+                sides: 2,
+                flat: 2,
+                fix: 0,// 固定ダメージ
+                armor_pierce: 0,// 装甲貫通率
+            },
+            {
+                type: "add_state",
+                stateId: "poison",
+                dice: 0,
+                sides: 0,
+                flat: 0,
+                fix: 50,
+                turn: 5,
+            }
+        ]
+    },
+    {
+        id: "charge",
+        name: "突進",
+        cost: {},
+        target_type: "alive_enemy_one",
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: true,
+        },
+        category: "combat",
+        type: "attack",// ボタンの色分け専用
+        effects: [
+            {
+                type: "damage",
+                element: "physical",
+                dice: 0,
+                sides: 5,
+                flat: 3,
+                fix: 0,// 固定ダメージ
+                armor_pierce: 0,// 装甲貫通率
+            },
+        ]
     },
 ];

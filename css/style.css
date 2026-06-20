@@ -248,13 +248,6 @@ input[type="number"] {
     border-bottom: dotted 0.05em gray;
 }
 
-.game-controls {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-top: 20px;
-}
-
 .choice-button {
     background-color: #4a4a6a; /* 少し明るいネイビー */
     color: #ffcc00;

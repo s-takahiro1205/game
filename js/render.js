@@ -9,8 +9,6 @@ import { SCREENS, SUB_SCREENS, LABEL, BATTLE_STATUSES, TARGET_TYPE_EXTRACTOR } f
 // DOM Elements
 // TODO:精査してね
 const titleScreen = document.getElementById(SCREENS.titleScreen);
-const newGameButton = document.getElementById("new-game-button");
-const loadGameButton = document.getElementById("load-game-button");
 
 const characterCreationScreen = document.getElementById(SCREENS.characterCreationScreen);
 const playerNameInput = document.getElementById("player-name");

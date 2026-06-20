@@ -1,7 +1,9 @@
 // localStorage セーブ・ロード処理
 
 const SAVE_KEY = "akatsuki_save";
-const SAVE_VERSION = "1.0";
+const SAVE_VERSION = "2.0.1";
+const versionDisplay = document.getElementById("version-display");
+versionDisplay.innerHTML = `Ver. ${SAVE_VERSION}`;
 
 /**
  * ゲームデータをlocalStorageに保存する

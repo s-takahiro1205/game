@@ -119,11 +119,11 @@ export let player = new Proxy({
                 phase: "",// waitingChoiceSelect｜exec｜complete
                 choices: [],
             },
-            achievement: {// 活動実績
-                mapClear: {},//id: {count, firstDay}
-                defeatedMonsters: {},//id: {count, firstDay}
-            }
         },
+        achievement: {// 活動実績
+            mapClear: {},//id: {count, firstDay}
+            defeatedMonsters: {},//id: {count, firstDay}
+        }
     },
     {
         set: setAndRender
@@ -1916,7 +1916,8 @@ async function battleInit(enemies) {
         enemies: enemies.map(enemy => 
             new Proxy({
                 ...enemy,
-                id: self.crypto.randomUUID()
+                defId: enemy.id,
+                id: self.crypto.randomUUID(),
             }, {set: setAndRender})
         ),
         turnOrder: [],
@@ -2002,17 +2003,23 @@ async function battleExecOrder() {
     if (gameState.battle.party.includes(gameState.battle.actor)) {
         gameState.battle.phase = "command_waiting";// コマンドパネル描画
     } else {
+        counterDecideEnemyActionAndTarget = 0;
         gameState.battle.pendingCommand = decideEnemyActionAndTarget(gameState.battle.actor);
         await battleExecCommand();
     }
 }
 
+let counterDecideEnemyActionAndTarget = 0;
 /**
  * 敵の行動をランダムに決定
  * @param {Object} actor 
  * @returns 
  */
 function decideEnemyActionAndTarget(actor) {
+    counterDecideEnemyActionAndTarget += 1;
+    if (counterDecideEnemyActionAndTarget > 100) {
+        throw new Error(`loop counterDecideEnemyActionAndTarget 100 ${actor.name}`);
+    }
     // TODO ランダムに敵の行動を決定
     const enemyActions = [
         "attack", "attack", "attack", "guard",
@@ -2030,12 +2037,13 @@ function decideEnemyActionAndTarget(actor) {
     } else {
         const skill = getSkillById(enemyAction);
         let units = TARGET_TYPE_EXTRACTOR[skill.target_type](gameState.battle.enemies, gameState.battle.party, actor);
+
+        if (units.length === 0) {
+            return decideEnemyActionAndTarget(actor);
+        }
         // 選択が必要な種別の場合、対象をランダムに選択
         if (SELECT_TARGET_TYPE.includes(skill.target_type)) {
             units = [units[Math.floor(Math.random() * units.length)]];
-        }
-        if (!units) {
-            return decideEnemyActionAndTarget(actor);
         }
         return new Proxy({act: "skill", actDetail: enemyAction, targets: units.map(unit => unit.id)}, {set: setAndRender});
     }
@@ -2524,6 +2532,16 @@ async function battleEnd() {
 
         for (const item of result.items) {
             await acquireItem(item);
+        }
+        for (const enemy of gameState.battle.enemies) {
+            if (!player.achievement.defeatedMonsters[enemy.defId]) {
+                player.achievement.defeatedMonsters[enemy.defId] = {
+                    count: 1,
+                    firstDay: player.day
+                };
+            } else {
+                player.achievement.defeatedMonsters[enemy.defId].count += 1;
+            }
         }
     }
     await resolveEventNode(result.isVictory ? player.explore.event.data.winNode : player.explore.event.data.loseNode);

@@ -1,6 +1,6 @@
 //  エネミーデータ定義
 
-import { RACES } from '../const.js';
+import { RACES, SEXES } from '../const.js';
 
 /**
  * @typedef {object} Enemy
@@ -60,6 +60,7 @@ export const ENEMIES = [
         ],
         money: 10,
         race: RACES.monster.id,
+        sex: null,
     },
     {
         id: "starving-dog",
@@ -91,6 +92,7 @@ export const ENEMIES = [
         ],
         money: 3,
         race: RACES.monster.id,
+        sex: null,
     },
     {
         id: "rotting-crow",
@@ -122,6 +124,7 @@ export const ENEMIES = [
         ],
         money: 2,
         race: RACES.monster.id,
+        sex: null,
     },
     {
         id: "twisted-rat",
@@ -153,6 +156,7 @@ export const ENEMIES = [
         ],
         money: 3,
         race: RACES.monster.id,
+        sex: null,
     },
     {
         id: "forest-ghoul",
@@ -184,6 +188,7 @@ export const ENEMIES = [
         ],
         money: 5,
         race: RACES.monster.id,
+        sex: null,
     },
     {
         id: "thorn-spider",
@@ -215,6 +220,7 @@ export const ENEMIES = [
         ],
         money: 4,
         race: RACES.monster.id,
+        sex: null,
     },
     {
         id: "moving-mushroom",
@@ -246,6 +252,7 @@ export const ENEMIES = [
         ],
         money: 8,
         race: RACES.monster.id,
+        sex: null,
     },
     {
         id: "wild-boar",
@@ -277,6 +284,7 @@ export const ENEMIES = [
         ],
         money: 10,
         race: RACES.monster.id,
+        sex: null,
     },
     {
         id: "moss-golem",
@@ -308,6 +316,7 @@ export const ENEMIES = [
         ],
         money: 20,
         race: RACES.monster.id,
+        sex: null,
     },
     {
         id: "rogue-bandit",
@@ -343,6 +352,7 @@ export const ENEMIES = [
         ],
         money: 10,
         race: RACES.human.id,
+        sex: null,
     },
     {
         id: "wandering-ghost",
@@ -374,6 +384,7 @@ export const ENEMIES = [
         ],
         money: 13,
         race: RACES.monster.id,
+        sex: null,
     },
 
     // ボス
@@ -407,6 +418,7 @@ export const ENEMIES = [
         ],
         money: 50,
         race: RACES.fallen.id,
+        sex: null,
     },
     {
         id: "guardian-of-the-forest",
@@ -438,6 +450,7 @@ export const ENEMIES = [
         ],
         money: 70,
         race: RACES.elf.id,
+        sex: null,
     },
     {
         id: "messenger-of-Shadows",
@@ -469,6 +482,7 @@ export const ENEMIES = [
         ],
         money: 120,
         race: RACES.fallen.id,
+        sex: null,
     },
     {
         id: "guardian-of-the-ruin",
@@ -495,6 +509,7 @@ export const ENEMIES = [
         dropItems: [],
         money: 100,
         race: RACES.human.id,
+        sex: null,
     },
     {
         id: "guardian-of-the-dawn",
@@ -527,5 +542,6 @@ export const ENEMIES = [
         ],
         money: 500,
         race: RACES.human.id,
+        sex: null,
     },
 ];

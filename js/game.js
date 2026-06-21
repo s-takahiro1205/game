@@ -8,7 +8,7 @@ import { ENEMIES } from './data/enemies.js';
 import { SKILLS } from './data/skills.js';
 import { JOBS } from './data/jobs.js';
 import { scheduleRender } from './render.js';
-import { LABEL, SCREENS, SUB_SCREENS, BOTTOM_SHEETS, BOTTOM_MENU_TABS, BATTLE_STATUSES, DEBUFF_STATUS_MODIFIERS, SELECT_TARGET_TYPE, TARGET_TYPE_EXTRACTOR, isDead } from './const.js';
+import { LABEL, SCREENS, SUB_SCREENS, BOTTOM_SHEETS, BOTTOM_MENU_TABS, BATTLE_STATUSES, DEBUFF_STATUS_MODIFIERS, SEXES, RACES, EQUIP_TYPES, SELECT_TARGET_TYPE, TARGET_TYPE_EXTRACTOR, isDead } from './const.js';
 
 // ============================================================================
 // 1. グローバル変数とDOM要素
@@ -40,7 +40,7 @@ import { LABEL, SCREENS, SUB_SCREENS, BOTTOM_SHEETS, BOTTOM_MENU_TABS, BATTLE_ST
  * @property {string} use_type - 使用種別
  * @property {string} use_target_type - 使用対象種別
  * @property {object | null} stat_modifier - 増減ステータス（例: { atk: +5, def: +2 }）
- * @property {"weapon" | "def" | "shield" | "accessory" | null} equip_type - 装備種別
+ * @property {"weapon" | "def" | "shield" | "accessory" | null} equipType - 装備種別
  */
 
 // ops["gte"](player.level, value)など
@@ -84,6 +84,7 @@ const unit_base = {
     size: 0,
     multiAction: 1,
     race: RACES.human.id,
+    sex: null,
     currentJob: "warrior",// 例
     jobs: {
         // warrior: {// 例
@@ -91,7 +92,13 @@ const unit_base = {
         //     exp: 150
         // },
     },
-    equipmentSlot: [],
+    equipmentSlot: [
+        {id: "weapon_1", category: EQUIP_TYPES.warpon.id, equippedItemId: null},
+        {id: "mainArmor_1", category: EQUIP_TYPES.mainArmor.id, equippedItemId: null},
+        {id: "subArmor_1", category: EQUIP_TYPES.subArmor.id, equippedItemId: null},
+        {id: "accessory_1", category: EQUIP_TYPES.accessory.id, equippedItemId: null},
+        {id: "accessory_2", category: EQUIP_TYPES.accessory.id, equippedItemId: null},
+    ],
     skillList: [ // スキル
         // getSkillById("thunder"),// 例
     ],
@@ -341,10 +348,17 @@ baseBtnMansion.addEventListener("click", () => {
     unit.hp = unit.maxHp;
     unit.mp = unit.maxMp;
     unit.multiAction = 1;
+    unit.sex = getRandom(1,3) <= 2 ? SEXES.female.id : getRandom(1,2) === 1 ? SEXES.male.id : SEXES.none.id;
     unit.race = RACES.human.id;
     unit.currentJob = null;
     unit.jobs = {};
-    unit.equipmentSlot = [];
+    unit.equipmentSlot = [
+        {id: "weapon_1", category: EQUIP_TYPES.warpon.id, equippedItemId: null},
+        {id: "mainArmor_1", category: EQUIP_TYPES.mainArmor.id, equippedItemId: null},
+        {id: "subArmor_1", category: EQUIP_TYPES.subArmor.id, equippedItemId: null},
+        {id: "accessory_1", category: EQUIP_TYPES.accessory.id, equippedItemId: null},
+        {id: "accessory_2", category: EQUIP_TYPES.accessory.id, equippedItemId: null},
+    ];
     unit.skillList = [
         // getSkillById("wait-and-see"),
     ];
@@ -1212,10 +1226,17 @@ function initializePlayer() {
     unit.hp = unit.maxHp;
     unit.mp = unit.maxMp;
     unit.multiAction = 1;
+    unit.sex = getRandom(1,3) <= 2 ? SEXES.female.id : getRandom(1,2) === 1 ? SEXES.male.id : SEXES.none.id;
     unit.race = RACES.human.id;
     unit.currentJob = null;
     unit.jobs = {};
-    unit.equipmentSlot = [];
+    unit.equipmentSlot = [
+        {id: "weapon_1", category: EQUIP_TYPESwarpon.id, equippedItemId: null},
+        {id: "mainArmor_1", category: EQUIP_TYPESmainArmor.id, equippedItemId: null},
+        {id: "subArmor_1", category: EQUIP_TYPESsubArmor.id, equippedItemId: null},
+        {id: "accessory_1", category: EQUIP_TYPESaccessory.id, equippedItemId: null},
+        {id: "accessory_2", category: EQUIP_TYPESaccessory.id, equippedItemId: null},
+    ];
     unit.skillList = [
         // getSkillById("wait-and-see"),
     ];
@@ -1685,9 +1706,9 @@ function closeMenuModal() {
 //  */
 // export function equip(_) {
 //     // 1. 同タイプチェックを先に
-//     const sameType = player.party[0].equipmentSlot.some(e => e.equip_type === this.item.equip_type);
+//     const sameType = player.party[0].equipmentSlot.some(e => e.equipType === this.item.equipType);
 //     if (sameType) {
-//         showToast(`すでに${this.item.equip_type}を装備しています`);
+//         showToast(`すでに${this.item.equipType}を装備しています`);
 //         return;
 //     }
 
@@ -1773,6 +1794,8 @@ function getEnemyById(id) {
         console.warn(`Enemy not found: ${id}`);
         return null;
     }
+    const data = structuredClone(enemy);
+    data.sex = enemy.sex ?? getRandom(1,3) <= 2 ? SEXES.female.id : getRandom(1,2) === 1 ? SEXES.male.id : SEXES.none.id;
     return structuredClone(enemy);
 }
 

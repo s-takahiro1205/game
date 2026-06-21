@@ -1,5 +1,6 @@
 // アイテムデータ定義
 
+import { EQUIP_TYPES } from '../const.js';
 /**
  * @typedef {object} Effect
  * @property {string} type - 効果のタイプ (例: "heal", "stat_change")
@@ -23,7 +24,7 @@
  * @property {string} use_type - 使用種別
  * @property {string} use_target_type - 使用対象種別
  * @property {object | null} stat_modifier - 増減ステータス（例: { atk: +5, def: +2 }）
- * @property {"weapon" | "def" | "shield" | "accessory" | null} equip_type - 装備種別
+ * @property {"weapon" | "def" | "shield" | "accessory" | null} equipType - 装備種別
  */
 
 /**
@@ -55,7 +56,7 @@ export const ITEMS = [
         use_type: "heal",
         use_target_type: "damaged_ally_one",
         stat_modifier: null,
-        equip_type: null,
+        equipType: null,
         uuid: "",
     },
     {
@@ -82,7 +83,7 @@ export const ITEMS = [
         use_type: "heal",
         use_target_type: "damaged_ally_one",
         stat_modifier: null,
-        equip_type: null,
+        equipType: null,
         uuid: "",
     },
     {
@@ -132,7 +133,7 @@ export const ITEMS = [
         use_type: "mod_status",
         use_target_type: "alive_ally_one",
         stat_modifier: null,
-        equip_type: null,
+        equipType: null,
         uuid: "",
     },
     {
@@ -160,7 +161,7 @@ export const ITEMS = [
         use_type: "mod_status",
         use_target_type: "alive_ally_one",
         stat_modifier: null,
-        equip_type: null,
+        equipType: null,
         uuid: "",
     },
     {
@@ -186,7 +187,7 @@ export const ITEMS = [
         use_type: "attack",
         use_target_type: "alive_enemy_all",
         stat_modifier: null,
-        equip_type: null,
+        equipType: null,
         uuid: "",
     },
     {
@@ -212,7 +213,7 @@ export const ITEMS = [
         use_type: "attack",
         use_target_type: "alive_enemy_one",
         stat_modifier: null,
-        equip_type: null,
+        equipType: null,
         uuid: "",
     },
     {
@@ -240,7 +241,7 @@ export const ITEMS = [
         use_type: "attack",
         use_target_type: "alive_enemy_one",
         stat_modifier: null,
-        equip_type: null,
+        equipType: null,
         uuid: "",
     },
     {
@@ -268,7 +269,7 @@ export const ITEMS = [
         use_type: "attack",
         use_target_type: "alive_enemy_one",
         stat_modifier: null,
-        equip_type: null,
+        equipType: null,
         uuid: "",
     },
     {
@@ -296,7 +297,7 @@ export const ITEMS = [
         use_type: "attack",
         use_target_type: "alive_enemy_one",
         stat_modifier: null,
-        equip_type: null,
+        equipType: null,
         uuid: "",
     },
     {
@@ -344,7 +345,7 @@ export const ITEMS = [
         use_type: "heal",
         use_target_type: "alive_ally_one",
         stat_modifier: null,
-        equip_type: null,
+        equipType: null,
         uuid: "",
     },
     {
@@ -371,7 +372,7 @@ export const ITEMS = [
         use_type: "heal",
         use_target_type: "dead_ally_one",
         stat_modifier: null,
-        equip_type: null,
+        equipType: null,
         uuid: "",
     },
     // 装備アイテム
@@ -394,12 +395,7 @@ export const ITEMS = [
             atk: 5,
             dex: -1
         },
-        dice_modifier: {
-            dice: 0,
-            sides: 3,
-            flat: 2
-        },
-        equip_type: "weapon",
+        equipType: EQUIP_TYPES.weapon.id,
         uuid: "",
     },
     {
@@ -418,7 +414,7 @@ export const ITEMS = [
         use_type: null,
         use_target_type: null,
         stat_modifier: { maxHp: 15, def: 3, spd: -1 },
-        equip_type: "armor",
+        equipType: EQUIP_TYPES.mainArmor.id,
         uuid: "",
     },
     {
@@ -426,7 +422,7 @@ export const ITEMS = [
         name: "古き者の指輪",
         description: "古代の魔術師が身につけていたとされる指輪。知性を高める力がある。",
         category: "equipment",
-        price: 2500,
+        price: 1500,
         effects: null,
         usableIn: {
             home: false,
@@ -436,13 +432,8 @@ export const ITEMS = [
         uses: null,
         use_type: null,
         use_target_type: null,
-        stat_modifier: { int: 10, maxMp: 10 },
-        dice_modifier: {
-            dice: 0,
-            sides: 0,
-            flat: 3
-        },
-        equip_type: "accessory",
+        stat_modifier: { int: 5, maxMp: 5 },
+        equipType: EQUIP_TYPES.accessory.id,
         uuid: "",
     },
     {
@@ -460,13 +451,8 @@ export const ITEMS = [
         uses: null,
         use_type: null,
         use_target_type: null,
-        stat_modifier: { maxHp: 10, maxMp: 50, dex: 3 },
-        dice_modifier: {
-            dice: 0,
-            sides: 0,
-            flat: 0
-        },
-        equip_type: "accessory",
+        stat_modifier: { maxMp: 50, int: 10 },
+        equipType: EQUIP_TYPES.accessory.id,
         uuid: "",
     },
     {
@@ -485,12 +471,7 @@ export const ITEMS = [
         use_type: null,
         use_target_type: null,
         stat_modifier: { spd: 15, multiAction: 1 },
-        dice_modifier: {
-            dice: 0,
-            sides: 5,
-            flat: 5
-        },
-        equip_type: "accessory",
+        equipType: EQUIP_TYPES.accessory.id,
         uuid: "",
     },
 ];

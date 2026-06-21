@@ -46,6 +46,12 @@ export const LABEL = {
     poisoned_all: "毒状態の全員", poisoned_random: "毒状態のランダムな1体", poisoned_one: "毒状態の1体", 
 };
 
+export const SEXES = {
+    male: {id: "male", name: "男性"},
+    female: {id: "female", name: "女性"},
+    none: {id: "none", name: "無性"},
+};
+
 export const RACES = {
     human: {
         id: "human",
@@ -87,6 +93,13 @@ export const RACES = {
         id: "monster",
         name: "魔物",
     },
+};
+
+export const EQUIP_TYPES = {
+    weapon: {id: "weapon", name: "武器"},
+    mainArmor: {id: "mainArmor", name: "主防具"},
+    subArmor: {id: "subArmor", name: "副防具"},
+    accessory: {id: "accessory", name: "装飾品"},
 };
 
 /**

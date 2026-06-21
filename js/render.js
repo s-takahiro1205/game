@@ -5,7 +5,7 @@ import { loadGame } from './save.js';
 import { JOBS } from './data/jobs.js';
 import { MAPS } from './data/maps.js';
 import { EVENTS } from './data/events.js';
-import { SCREENS, SUB_SCREENS, BOTTOM_SHEETS, BOTTOM_MENU_TABS, LABEL, BATTLE_STATUSES, TARGET_TYPE_EXTRACTOR } from './const.js';
+import { SCREENS, SUB_SCREENS, BOTTOM_SHEETS, BOTTOM_MENU_TABS, LABEL, BATTLE_STATUSES, SEXES, RACES, TARGET_TYPE_EXTRACTOR } from './const.js';
 
 // DOM Elements
 // TODO:精査してね

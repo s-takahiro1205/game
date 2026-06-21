@@ -132,7 +132,7 @@ export let player = new Proxy({
 
 // ゲーム管理用Proxyオブジェクト
 export const gameState = new Proxy({
-        isDebugMode: false,//デバッグ時に直打ち
+        isDebugMode: true,//デバッグ時に直打ち
         // 強制描画用フラグ
         dirty: false,
         // ページ制御
@@ -508,7 +508,8 @@ function populateDebugJobSelect() {
         debugJobUnitSelect.appendChild(option);
     });
 }
-
+populateDebugItemSelect();
+populateDebugJobSelect();
 /**
  * デバッグ: 選択されたアイテムをプレイヤーに付与する
  */
@@ -875,11 +876,7 @@ async function resolveEventNode(nodeId) {
             for (const unitId of unitIds) {
                 const unit = getPartyUnitById(unitId);
                 let heal = 0;
-                heal += calculateDiceHeal(
-                    unit, unit,
-                    node.data.dice, node.data.sides, node.data.flat,
-                    false, 0
-                );
+                heal += node.data.fix ? node.data.fix : getRandom(node.data.min, node.data.max);
                 if (node.data.ref) {
                     heal += Math.floor(unit[node.data.ref] * (node.data.rate / 100));
                 }
@@ -898,11 +895,7 @@ async function resolveEventNode(nodeId) {
             for (const unitId of unitIds) {
                 const unit = getPartyUnitById(unitId);
                 let heal = 0;
-                heal += calculateDiceHeal(
-                    unit, unit,
-                    node.data.dice, node.data.sides, node.data.flat,
-                    false, 0
-                );
+                heal += node.data.fix ? node.data.fix : getRandom(node.data.min, node.data.max);
                 if (node.data.ref) {
                     heal += Math.floor(unit[node.data.ref] * (node.data.rate / 100));
                 }
@@ -921,11 +914,7 @@ async function resolveEventNode(nodeId) {
             for (const unitId of unitIds) {
                 const unit = getPartyUnitById(unitId);
                 let damage = 0;
-                damage += calculateDiceDamage(
-                    unit, unit,
-                    node.data.dice, node.data.sides, node.data.flat,
-                    false, 1// 守備貫通
-                );
+                damage += node.data.fix ? node.data.fix : getRandom(node.data.min, node.data.max);
                 if (node.data.ref) {
                     damage += Math.floor(unit[node.data.ref] * (node.data.rate / 100));
                 }
@@ -942,11 +931,7 @@ async function resolveEventNode(nodeId) {
             for (const unitId of unitIds) {
                 const unit = getPartyUnitById(unitId);
                 let damage = 0;
-                damage += calculateDiceDamage(
-                    unit, unit,
-                    node.data.dice, node.data.sides, node.data.flat,
-                    false, 1// 守備貫通
-                );
+                damage += node.data.fix ? node.data.fix : getRandom(node.data.min, node.data.max);
                 if (node.data.ref) {
                     damage += Math.floor(unit[node.data.ref] * (node.data.rate / 100));
                 }
@@ -963,11 +948,7 @@ async function resolveEventNode(nodeId) {
             for (const unitId of unitIds) {
                 const unit = getPartyUnitById(unitId);
                 let point = 0;
-                point += calculateDiceHeal(
-                    unit, unit,
-                    node.data.dice, node.data.sides, node.data.flat,
-                    false, 0
-                );
+                point += node.data.fix ? node.data.fix : getRandom(node.data.min, node.data.max);
                 if (node.data.ref) {
                     point += Math.floor(unit[node.data.ref] * (node.data.rate / 100));
                 }
@@ -984,11 +965,7 @@ async function resolveEventNode(nodeId) {
             for (const unitId of unitIds) {
                 const unit = getPartyUnitById(unitId);
                 let point = 0;
-                point += calculateDiceHeal(
-                    unit, unit,
-                    node.data.dice, node.data.sides, node.data.flat,
-                    false, 0
-                );
+                point += node.data.fix ? node.data.fix : getRandom(node.data.min, node.data.max);
                 if (node.data.ref) {
                     point += Math.floor(unit[node.data.ref] * (node.data.rate / 100));
                 }
@@ -1008,11 +985,7 @@ async function resolveEventNode(nodeId) {
             for (const unitId of unitIds) {
                 const unit = getPartyUnitById(unitId);
                 let point = 0;
-                point += calculateDiceHeal(
-                    unit, unit,
-                    node.data.dice, node.data.sides, node.data.flat,
-                    false, 0
-                );
+                point += node.data.fix ? node.data.fix : getRandom(node.data.min, node.data.max);
                 if (node.data.ref) {
                     point += Math.floor(unit[node.data.ref] * (node.data.rate / 100));
                 }
@@ -1825,16 +1798,6 @@ export function getUsableList(skills, timing) {
 }
 
 /**
- * ダメージ計算（アーマー軽減込み）
- * @param {number} rawDamage - 軽減前のダメージ
- * @param {number} targetArmor - 対象のアーマー値
- * @returns {number} 軽減後のダメージ
- */
-function calculateDamage(rawDamage, targetArmor) {
-    return Math.max(0, rawDamage - targetArmor);
-}
-
-/**
  * 対象にダメージを与える
  * @param {Object} target
  * @param {number} damage
@@ -1850,63 +1813,33 @@ function applyDamage(target, damage, is_phisycal = false) {
     }
 }
 
-// キャラの能力値からダイス数値を計算する
-function unitDiceCreate(unit) {
-    //装備の攻撃ダイス修正を収集
-    const equip_dices = unit.equipment_slot
-        .filter((equip) => equip.dice_modifier)
-        .map((equip) => equip.dice_modifier)
-    // ダイス数：速度 / 333 + 装備の値 + 1：下限1 999で3
-    const dice = Math.max(
-        Math.floor(unit.speed / 333) + equip_dices.reduce((sum, _dice) => sum + _dice.dice, 0) + 1,
-        1
-    );
-    // ダイス面：攻撃の35% + 装備の値：下限1 999で400
-    const sides = Math.max(
-        Math.floor(unit.attack * 0.35) + equip_dices.reduce((sum, _dice) => sum + _dice.sides, 0),
-        1
-    );
-    // 修正値：器用の20% + 装備の値：下限0 999で62
-    const flat = Math.max(
-        Math.floor(unit.dex * 0.2) + equip_dices.reduce((sum, _dice) => sum + _dice.flat, 0),
-        0
-    );
-    return {
-        dice: dice,
-        sides: sides,
-        flat: flat
-    }
-}
-
 /**
- * ダイスによるダメージ計算（アーマー軽減込み）
+ * ダメージ計算
  * @param {Object} attacker 
  * @param {Object} target 
- * @param {number} dice // ダイス数
- * @param {number} sides // ダイス1つあたりの出目最大数
- * @param {number} flat // ダイス出目の補正値+N
- * @param {boolean} is_magic // 魔法なら威力にINT乗算
- * @param {number} fix_value // 固定ダメージ：防御以外のすべてを無視した固定値
- * @param {number} armor_pierce // アーマー貫通割合（小数）
- * @returns 
+ * @param {number} power // 小数 ダメージ係数
+ * @param {boolean} isMagic // 魔法なら威力にINT乗算
+ * @param {number} fix // 固定ダメージ：防御以外のすべてを無視した固定値
+ * @param {number} add // 追加ダメージ
+ * @param {number} armorPierce // アーマー貫通割合（小数）
  */
-function calculateDiceDamage(attacker, target, dice, sides, flat, is_magic = false, fix_value = 0, armor_pierce = 0) {
-    let damage = flat;
-
-    if (fix_value > 0) {
-        damage = fix_value;
+function calculateDamage(attacker, target, power = 1.00, isMagic = false, fix = 0, add = 0, armorPierce = 0) {
+    let damage = 0;
+    if (fix > 0) {
+        damage = fix;
     } else {
-        for (let i = 0; i < dice; i++) {
-            damage += 1 + Math.floor(Math.random() * sides);
+        let base = 400;// 防御の逆影響度合い。高ければ薄れ、低ければ高まる
+        let atk =  attacker.attack;
+        let def =  target.armor * (1 - armorPierce);
+        const rand = Number((0.95 + Math.random() * 0.1).toFixed(2));// 0.95 ~ 1.05の幅
+        if (isMagic) {
+            // 魔法なら知力どうしで計算
+            base = 500;
+            atk = attacker.intel;
+            def =  target.intel * (1 - armorPierce);
         }
-        // 魔法なら威力増減
-        if (is_magic) {
-            damage *= magicRate(attacker.intel);
-        } else {
-            // ダメージ値 × 100 / (100 + DEF / 4)
-            // 魔法でないならアーマー軽減
-            damage = (damage * 100) / (100 + (target.armor * (1 - armor_pierce) / 4));
-        }
+        damage += ((atk * power) * (base / (base + def))
+                + add) * rand;
     }
 
     // 防御中なら半減
@@ -1924,110 +1857,39 @@ function calculateDiceDamage(attacker, target, dice, sides, flat, is_magic = fal
 }
 
 /**
- * ダイスによる回復量計算
- * @param {Object} healer 
+ * 回復量計算
+ * @param {Object} attacker 
  * @param {Object} target 
- * @param {number} dice // ダイス数
- * @param {number} sides // ダイス1つあたりの出目最大数
- * @param {number} flat // ダイス出目の補正値+N
- * @param {boolean} is_magic // 魔法なら威力にINT乗算
- * @param {number} fix_value // 固定回復量：すべてを無視した固定値
- * @returns 
+ * @param {number} power // 小数 ダメージ係数
+ * @param {boolean} isMagic // 魔法なら威力にINT乗算
+ * @param {number} fix // 固定ダメージ：防御以外のすべてを無視した固定値
+ * @param {number} add // 追加ダメージ
+ * @param {number} armorPierce // アーマー貫通割合（小数）
  */
-function calculateDiceHeal(attacker, target, dice, sides, flat, is_magic = false, fix_value = 0) {
-    let heal = flat;
-
-    if (fix_value > 0) {
-        heal = fix_value;
+function calculateHeal(attacker, target, power = 1.00, isMagic = false, fix = 0, add = 0,) {
+    let heal = 0;
+    if (fix > 0) {
+        heal = fix;
     } else {
-        for (let i = 0; i < dice; i++) {
-            heal += 1 + Math.floor(Math.random() * sides);
+        let atk =  1;
+        const rand = Number((0.95 + Math.random() * 0.1).toFixed(2));// 0.95 ~ 1.05の幅
+        if (isMagic) {
+            // 魔法なら知力どうしで計算
+            atk = attacker.intel;
         }
-        // 魔法なら威力増減
-        if (is_magic) {
-            heal *= magicRate(attacker.intel);
-        }
+        heal += ((atk * power) + add) * rand;
     }
 
     return Math.max(0, Math.floor(heal));
 }
 
-/**
- * ダイスによる確率計算 判定を返す
- * @param {Object} modifier
- * @param {Object} target
- * @param {string} state_id // 状態異常種別
- * @param {number} dice // ダイス数
- * @param {number} sides // ダイス1つあたりの出目最大数
- * @param {number} flat // ダイス出目の補正値+N
- * @param {boolean} is_magic // 魔法なら威力にINT乗算
- * @param {number} fix_value // 固定回復量：すべてを無視した固定確率
- * @returns {bool}
- */
-function calculateDiceChance(attacker, target, state_id, dice, sides, flat, is_magic = false, fix_value = 0) {
-    let chance_rate = flat;
-
-    if (fix_value > 0) {
-        chance_rate = fix_value;
-    } else {
-        for (let i = 0; i < dice; i++) {
-            chance_rate += 1 + Math.floor(Math.random() * sides);
-        }
-        // 魔法なら威力増減
-        if (is_magic) {
-            chance_rate *= magicRate(attacker.intel);
-        }
-    }
-    // TODO: 抵抗力の増減
-
-    // 1D100を実施しchance以下であれば成功判定を返す
-    const roll = Math.ceil(Math.random() * 100);
-    return roll <= Math.floor(chance_rate);
+function getRandom(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-/**
- * 条件をチェックし、プレイヤーが満たしているか判定する
- * @param {Object} condition - Conditionオブジェクト { stat: string, operator: string, value: number }
- * @returns {boolean} 条件を満たしていれば true、そうでなければ false
- */
-function checkCondition(condition) {
-    if (!condition || !condition.stat || !condition.operator || condition.value === undefined) {
-        console.warn("Invalid condition object:", condition);
-        return true; // 無効な条件は常に満たすとみなす
-    }
-
-    // TODO: ちゃんと作り直して
-    if (condition.stat === "money") {
-        switch (condition.operator) {
-            case "gte": // Greater Than or Equal to
-                return player[condition.stat] >= condition.value;
-            case "lte": // Less Than or Equal to
-                return player[condition.stat] <= condition.value;
-            case "eq":  // Equal to
-                return player[condition.stat] === condition.value;
-            default:
-                console.warn("Unknown operator in condition:", condition.operator);
-                return false;
-        }
-    }
-
-    const playerStat = player.party[0][condition.stat];
-    if (playerStat === undefined) {
-        console.warn(`Player stat "${condition.stat}" not found for condition check.`);
-        return false; // 存在しないステータスは条件を満たさない
-    }
-
-    switch (condition.operator) {
-        case "gte": // Greater Than or Equal to
-            return playerStat >= condition.value;
-        case "lte": // Less Than or Equal to
-            return playerStat <= condition.value;
-        case "eq":  // Equal to
-            return playerStat === condition.value;
-        default:
-            console.warn("Unknown operator in condition:", condition.operator);
-            return false;
-    }
+function roll(chance) {
+    const roll = Math.ceil(Math.random() * 100);
+    return roll <= Math.floor(chance);
 }
 
 // ============================================================================
@@ -2197,14 +2059,8 @@ async function battleExecCommand() {
     } else if (cmd.act === "attack") {
         console.log("攻撃コマンドが実行されました")
         addMessage(`${actor.name} のこうげき！`);
-        const dice = unitDiceCreate(actor);
         for (const target of targets) {
-            const damage = calculateDiceDamage(
-                actor, target,
-                dice.dice, dice.sides, dice.flat,
-                false,// TODO: 魔法武器とかが今後出れば
-                dice.fix ?? 0, dice.armor_pierce ?? 0
-            );
+            const damage = calculateDamage(actor, target);
             applyDamage(target, damage, true);
         }
     } else if (cmd.act === "guard") {
@@ -2243,22 +2099,14 @@ async function battleExecCommand() {
         for (const effect of skill.effects) {
             if (effect.type === "damage") {
                 const is_combat = skill.category === "combat";
-                const unit_dice = unitDiceCreate(actor);
                 for (const target of targets) {
                     if (isDead(target)) {
                         continue;
                     }
-                    // 戦技なら通常ダイスに加算
-                    const dice = is_combat ? (unit_dice.dice ?? 0) + (effect.dice ?? 0) : (effect.dice ?? 0);
-                    const sides = is_combat ? (unit_dice.sides ?? 0) + (effect.sides ?? 0) : (effect.sides ?? 0);
-                    const flat = is_combat ? (unit_dice.flat ?? 0) + (effect.flat ?? 0) : (effect.flat ?? 0);
-                    const fix = is_combat ? (unit_dice.fix ?? 0) + (effect.fix ?? 0) : (effect.fix ?? 0);
-                    const armor_pierce = is_combat ? (unit_dice.armor_pierce ?? 0) + (effect.armor_pierce ?? 0) : (effect.armor_pierce ?? 0);
-                    const damage = calculateDiceDamage(
-                        actor, target,
-                        dice, sides, flat,
-                        skill.category === "magic" ? true : false,
-                        fix ?? 0, armor_pierce ?? 0
+                    const damage = calculateDamage(
+                        actor, target, effect.power,
+                        skill.category === "magic",
+                        effect.fix, effect.add, effect.armor_pierce
                     );
                     applyDamage(target, damage, skill.category !== "magic");
                 }
@@ -2267,11 +2115,10 @@ async function battleExecCommand() {
                     if (isDead(target)) {
                         continue;
                     }
-                    const heal = calculateDiceHeal(
+                    const heal = calculateHeal(
                         actor, target,
-                        effect.dice, effect.sides, effect.flat,
-                        skill.category === "magic" ? true : false,
-                        effect.fix ?? 0
+                        effect.power, skill.category === "magic",
+                        effect.fix, effect.add
                     );
                     target.hp = Math.min(target.maxHp, target.hp + heal);
                     addMessage(`${target.name} は ${heal} 回復した！`);
@@ -2282,12 +2129,7 @@ async function battleExecCommand() {
                         continue;
                     }
                     const is_magic = skill.category === "magic";
-                    const is_success = calculateDiceChance(
-                        actor, target, effect.stateId,
-                        effect.dice, effect.sides, effect.flat,
-                        is_magic,
-                        effect.fix ?? 0
-                    );
+                    const is_success = roll(effect.fix);
                     if (is_success) {
                         let turn = effect.turn;
                         // 魔法なら持続増減
@@ -2308,12 +2150,7 @@ async function battleExecCommand() {
                         continue;
                     }
                     const is_magic = skill.category === "magic";
-                    const is_success = calculateDiceChance(
-                        actor, target, effect.stateId,
-                        effect.dice, effect.sides, effect.flat,
-                        is_magic,
-                        effect.fix ?? 0
-                    );
+                    const is_success = roll(effect.fix)
                     if (is_success) {
                         recoverBattleStatus(effect.stateId, target);
                     }
@@ -2324,12 +2161,7 @@ async function battleExecCommand() {
                         continue;
                     }
                     const is_magic = skill.category === "magic";
-                    const is_success = calculateDiceChance(
-                        actor, target, "dead",
-                        effect.dice, effect.sides, effect.flat,
-                        is_magic,
-                        effect.fix ?? 0
-                    );
+                    const is_success = effect.roll(effect.fix)
                     if (is_success) {
                         revive(target, effect.heal);
                     }
@@ -2348,12 +2180,7 @@ async function battleExecCommand() {
                     if (isDead(target)) {
                         continue;
                     }
-                    const damage = calculateDiceDamage(
-                        actor, target,
-                        effect.dice, effect.sides, effect.flat,
-                        false,
-                        effect.fix ?? 0, effect.armor_pierce ?? 0
-                    );
+                    const damage = effect.fix ? effect.fix : getRandom(effect.min, effect.max);
                     applyDamage(target, damage, false)
                 }
             } else if (effect.type === "heal") {
@@ -2361,12 +2188,7 @@ async function battleExecCommand() {
                     if (isDead(target)) {
                         continue;
                     }
-                    const heal = calculateDiceHeal(
-                        actor, target,
-                        effect.dice, effect.sides, effect.flat,
-                        false,
-                        effect.fix ?? 0
-                    );
+                    const heal = effect.fix ? effect.fix : getRandom(effect.min, effect.max);
                     target.hp = Math.min(target.maxHp, target.hp + heal);
                     addMessage(`${target.name} は ${heal} 回復した！`);
                 }
@@ -2375,12 +2197,7 @@ async function battleExecCommand() {
                     if (isDead(target)) {
                         continue;
                     }
-                    const is_success = calculateDiceChance(
-                        actor, target, effect.stateId,
-                        effect.dice, effect.sides, effect.flat,
-                        false,
-                        effect.fix ?? 0
-                    );
+                    const is_success = roll(effect.fix);
                     if (is_success) {
                         const turn = effect.turn;
                         addBattleStatus(effect.stateId, target, turn);
@@ -2395,12 +2212,7 @@ async function battleExecCommand() {
                     if (!target.battle_status.some(s => s.type === effect.stateId)) {
                         continue;
                     }
-                    const is_success = calculateDiceChance(
-                        actor, target, effect.stateId,
-                        effect.dice, effect.sides, effect.flat,
-                        false,
-                        effect.fix ?? 0
-                    );
+                    const is_success = roll(effect.fix)
                     if (is_success) {
                         recoverBattleStatus(effect.stateId, target)
                     }
@@ -2410,12 +2222,7 @@ async function battleExecCommand() {
                     if (!isDead(target)) {
                         continue;
                     }
-                    const is_success = calculateDiceChance(
-                        actor, target, "dead",
-                        effect.dice, effect.sides, effect.flat,
-                        false,
-                        effect.fix ?? 0
-                    );
+                    const is_success = roll(effect.fix)
                     if (is_success) {
                         revive(target, effect.heal)
                     }

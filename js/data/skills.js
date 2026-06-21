@@ -54,11 +54,10 @@ export const SKILLS = [
             {
                 type: "damage",
                 element: "flame",
-                dice: 3,
-                sides: 7,
-                flat: 10,
+                power: 0.45,
                 fix: 0,
-                // armor_pierce: 0,// 装甲貫通率 魔法はなし
+                add: 10,
+                armor_pierce: 0.00,
             },
         ]
     },
@@ -80,19 +79,17 @@ export const SKILLS = [
             {
                 type: "damage",
                 element: "lightning",
-                dice: 2,
-                sides: 10,
-                flat: 8,
+                power: 0.35,
                 fix: 0,
-                // armor_pierce: 0,// 装甲貫通率
+                add: 18,
+                armor_pierce: 0.00,
             },
             {
                 type: "add_state",
                 stateId: "paralyze",
-                dice: 0,
-                sides: 0,
-                flat: 0,
-                fix: 40,
+                min: 0,
+                max: 0,
+                fix: 30,
                 turn: 5,
             }
         ]
@@ -115,20 +112,18 @@ export const SKILLS = [
             {
                 type: "damage",
                 element: "lightning",
-                dice: 2,
-                sides: 9,
-                flat: 6,
+                power: 0.20,
                 fix: 0,
-                // armor_pierce: 0,
+                add: 15,
+                armor_pierce: 0.00,
             },
             {
                 type: "add_state",
                 stateId: "paralyze",
-                dice: 0,
-                sides: 0,
-                flat: 0,
+                min: 0,
+                max: 0,
                 fix: 25,
-                turn: 5,
+                turn: 4,
             }
         ]
     },
@@ -151,10 +146,9 @@ export const SKILLS = [
         effects: [
             {
                 type: "heal",
-                dice: 5,
-                sides: 6,
-                flat: 10,
+                power: 0.20,
                 fix: 0,
+                add: 20,
             }
         ]
     },
@@ -176,9 +170,8 @@ export const SKILLS = [
             {
                 type: "recover_state",
                 stateId: "poison",
-                dice: 0,
-                sides: 0,
-                flat: 0,
+                min: 0,
+                max: 0,
                 fix: 100,
             },
         ]
@@ -200,10 +193,9 @@ export const SKILLS = [
         effects: [
             {
                 type: "heal",
-                dice: 7,
-                sides: 12,
-                flat: 20,
+                power: 0.40,
                 fix: 0,
+                add: 0,
             }
         ]
     },
@@ -227,11 +219,10 @@ export const SKILLS = [
             {
                 type: "damage",
                 element: "physical",
-                dice: 0,
-                sides: 3,
-                flat: 7,
-                fix: 0,// 固定ダメージ
-                armor_pierce: 0,// 装甲貫通率
+                power: 1.25,
+                fix: 0,
+                add: 0,
+                armor_pierce: 0.00,
             },
         ]
     },
@@ -253,11 +244,10 @@ export const SKILLS = [
             {
                 type: "damage",
                 element: "physical",
-                dice: 0,
-                sides: 5,
-                flat: 15,
+                power: 1.50,
                 fix: 0,
-                armor_pierce: 0,
+                add: 0,
+                armor_pierce: 0.00,
             },
         ]
     },
@@ -279,11 +269,10 @@ export const SKILLS = [
             {
                 type: "damage",
                 element: "physical",
-                dice: 0,
-                sides: 3,
-                flat: 7,
+                power: 1.20,
                 fix: 0,
-                armor_pierce: 0,
+                add: 0,
+                armor_pierce: 0.00,
             }
         ]
     },
@@ -320,11 +309,10 @@ export const SKILLS = [
             {
                 type: "damage",
                 element: "physical",
-                dice: 0,
-                sides: 2,
-                flat: 2,
-                fix: 0,// 固定ダメージ
-                armor_pierce: 0,// 装甲貫通率
+                power: 1.00,
+                fix: 0,
+                add: 2,
+                armor_pierce: 0.00,
             },
         ]
     },
@@ -344,18 +332,16 @@ export const SKILLS = [
             {
                 type: "damage",
                 element: "physical",
-                dice: 0,
-                sides: 2,
-                flat: 2,
-                fix: 0,// 固定ダメージ
-                armor_pierce: 0,// 装甲貫通率
+                power: 1.00,
+                fix: 0,
+                add: 2,
+                armor_pierce: 0.00,
             },
             {
                 type: "add_state",
                 stateId: "poison",
-                dice: 0,
-                sides: 0,
-                flat: 0,
+                min: 0,
+                max: 0,
                 fix: 50,
                 turn: 5,
             }
@@ -377,11 +363,10 @@ export const SKILLS = [
             {
                 type: "damage",
                 element: "physical",
-                dice: 0,
-                sides: 5,
-                flat: 3,
-                fix: 0,// 固定ダメージ
-                armor_pierce: 0,// 装甲貫通率
+                power: 1.50,
+                fix: 0,
+                add: 5,
+                armor_pierce: 0.00,
             },
         ]
     },

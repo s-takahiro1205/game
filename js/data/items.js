@@ -40,9 +40,8 @@ export const ITEMS = [
         effects: [
             {
                 type: "heal",
-                dice: 0,
-                sides: 0,
-                flat: 0,
+                min: 0,
+                max: 0,
                 fix: 20,
                 text: "薬草を使った。HPが20回復した！"
             }
@@ -68,9 +67,8 @@ export const ITEMS = [
         effects: [
             {
                 type: "heal",
-                dice: 0,
-                sides: 0,
-                flat: 0,
+                min: 0,
+                max: 0,
                 fix: 10,
                 text: "朽ちた回復薬を飲んだ。10 HP回復した！"
             }
@@ -97,35 +95,31 @@ export const ITEMS = [
             {
                 type: "stat_change",
                 stat: "attack",
-                dice: 0,
-                sides: 0,
-                flat: 0,
+                min: 0,
+                max: 0,
                 fix: 1,
                 text: "影の秘薬を飲んだ。攻撃力が1上昇した！"
             },
             {
                 type: "stat_change",
                 stat: "size",
-                dice: 0,
-                sides: 0,
-                flat: 0,
+                min: 0,
+                max: 0,
                 fix: 1,
                 text: "体格が1上昇した！"
             },
             {
                 type: "stat_change",
                 stat: "maxHp",
-                dice: 0,
-                sides: 0,
-                flat: 0,
+                min: 0,
+                max: 0,
                 fix: 3,
                 text: "最大HPが3上昇した！"
             },
             { 
                 type: "heal", 
-                dice: 0,
-                sides: 0,
-                flat: 0,
+                min: 0,
+                max: 0,
                 fix: 3,
             },
         ],
@@ -151,9 +145,8 @@ export const ITEMS = [
             {
                 type: "stat_change",
                 stat: "intel",
-                dice: 0,
-                sides: 0,
-                flat: 0,
+                min: 0,
+                max: 0,
                 fix: 1,
                 text: "忘却の巻物を使った。知能が2上昇した！"
             },
@@ -179,11 +172,9 @@ export const ITEMS = [
         effects: [
             {
                 type: "damage",
-                dice: 5,
-                sides: 5,
-                flat: 7,
+                min: 12,
+                max: 32,
                 fix: 0,
-                armor_pierce: 1,//アイテムは全部アーマー無視
             },
         ],
         usableIn: {
@@ -207,11 +198,9 @@ export const ITEMS = [
         effects: [
             {
                 type: "damage",
-                dice: 5,
-                sides: 6,
-                flat: 10,
+                min: 15,
+                max: 40,
                 fix: 0,
-                armor_pierce: 1,
             },
         ],
         usableIn: {
@@ -236,9 +225,8 @@ export const ITEMS = [
             {
                 type: "add_state",
                 stateId: "poison",
-                dice: 0,
-                sides: 0,
-                flat: 0,
+                min: 0,
+                max: 0,
                 fix: 100,
                 turn: 4,
             }
@@ -265,9 +253,8 @@ export const ITEMS = [
             {
                 type: "add_state",
                 stateId: "sleep",
-                dice: 0,
-                sides: 0,
-                flat: 0,
+                min: 0,
+                max: 0,
                 fix: 100,
                 turn: 4,
             }
@@ -294,9 +281,8 @@ export const ITEMS = [
             {
                 type: "add_state",
                 stateId: "stan",
-                dice: 0,
-                sides: 0,
-                flat: 0,
+                min: 0,
+                max: 0,
                 fix: 100,
                 turn: 1,
             }
@@ -323,33 +309,29 @@ export const ITEMS = [
             {
                 type: "recover_state",
                 stateId: "poison",
-                dice: 0,
-                sides: 0,
-                flat: 0,
+                min: 0,
+                max: 0,
                 fix: 100,
             },
             {
                 type: "recover_state",
                 stateId: "paralyze",
-                dice: 0,
-                sides: 0,
-                flat: 0,
+                min: 0,
+                max: 0,
                 fix: 100,
             },
             {
                 type: "recover_state",
                 stateId: "sleep",
-                dice: 0,
-                sides: 0,
-                flat: 0,
+                min: 0,
+                max: 0,
                 fix: 100,
             },
             {
                 type: "recover_state",
                 stateId: "stan",
-                dice: 0,
-                sides: 0,
-                flat: 0,
+                min: 0,
+                max: 0,
                 fix: 100,
             }
         ],
@@ -375,9 +357,8 @@ export const ITEMS = [
             {
                 type: "revive",
                 heal: 100,
-                dice: 0,
-                sides: 0,
-                flat: 0,
+                min: 0,
+                max: 0,
                 fix: 100,
             },
         ],

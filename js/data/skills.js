@@ -85,7 +85,7 @@ export const SKILLS = [
                 armor_pierce: 0.00,
             },
             {
-                type: "add_state",
+                type: "addState",
                 stateId: "paralyze",
                 min: 0,
                 max: 0,
@@ -118,7 +118,7 @@ export const SKILLS = [
                 armor_pierce: 0.00,
             },
             {
-                type: "add_state",
+                type: "addState",
                 stateId: "paralyze",
                 min: 0,
                 max: 0,
@@ -168,7 +168,7 @@ export const SKILLS = [
         type: "heal",
         effects: [
             {
-                type: "recover_state",
+                type: "recoverState",
                 stateId: "poison",
                 min: 0,
                 max: 0,
@@ -338,7 +338,7 @@ export const SKILLS = [
                 armor_pierce: 0.00,
             },
             {
-                type: "add_state",
+                type: "addState",
                 stateId: "poison",
                 min: 0,
                 max: 0,

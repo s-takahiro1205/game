@@ -5,7 +5,7 @@ import { loadGame } from './save.js';
 import { JOBS } from './data/jobs.js';
 import { MAPS } from './data/maps.js';
 import { EVENTS } from './data/events.js';
-import { SCREENS, SUB_SCREENS, BOTTOM_SHEETS, BOTTOM_MENU_TABS, LABEL, BATTLE_STATUSES, SEXES, RACES, TARGET_TYPE_EXTRACTOR } from './const.js';
+import { SCREENS, SUB_SCREENS, BOTTOM_SHEETS, BOTTOM_MENU_TABS, LABEL, BATTLE_STATUSES, SEXES, RACES, EQUIP_TYPES, TARGET_TYPE_EXTRACTOR } from './const.js';
 
 // DOM Elements
 // TODO:精査してね
@@ -127,8 +127,11 @@ function render() {
         renderExplore();
     } else if (gameState.subScreen === SUB_SCREENS.exploreEventScreen) {
         renderExploreEvent();
+    } else if (gameState.subScreen === SUB_SCREENS.exploreClearScreen) {
+        document.getElementById("clear-map-name").innerHTML = MAPS[player.explore.mapId].name;
     }
 
+    // 戦闘画面
     if (gameState.screen === SCREENS.battleScreen) {
         renderBattle();
         updateEnemyStatus();
@@ -195,7 +198,11 @@ function showScreen() {
     for (const id in bottomMenuTabs) {
         bottomMenuTabs[id].classList.remove("active");
     }
+    // メニュータブのアクティブ解除
     document.querySelectorAll(".menu-nav-tab").forEach(ele => {
+        ele.classList.remove("active");
+    });
+    document.querySelectorAll(".menu-tab-party-member-sub-tab").forEach(ele => {
         ele.classList.remove("active");
     });
     // メインスクリーンなら
@@ -221,6 +228,7 @@ function showScreen() {
             bottomMenuTabs[gameState.bottomMenuTabId].classList.add("active");
             renderMenuTabs();
             document.querySelector(`.menu-nav-tab[data-tab-id="${gameState.bottomMenuTabId}"]`).classList.add("active");
+            document.querySelector(`.menu-tab-party-member-sub-tab[data-sub-type="${gameState.bottomMenuPartyTabSubType}"]`).classList.add("active");
         }
     }
 }
@@ -338,52 +346,69 @@ function renderMenu() {
                 ${Object.entries(unit.jobs).map(([k,v])=>`<div class="status-param"><span class="status-param-label">${JOBS[k].name}</span><span class="status-param-val">ランク${v.rank}</span></div>`).join('')}</div>
             </div>`;
         } else if (gameState.bottomMenuPartyTabSubType === 'equip') {
-            area.innerHTML = `<div class="equip-panel">${unit.equip.map(e=>`
+            area.innerHTML = `<div class="equip-panel">${unit.equipmentSlot.map(e=>{
+                const stats = e.equippedItem
+                            ? Object.keys(e.equippedItem.stat_modifier).map(st => LABEL[st] + (e.equippedItem.stat_modifier[st] >= 0 ? "+" + e.equippedItem.stat_modifier[st] : e.equippedItem.stat_modifier[st])).join(" ")
+                            : "";
+                return `
             <div class="equip-slot">
-                <span class="equip-slot-label">${e.slot}</span>
+                <span class="equip-slot-label">${EQUIP_TYPES[e.category].name}</span>
                 <div class="equip-slot-icon">${e.icon||'─'}</div>
-                <div class="equip-slot-info">${e.name
-                ? `<div class="equip-slot-name rarity-${e.rarity}">${e.name}</div><div class="equip-slot-stats">${e.stats}</div>`
+                <div class="equip-slot-info">${e.equippedItem
+                ? `<div class="equip-slot-name rarity-${e.rarity ?? ""}">${e.equippedItem.name}</div><div class="equip-slot-stats">${stats}</div>`
                 : `<div class="equip-slot-empty">未装備</div>`}</div>
                 <span class="equip-slot-arrow">▶</span>
-            </div>`).join('')}
+            </div>`}).join('')}
             </div>`;
             /*
             [
-    {
-        "id": "slash",
-        "name": "スラッシュ",
-        "cost": {
-            "hp": 2
-        },
-        "target_type": "alive_enemy_one",
-        "usableIn": {
-            "home": false,
-            "explore": false,
-            "battle": true
-        },
-        "category": "combat",
-        "type": "attack",
-        "effects": [
-            {
-                "type": "damage",
-                "element": "physical",
-                "dice": 0,
-                "sides": 3,
-                "flat": 7,
-                "fix": 0,
-                "armor_pierce": 0
-            }
-        ]
-    }
-]
+                {
+                    "id": "slash",
+                    "name": "スラッシュ",
+                    "cost": {
+                        "hp": 2
+                    },
+                    "target_type": "alive_enemy_one",
+                    "usableIn": {
+                        "home": false,
+                        "explore": false,
+                        "battle": true
+                    },
+                    "category": "combat",
+                    "type": "attack",
+                    "effects": [
+                        {
+                            "type": "damage",
+                            "element": "physical",
+                            "dice": 0,
+                            "sides": 3,
+                            "flat": 7,
+                            "fix": 0,
+                            "armor_pierce": 0
+                        }
+                    ]
+                }
+            ]
             */
         } else if (gameState.bottomMenuPartyTabSubType === "skill") {
             const tagList = {
                 attack:'攻撃', heal:'回復', support:'補助',
                 combat:'物理', magic:'魔法', special:'特殊',
             };
-            area.innerHTML = `<div class="skill-panel">${unit.skillList.map(s=>`
+            area.innerHTML = `<div class="skill-panel">${unit.skillList.map(s=>{
+            const effectLabels = s.effects.map(ef => {
+                if(ef.type === "damage" || ef.type === "heal") {
+                    return `威力 ${ef.fix ? ef.fix : ((ef.power * 100))}${ef.add ? `+${ef.add}`: ""}${ef.armor_pierce ? "(貫通)" + (ef.armor_pierce * 100) + "%" : ""}`;
+                } else if(ef.type === "addState") {
+                    return `付与:${LABEL[ef.stateId]} 約${ef.turn}ターン ${ef.fix}%`;
+                } else if(ef.type === "recoverState") {
+                    return `治癒:${LABEL[ef.stateId]} ${ef.fix}%`;
+                } else if(ef.type === "revive") {
+                    return `蘇生 ${ef.fix}%`;
+                }
+                return 
+            });
+            return `
             <div class="skill-card">
                 <div class="skill-icon">${s.icon ?? ""}</div>
                 <div class="skill-info">
@@ -392,10 +417,11 @@ function renderMenu() {
                         ${`<span class="skill-tag tag-${s.type}">${tagList[s.type]}</span>`}
                         ${`<span class="skill-tag tag-${s.category}">${tagList[s.category]}</span>`}
                 </div>
-                <div class="skill-desc">${s.desc ?? ""}</div>
+                <div class="skill-desc">${LABEL[s.target_type]}</div>
+                ${effectLabels.map(label => `<div class="skill-desc">${label}</div>`)}
                 <div class="skill-cost">${Object.keys(s.cost).map(key => key + "" + (-1 * s.cost[key])).join(' ')}</div>
                 </div>
-            </div>`).join('')}
+            </div>`}).join('')}
             </div>`;
         }
     } else if (gameState.bottomMenuTabId === BOTTOM_MENU_TABS.menuTabItems) {

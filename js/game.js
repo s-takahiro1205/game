@@ -93,11 +93,11 @@ const unit_base = {
         // },
     },
     equipmentSlot: [
-        {id: "weapon_1", category: EQUIP_TYPES.warpon.id, equippedItemId: null},
-        {id: "mainArmor_1", category: EQUIP_TYPES.mainArmor.id, equippedItemId: null},
-        {id: "subArmor_1", category: EQUIP_TYPES.subArmor.id, equippedItemId: null},
-        {id: "accessory_1", category: EQUIP_TYPES.accessory.id, equippedItemId: null},
-        {id: "accessory_2", category: EQUIP_TYPES.accessory.id, equippedItemId: null},
+        {id: "weapon_1", category: EQUIP_TYPES.weapon.id, equippedItem: null},
+        {id: "mainArmor_1", category: EQUIP_TYPES.mainArmor.id, equippedItem: null},
+        {id: "subArmor_1", category: EQUIP_TYPES.subArmor.id, equippedItem: null},
+        {id: "accessory_1", category: EQUIP_TYPES.accessory.id, equippedItem: null},
+        {id: "accessory_2", category: EQUIP_TYPES.accessory.id, equippedItem: null},
     ],
     skillList: [ // スキル
         // getSkillById("thunder"),// 例
@@ -140,7 +140,7 @@ export let player = new Proxy({
 
 // ゲーム管理用Proxyオブジェクト
 export const gameState = new Proxy({
-        isDebugMode: true,//デバッグ時に直打ち
+        isDebugMode: false,//デバッグ時に直打ち
         // 強制描画用フラグ
         dirty: false,
         // ページ制御
@@ -353,11 +353,11 @@ baseBtnMansion.addEventListener("click", () => {
     unit.currentJob = null;
     unit.jobs = {};
     unit.equipmentSlot = [
-        {id: "weapon_1", category: EQUIP_TYPES.warpon.id, equippedItemId: null},
-        {id: "mainArmor_1", category: EQUIP_TYPES.mainArmor.id, equippedItemId: null},
-        {id: "subArmor_1", category: EQUIP_TYPES.subArmor.id, equippedItemId: null},
-        {id: "accessory_1", category: EQUIP_TYPES.accessory.id, equippedItemId: null},
-        {id: "accessory_2", category: EQUIP_TYPES.accessory.id, equippedItemId: null},
+        {id: "weapon_1", category: EQUIP_TYPES.weapon.id, equippedItem: null},
+        {id: "mainArmor_1", category: EQUIP_TYPES.mainArmor.id, equippedItem: null},
+        {id: "subArmor_1", category: EQUIP_TYPES.subArmor.id, equippedItem: null},
+        {id: "accessory_1", category: EQUIP_TYPES.accessory.id, equippedItem: null},
+        {id: "accessory_2", category: EQUIP_TYPES.accessory.id, equippedItem: null},
     ];
     unit.skillList = [
         // getSkillById("wait-and-see"),
@@ -639,6 +639,7 @@ function moveScreen(screenId, subScreenId = null) {
     // 別画面から拠点への帰還なら全回復
     if (player.screen !== screenId && screenId === SCREENS.baseScreen) {
         systemHealAll();
+        saveGame(player);
     }
     gameState.isHudOpen = false;// hudを閉じる
     gameState.bottomSheet = null;// ボトムシートを閉じる
@@ -1231,11 +1232,11 @@ function initializePlayer() {
     unit.currentJob = null;
     unit.jobs = {};
     unit.equipmentSlot = [
-        {id: "weapon_1", category: EQUIP_TYPESwarpon.id, equippedItemId: null},
-        {id: "mainArmor_1", category: EQUIP_TYPESmainArmor.id, equippedItemId: null},
-        {id: "subArmor_1", category: EQUIP_TYPESsubArmor.id, equippedItemId: null},
-        {id: "accessory_1", category: EQUIP_TYPESaccessory.id, equippedItemId: null},
-        {id: "accessory_2", category: EQUIP_TYPESaccessory.id, equippedItemId: null},
+        {id: "weapon_1", category: EQUIP_TYPES.weapon.id, equippedItem: null},
+        {id: "mainArmor_1", category: EQUIP_TYPES.mainArmor.id, equippedItem: null},
+        {id: "subArmor_1", category: EQUIP_TYPES.subArmor.id, equippedItem: null},
+        {id: "accessory_1", category: EQUIP_TYPES.accessory.id, equippedItem: null},
+        {id: "accessory_2", category: EQUIP_TYPES.accessory.id, equippedItem: null},
     ];
     unit.skillList = [
         // getSkillById("wait-and-see"),
@@ -1622,7 +1623,7 @@ function closeMenuModal() {
 //                     target.hp = Math.min(target.maxHp, target.hp + heal);
 //                     addMessage(`${target.name} は ${heal} 回復した！`);
 //                 }
-//             } else if (effect.type === "add_state") {
+//             } else if (effect.type === "addState") {
 //                 for (const target of targets) {
 //                     const is_success = calculateDiceChance(
 //                         actor, target, effect.stateId,
@@ -1635,7 +1636,7 @@ function closeMenuModal() {
 //                         addBattleStatus(effect.stateId, target, turn);
 //                     }
 //                 }
-//             } else if (effect.type === "recover_state") {
+//             } else if (effect.type === "recoverState") {
 //                 for (const target of targets) {
 //                     // その状態異常になっているか
 //                     if (!target.battleStatus.some(s => s.type === effect.stateId)) {
@@ -1945,6 +1946,7 @@ async function battleInit(enemies) {
         result: {},
     }, {set: setAndRender});
     moveScreen(SCREENS.battleScreen);
+    addMessage("", false);
     gameState.battle.phase = "start";
 
     for (const enemy of gameState.battle.enemies) {
@@ -2149,7 +2151,7 @@ async function battleExecCommand() {
                     target.hp = Math.min(target.maxHp, target.hp + heal);
                     addMessage(`${target.name} は ${heal} 回復した！`);
                 }
-            } else if (effect.type === "add_state") {
+            } else if (effect.type === "addState") {
                 for (const target of targets) {
                     if (isDead(target)) {
                         continue;
@@ -2166,7 +2168,7 @@ async function battleExecCommand() {
                         addBattleStatus(effect.stateId, target, turn);
                     }
                 }
-            } else if (effect.type === "recover_state") {
+            } else if (effect.type === "recoverState") {
                 for (const target of targets) {
                     if (isDead(target)) {
                         continue;
@@ -2218,7 +2220,7 @@ async function battleExecCommand() {
                     target.hp = Math.min(target.maxHp, target.hp + heal);
                     addMessage(`${target.name} は ${heal} 回復した！`);
                 }
-            } else if (effect.type === "add_state") {
+            } else if (effect.type === "addState") {
                 for (const target of targets) {
                     if (isDead(target)) {
                         continue;
@@ -2229,7 +2231,7 @@ async function battleExecCommand() {
                         addBattleStatus(effect.stateId, target, turn);
                     }
                 }
-            } else if (effect.type === "recover_state") {
+            } else if (effect.type === "recoverState") {
                 for (const target of targets) {
                     if (isDead(target)) {
                         continue;
@@ -2936,18 +2938,22 @@ loadGameButton.addEventListener("click", async () => {
         });
         gameState.dirty = true;
         // 探索中なら探索画面へ
-        if (player.explore.phase === "waitingTileSelect") {
+        if (player.explore?.phase === "waitingTileSelect") {
             moveScreen(SCREENS.exploreScreen);
             showToast("探索を再開します。");
             return;
-        } else if (player.explore.phase === "waitingChoiceSelect") {
+        } else if (player.explore?.phase === "waitingChoiceSelect") {
             moveScreen(SCREENS.exploreScreen, SUB_SCREENS.exploreEventScreen);
             return;
-        } else if (player.explore.phase === "battle") {
+        } else if (player.explore?.phase === "battle") {
             await battleInit(player.explore.event.data.enemyIds.map(id => getEnemyById(id)));
             return;
-        } else if (player.explore.phase === "gameOver" || player.explore.phase === "clear") {
-            player.explore = null;
+        } else if (player.explore?.phase === "clear") {
+            moveScreen(SCREENS.exploreScreen, SUB_SCREENS.exploreClearScreen);
+            return;
+        } else if (player.explore?.phase === "gameOver") {
+            moveScreen(SCREENS.exploreScreen, SUB_SCREENS.exploreGameOverScreen);
+            return;
         }
         moveScreen(SCREENS.baseScreen);
         showToast("おかえりなさい！");

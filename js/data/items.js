@@ -224,7 +224,7 @@ export const ITEMS = [
         price: 50,
         effects: [
             {
-                type: "add_state",
+                type: "addState",
                 stateId: "poison",
                 min: 0,
                 max: 0,
@@ -252,7 +252,7 @@ export const ITEMS = [
         price: 50,
         effects: [
             {
-                type: "add_state",
+                type: "addState",
                 stateId: "sleep",
                 min: 0,
                 max: 0,
@@ -280,7 +280,7 @@ export const ITEMS = [
         price: 50,
         effects: [
             {
-                type: "add_state",
+                type: "addState",
                 stateId: "stan",
                 min: 0,
                 max: 0,
@@ -308,28 +308,28 @@ export const ITEMS = [
         price: 50,
         effects: [
             {
-                type: "recover_state",
+                type: "recoverState",
                 stateId: "poison",
                 min: 0,
                 max: 0,
                 fix: 100,
             },
             {
-                type: "recover_state",
+                type: "recoverState",
                 stateId: "paralyze",
                 min: 0,
                 max: 0,
                 fix: 100,
             },
             {
-                type: "recover_state",
+                type: "recoverState",
                 stateId: "sleep",
                 min: 0,
                 max: 0,
                 fix: 100,
             },
             {
-                type: "recover_state",
+                type: "recoverState",
                 stateId: "stan",
                 min: 0,
                 max: 0,

@@ -43,18 +43,21 @@ export const JOBS = {
             {
                 rank: 5,
                 learnSkills: ["power-slash"],
+            },
+            {
+                rank: 7,
                 status: {
-                    maxHp: 10,
-                    atk: 5,
+                    maxHp: 8,
+                    atk: 3,
                 }
             },
             {
                 rank: 10,
                 learnSkills: ["full-slash"],
                 status: {
-                    maxHp: 20,
-                    atk: 5,
-                    size: 5,
+                    maxHp: 12,
+                    atk: 4,
+                    size: 2,
                 }
             }
         ]
@@ -72,13 +75,13 @@ export const JOBS = {
             }
         ],
         growthRates: {// 成長率補正 165 魔法職は1割増し
-            maxHp: 40,
-            maxMp: 90,
+            maxHp: 30,
+            maxMp: 75,
             atk: 0,
             def: 0,
-            spd: 20,
+            spd: 15,
             int: 30,
-            dex: 20,
+            dex: 15,
             size: 0,
         },
         equipTypes: [
@@ -100,18 +103,21 @@ export const JOBS = {
             {
                 rank: 5,
                 learnSkills: ["thunder"],
+            },
+            {
+                rank: 7,
                 status: {
-                    maxMp: 15,
-                    int: 5,
+                    maxMp: 8,
+                    int: 3,
                 }
             },
             {
                 rank: 10,
                 learnSkills: ["full-thunder"],
                 status: {
-                    maxMp: 25,
-                    int: 5,
-                    spd: 3,
+                    maxMp: 12,
+                    int: 4,
+                    spd: 2,
                 }
             }
         ]
@@ -129,13 +135,13 @@ export const JOBS = {
             }
         ],
         growthRates: {// 成長率補正 165 魔法職は1割増し
-            maxHp: 50,
+            maxHp: 35,
             maxMp: 80,
             atk: 0,
             def: 10,
-            spd: 20,
-            int: 30,
-            dex: 10,
+            spd: 10,
+            int: 25,
+            dex: 5,
             size: 0,
         },
         equipTypes: [
@@ -157,18 +163,85 @@ export const JOBS = {
             {
                 rank: 5,
                 learnSkills: ["poi-cure"],
+            },
+            {
+                rank: 7,
                 status: {
-                    maxMp: 10,
-                    int: 8,
+                    maxMp: 8,
+                    int: 3,
                 }
             },
             {
                 rank: 10,
                 learnSkills: ["ra-heal"],
                 status: {
-                    maxMp: 20,
-                    int: 5,
-                    def: 3,
+                    maxMp: 12,
+                    int: 4,
+                    def: 2,
+                }
+            }
+        ]
+    },
+    scout: {
+        id: "scout",
+        name: "斥候",
+        grade: 1,
+        maxRank: 10,
+        rateExp: 1.0,
+        unlockConditions: [
+            {
+                type: "level",
+                value: 1
+            }
+        ],
+        growthRates: {// 成長率補正 150
+            maxHp: 35,
+            maxMp: 10,
+            atk: 25,
+            def: 10,
+            spd: 35,
+            int: 0,
+            dex: 35,
+            size: 0,
+        },
+        equipTypes: [// 装備適正(仮)
+            "sword",
+            "shield",
+            "heavyArmor"
+        ],
+        rankBonuses: [// ランクボーナス
+            {
+                rank: 1,
+                learnSkills: ["aim-shot"]
+            },
+            {
+                rank: 2,
+                status: {
+                    maxHp: 3,
+                    spd: 2,
+                    tek: 2,
+                }
+            },
+            {
+                rank: 5,
+                learnSkills: ["leg-shot", "poison-slash"],
+            },
+            {
+                rank: 7,
+                status: {
+                    maxHp: 4,
+                    spd: 2,
+                    tek: 2,
+                }
+            },
+            {
+                rank: 10,
+                learnSkills: ["double-shot"],
+                status: {
+                    maxHp: 10,
+                    atk: 2,
+                    spd: 3,
+                    tek: 3,
                 }
             }
         ]

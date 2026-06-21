@@ -360,36 +360,6 @@ function renderMenu() {
                 <span class="equip-slot-arrow">▶</span>
             </div>`}).join('')}
             </div>`;
-            /*
-            [
-                {
-                    "id": "slash",
-                    "name": "スラッシュ",
-                    "cost": {
-                        "hp": 2
-                    },
-                    "target_type": "alive_enemy_one",
-                    "usableIn": {
-                        "home": false,
-                        "explore": false,
-                        "battle": true
-                    },
-                    "category": "combat",
-                    "type": "attack",
-                    "effects": [
-                        {
-                            "type": "damage",
-                            "element": "physical",
-                            "dice": 0,
-                            "sides": 3,
-                            "flat": 7,
-                            "fix": 0,
-                            "armor_pierce": 0
-                        }
-                    ]
-                }
-            ]
-            */
         } else if (gameState.bottomMenuPartyTabSubType === "skill") {
             const tagList = {
                 attack:'攻撃', heal:'回復', support:'補助',
@@ -425,8 +395,41 @@ function renderMenu() {
             </div>`;
         }
     } else if (gameState.bottomMenuTabId === BOTTOM_MENU_TABS.menuTabItems) {
+        renderMenuItems();
     } else if (gameState.bottomMenuTabId === BOTTOM_MENU_TABS.menuTabSetting) {
     }
+}
+
+
+/* メニュー内アイテム */
+function renderMenuItems() {
+    const grid = document.getElementById('menu-tab-item-grid');
+    grid.innerHTML = player.itemSlot.map(item => {
+        const effectLabels = item.effects.map(ef => {
+                if(ef.type === "damage" || ef.type === "heal") {
+                    return `威力 ${ef.fix ? ef.fix : (ef.min + "～" + ef.max)}`;
+                } else if(ef.type === "addState") {
+                    return `付与:${LABEL[ef.stateId]} 約${ef.turn}ターン ${ef.fix}%`;
+                } else if(ef.type === "recoverState") {
+                    return `治癒:${LABEL[ef.stateId]} ${ef.fix}%`;
+                } else if(ef.type === "revive") {
+                    return `蘇生 ${ef.fix}%`;
+                }
+                return 
+            });
+        const iconMap = {
+            attack: "💥", heal: "💖", mod_status: "💪",
+            weapon: "⚔️", mainArmor: "🛡️", subArmor: "⛨", accessory: "💍",
+        };
+        return `
+        <div class="storage-item" style="background:var(--panel2)">
+        <div class="storage-item-icon" style="width:32px;height:32px;font-size:18px">${item.use_type ? iconMap[item.use_type] : (item.equipType ? iconMap[item.equipType] : "")}</div>
+        <div>
+            <div class="storage-item-name" style="font-size:10px">${item.name}</div>
+            <div class="storage-item-sub" style="font-size:8px">${effectLabels||'—'}</div>
+        </div>
+        ${item.uses>=1?`<div class="storage-item-qty">${item.uses}回</div>`:''}
+        </div>`}).join('');
 }
 
 /* ======================
@@ -745,7 +748,7 @@ function renderBattle() {
                 renderTargetPanel(candidates);
                 targetPanel.classList.remove("hidden");
             } else if (gameState.battle.pendingCommand.act === "item" && gameState.battle.pendingCommand.actDetail) {
-                const item = player.item_slot.find(item => item.uuid === gameState.battle.pendingCommand.actDetail);
+                const item = player.itemSlot.find(item => item.uuid === gameState.battle.pendingCommand.actDetail);
                 const candidates = TARGET_TYPE_EXTRACTOR[item.use_target_type](gameState.battle.party, gameState.battle.enemies);
                 renderTargetPanel(candidates);
                 targetPanel.classList.remove("hidden");
@@ -1070,7 +1073,7 @@ function renderItemPanel() {
     backButton.textContent = "戻る";
     itemPanel.appendChild(backButton);
 
-    player.item_slot.forEach((item, index) => {
+    player.itemSlot.forEach((item, index) => {
         if (!item.usableIn.battle) {
             return;
         }

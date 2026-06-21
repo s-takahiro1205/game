@@ -113,7 +113,7 @@ const unit_base = {
 export let player = new Proxy({
         day: 0,
         money: 0,
-        item_slot: [],// 最大20
+        itemSlot: [],// 最大20
         party: [],// 最大4
         explore: { //proxyを剥がしているのはsaveできなくなるため dirtyで反映かな
             mapId: "lostForest",// 現在マップのid
@@ -309,18 +309,18 @@ baseBtnMansion.addEventListener("click", () => {
     let jobId = "";
     if (partyCount === 3) {
         jobId = "warrior";
-        unit.name = "センシ";
-        unit.maxHp = 45;
+        unit.name = "セッコ";
+        unit.maxHp = 28;
         unit.maxMp = 0;
-        unit.atk = 25;
+        unit.atk = 12;
         unit.def = 3;
-        unit.spd = 2;
+        unit.spd = 8;
         unit.int = 3;
-        unit.dex = 12;
-        unit.size = 8;
+        unit.dex = 8;
+        unit.size = 4;
     } else if (partyCount === 2) {
         jobId = "mage";
-        unit.name = "マホウツカイ";
+        unit.name = "マホカ";
         unit.maxHp = 23;
         unit.maxMp = 30;
         unit.atk = 3;
@@ -331,7 +331,7 @@ baseBtnMansion.addEventListener("click", () => {
         unit.size = 3;
     } else if (partyCount === 1) {
         jobId = "priest";
-        unit.name = "ソウリョ";
+        unit.name = "ソウ";
         unit.maxHp = 28;
         unit.maxMp = 20;
         unit.atk = 1;
@@ -1286,9 +1286,9 @@ function getStatus(chara, property) {
  * @returns {Promise<boolean>} アイテムが正常に取得された場合はtrue、諦めた場合はfalseを返すPromise
  */
 async function acquireItem(item) {
-    if (player.item_slot.length < 50) {
+    if (player.itemSlot.length < 50) {
         item.uuid = self.crypto.randomUUID();
-        player.item_slot.push(item);
+        player.itemSlot.push(item);
         // showToast(`${item.name} を手に入れた！`);
         return true;
     } else {
@@ -1307,7 +1307,7 @@ function openDiscardItemModal() {
         selectedItemToDiscardIndex = -1; // 選択状態をリセット
         discardSelectedItemButton.disabled = true; // ボタンを無効化
 
-        if (player.item_slot.length === 0) {
+        if (player.itemSlot.length === 0) {
             discardItemList.innerHTML = '<p>所持アイテムがありません。</p>';
             // アイテムがない場合は破棄できないので、自動的にキャンセル扱い
             addMessage("破棄できるアイテムがありません。アイテムの取得を諦めます。");
@@ -1316,7 +1316,7 @@ function openDiscardItemModal() {
             return;
         }
 
-        player.item_slot.forEach((item, index) => {
+        player.itemSlot.forEach((item, index) => {
             const listItem = document.createElement("li");
             listItem.textContent = `${item.name}`;// - ${item.description}
             listItem.dataset.index = index;
@@ -1355,7 +1355,7 @@ function openDiscardItemModal() {
         // 破棄ボタンのイベントリスナー
         const discardHandler = () => {
             if (selectedItemToDiscardIndex !== -1) {
-                const discardedItem = player.item_slot.splice(selectedItemToDiscardIndex, 1)[0];
+                const discardedItem = player.itemSlot.splice(selectedItemToDiscardIndex, 1)[0];
                 addMessage(`${discardedItem.name} を捨てました。`);
                 discardItemModal.classList.add("hidden");
                 document.body.style.overflow = "auto";
@@ -1687,7 +1687,7 @@ function closeMenuModal() {
 //         this.item.uses -= 1;
 //     }
 //     if (this.item.uses !== null && this.item.uses <= 0) {
-//         player.item_slot = player.item_slot.filter(i => i !== this.item);
+//         player.itemSlot = player.itemSlot.filter(i => i !== this.item);
 //         const msg = `${this.item.name} を使い切った！`;
 //         addMessage(msg);
 //         showToast(msg);
@@ -1727,7 +1727,7 @@ function closeMenuModal() {
 //     }
 
 //     player.party[0].equipmentSlot.push(this.item);
-//     player.item_slot = player.item_slot.filter(i => i !== this.item);
+//     player.itemSlot = player.itemSlot.filter(i => i !== this.item);
 
 //     const equipMsg = `${this.item.name}を装備した`;
 //     addMessage(equipMsg);
@@ -1741,7 +1741,7 @@ function closeMenuModal() {
 //  */
 // export function unequip(_) {
 //     // 1. アイテム枠チェック
-//     if (player.item_slot.length >= 20) {
+//     if (player.itemSlot.length >= 20) {
 //         // addMessage("アイテム枠が一杯で外せません");
 //         showToast("アイテム枠が一杯で外せません");
 //         return;
@@ -1760,7 +1760,7 @@ function closeMenuModal() {
 //         }
 //     }
 
-//     player.item_slot.push(this.item);
+//     player.itemSlot.push(this.item);
 //     player.party[0].equipmentSlot = player.party[0].equipmentSlot.filter(i => i !== this.item);
 
 //     const unequipMsg = `${this.item.name}を外した`;
@@ -2198,7 +2198,7 @@ async function battleExecCommand() {
         }
     } else if (cmd.act === "item") {
         console.log("アイテムコマンドが実行されました");
-        const item = player.item_slot.find(item => item.uuid === cmd.actDetail);
+        const item = player.itemSlot.find(item => item.uuid === cmd.actDetail);
         addMessage(`${actor.name} は ${item.name} を使用した！`);
 
         // TODO: healとdamage以外の処理
@@ -2261,7 +2261,7 @@ async function battleExecCommand() {
         if (item.uses) {
             item.uses -= 1;
             if (item.uses <= 0) {
-                player.item_slot = player.item_slot.filter(i => i !== item);
+                player.itemSlot = player.itemSlot.filter(i => i !== item);
                 addMessage(`${actor.name} は ${item.name} を使い切った！`);
             }
         }
@@ -2381,7 +2381,7 @@ async function onActSelect(e) {
     } else if (act === "skill" && getUsableList(gameState.battle.actor.skillList, "battle").length === 0) {
         gameState.battle.alert = "使用できるスキルがありません";
         gameState.battle.pendingCommand.act = null;
-    } else if (act === "item" && !player.item_slot.some((item) => item.usableIn["battle"])) {
+    } else if (act === "item" && !player.itemSlot.some((item) => item.usableIn["battle"])) {
         gameState.battle.alert = "使用できるアイテムがありません";
         gameState.battle.pendingCommand.act = null;
     }
@@ -2403,7 +2403,7 @@ async function onActDetailItemSelect(e) {
         return;
     }
 
-    const item =  player.item_slot.find(item => item.uuid === actDetail);
+    const item =  player.itemSlot.find(item => item.uuid === actDetail);
     const units = TARGET_TYPE_EXTRACTOR[item.use_target_type](gameState.battle.party, gameState.battle.enemies, gameState.battle.actor);
     if (units.length === 0) {
         gameState.battle.alert = "対象が存在しないため使用できません";

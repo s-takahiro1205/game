@@ -200,7 +200,7 @@ export const SKILLS = [
         ]
     },
 
-    // 戦技 戦技は通常ダイスに加算する
+    // 戦技 戦技はHP消費
     {
         id: "slash",
         name: "スラッシュ",
@@ -276,6 +276,155 @@ export const SKILLS = [
             }
         ]
     },
+    {
+        id: "aim-shot",
+        name: "狙撃",
+        cost: {
+            hp: 3
+        },
+        target_type: "alive_enemy_one",
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: true,
+        },
+        category: "combat",
+        type: "attack",// ボタンの色分け専用
+        effects: [
+            {
+                type: "damage",
+                element: "physical",
+                power: 1.10,
+                fix: 0,
+                add: 0,
+                armor_pierce: 0.33,
+            },
+        ]
+    },
+    {
+        id: "leg-shot",
+        name: "下肢撃ち",
+        cost: {
+            hp: 3
+        },
+        target_type: "alive_enemy_one",
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: true,
+        },
+        category: "combat",
+        type: "attack",
+        effects: [
+            {
+                type: "damage",
+                element: "physical",
+                power: 1.10,
+                fix: 0,
+                add: 0,
+                armor_pierce: 0.00,
+            },
+            {
+                type: "addState",
+                stateId: "stan",
+                min: 0,
+                max: 0,
+                fix: 25,
+                turn: 1,
+            }
+        ]
+    },
+    {
+        id: "poison-slash",
+        name: "ポイズンスラッシュ",
+        cost: {
+            hp: 3
+        },
+        target_type: "alive_enemy_one",
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: true,
+        },
+        category: "combat",
+        type: "attack",
+        effects: [
+            {
+                type: "damage",
+                element: "physical",
+                power: 1.10,
+                fix: 0,
+                add: 0,
+                armor_pierce: 0.00,
+            },
+            {
+                type: "addState",
+                stateId: "poison",
+                min: 0,
+                max: 0,
+                fix: 50,
+                turn: 5,
+            }
+        ]
+    },
+    {
+        id: "double-shot",
+        name: "ダブルショット",
+        cost: {
+            hp: 3
+        },
+        target_type: "alive_enemy_one",
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: true,
+        },
+        category: "combat",
+        type: "attack",
+        effects: [
+            {
+                type: "damage",
+                element: "physical",
+                power: 0.75,
+                fix: 0,
+                add: 0,
+                armor_pierce: 0.00,
+            },
+            {
+                type: "damage",
+                element: "physical",
+                power: 0.75,
+                fix: 0,
+                add: 0,
+                armor_pierce: 0.00,
+            },
+        ]
+    },
+    // { 回避を作って->状態異常追加してから
+    //     id: "with-draw",
+    //     name: "回避体制",
+    //     cost: {
+    //         hp: 8
+    //     },
+    //     target_type: "own",
+    //     usableIn: {
+    //         home: false,
+    //         explore: false,
+    //         battle: true,
+    //     },
+    //     category: "special",
+    //     type: "support",
+    //     effects: [
+    //         {
+    //             type: "addState",
+    //             stateId: "avoidStance",
+    //             min: 0,
+    //             max: 0,
+    //             fix: 100,
+    //             turn: 6,
+    //         }
+    //     ]
+    // },
 
     // 敵専用
     {

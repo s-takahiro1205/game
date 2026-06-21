@@ -116,7 +116,7 @@ html, body {
     display: flex; align-items: center; gap: 3px;
     font-size: 11px; font-weight: bold;
 }
-.hud-stat.gold { color: var(--gold); }
+.hud-stat.money { color: var(--gold); }
 .hud-stat.day  { color: var(--text); letter-spacing: 1px; }
 .hud-btns { display: flex; gap: 4px; }
 .hud-icon-btn {
@@ -130,32 +130,32 @@ html, body {
 .hud-icon-btn:active { background: var(--panel3); }
 
 /* パーティパネル */
-.party-panel {
+.hud-party-panel {
     overflow: hidden; max-height: 0;
     transition: max-height .3s cubic-bezier(.4,0,.2,1);
 }
-.party-panel.open {
+.hud-party-panel.open {
     max-height: 200px;
     border-top: 1px solid var(--border);
 }
-.party-grid {
+.hud-party-grid {
     display: grid; grid-template-columns: 1fr 1fr;
     gap: 6px; padding: 8px;
 }
-.party-member {
+.hud-party-member {
     display: flex; align-items: center; gap: 6px;
     background: var(--panel2); border: 1px solid var(--border2);
     border-radius: 6px; padding: 5px 7px;
 }
-.party-icon { font-size: 18px; width: 24px; text-align: center; }
-.party-bars { flex: 1; min-width: 0; }
-.party-name { font-size: 9px; color: var(--text); margin-bottom: 3px; font-weight: bold; }
-.party-bar-row { display: flex; align-items: center; gap: 3px; margin-bottom: 2px; }
-.party-bar-label { font-size: 8px; color: var(--text-sub); width: 14px; }
-.party-bar-track { flex: 1; height: 4px; background: #1a1008; border-radius: 2px; overflow: hidden; }
-.party-bar-fill  { height: 100%; border-radius: 2px; transition: width .4s; }
-.party-bar-val   { font-size: 8px; color: var(--text-sub); width: 26px; text-align: right; }
-.party-status    { font-size: 8px; margin-top: 1px; }
+.hud-party-icon { font-size: 18px; width: 24px; text-align: center; }
+.hud-party-bars { flex: 1; min-width: 0; }
+.hud-party-name { font-size: 9px; color: var(--text); margin-bottom: 3px; font-weight: bold; }
+.hud-party-bar-row { display: flex; align-items: center; gap: 3px; margin-bottom: 2px; }
+.hud-party-bar-label { font-size: 8px; color: var(--text-sub); width: 14px; }
+.hud-party-bar-track { flex: 1; height: 4px; background: #1a1008; border-radius: 2px; overflow: hidden; }
+.hud-party-bar-fill  { height: 100%; border-radius: 2px; transition: width .4s; }
+.hud-party-bar-val   { font-size: 8px; color: var(--text-sub); width: 26px; text-align: right; }
+/* .hud-party-status    { font-size: 8px; margin-top: 1px; } */
 
 /* ══════════════════════════════════
     拠点メイン画面
@@ -754,32 +754,20 @@ html, body {
         }
     </script>
     <div id="base-screen" class="screen hidden">
-        <!-- HUD（共通） TODO: 動的生成 -->
-        <div class="hud" id="base-hud">
+        <!-- HUD（共通） -->
+        <div class="hud base-hud">
             <div class="hud-main">
-                <div class="hud-char-icon" onclick="toggleParty('base')">⚔️</div>
-                <div class="hud-hp-mini">
-                    <div class="hud-bar-row">
-                        <span class="hud-bar-label">HP</span>
-                        <div class="hud-bar-track"><div class="hud-bar-fill fill-hp" style="width:81%"></div></div>
-                        </div>
-                        <div class="hud-bar-row">
-                            <span class="hud-bar-label">MP</span>
-                        <div class="hud-bar-track"><div class="hud-bar-fill fill-mp" style="width:58%"></div></div>
-                    </div>
-                </div>
                 <div class="hud-stats">
-                    <div class="hud-stat gold">🪙 136</div>
-                    <div class="hud-stat day">D+4</div>
+                    <div class="hud-stat money"></div>
+                    <div class="hud-stat day"></div>
                 </div>
                 <div style="flex:1"></div>
-                    <div class="hud-btns">
-                        <div class="hud-icon-btn" onclick="toggleParty('base')">👥</div>
-                        <div class="hud-icon-btn" onclick="openBaseMenu('bm-home')">☰</div>
-                    </div>
+                <div class="hud-btns">
+                    <div class="hud-icon-btn menu-switch-btn">☰</div>
                 </div>
-                <div class="party-panel" id="party-panel-base">
-                <div class="party-grid" id="party-grid-base"></div>
+            </div>
+            <div class="hud-party-panel open">
+                <div class="hud-party-grid"></div>
             </div>
         </div>
 
@@ -854,19 +842,20 @@ html, body {
 
     <!-- Base Select Explore Map Screen -->
     <div id="base-select-explore-map-screen" class="base-screen sub-screen close">
+        <!-- HUD（共通） -->
         <div class="hud base-hud">
-            <div class="hud-main" onclick="alert('base')">
+            <div class="hud-main">
                 <div class="hud-stats">
-                    <div class="hud-stat gold">🪙 136</div>
-                    <div class="hud-stat day">Day4</div>
+                    <div class="hud-stat money"></div>
+                    <div class="hud-stat day"></div>
                 </div>
                 <div style="flex:1"></div>
-                    <div class="hud-btns">
-                        <div class="hud-icon-btn">☰</div>
-                    </div>
+                <div class="hud-btns">
+                    <div class="hud-icon-btn menu-switch-btn">☰</div>
                 </div>
-                <div class="party-panel" id="party-panel-base">
-                <div class="party-grid" id="party-grid-base"></div>
+            </div>
+            <div class="hud-party-panel open">
+                <div class="hud-party-grid"></div>
             </div>
         </div>
         <div class="base-banner">
@@ -887,6 +876,22 @@ html, body {
 
     <!-- Explore Screen -->
     <div id="explore-screen" class="explore-screen screen hidden">
+        <!-- HUD（共通） -->
+        <div class="hud base-hud">
+            <div class="hud-main">
+                <div class="hud-stats">
+                    <div class="hud-stat money"></div>
+                    <div class="hud-stat day"></div>
+                </div>
+                <div style="flex:1"></div>
+                <div class="hud-btns">
+                    <div class="hud-icon-btn menu-switch-btn">☰</div>
+                </div>
+            </div>
+            <div class="hud-party-panel open">
+                <div class="hud-party-grid"></div>
+            </div>
+        </div>
         <div class="base-banner">
             <div class="base-banner-title" id="explore-map-title"></div>
             <div class="base-banner-sub"></div>

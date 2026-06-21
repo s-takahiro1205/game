@@ -28,6 +28,9 @@ const displayDexSpan = document.getElementById("display-dex");
 const displaySizeSpan = document.getElementById("display-size");
 const startAdventureButton = document.getElementById("start-adventure-button");
 
+// ヘッダー・メニュー
+
+
 // 拠点
 const baseScreen = document.getElementById(SCREENS.baseScreen);
 const baseSelectExploreMapScreen = document.getElementById(SUB_SCREENS.baseSelectExploreMapScreen);
@@ -110,11 +113,17 @@ function render() {
     showScreen();
 
     // デバッグパネルの表示/非表示
-    debugPanel.classList.toggle("hidden", (!gameState.is_debug_mode || gameState.screen !== SCREENS.exploreScreen));
+    debugPanel.classList.toggle("hidden", (!gameState.isDebugMode || gameState.screen !== SCREENS.exploreScreen));
 
     // ============================================================================
     // 各画面固有の描画
     // ============================================================================
+
+    // 拠点-探索メインならヘッダー、メニューの描画
+    if (gameState.screen === SCREENS.baseScreen || gameState.subScreen === SCREENS.exploreScreen) {
+        renderHeader();
+        // renderMenu();
+    }
 
     // 拠点：探索マップ選択
     if (gameState.screen === SCREENS.baseScreen && gameState.subScreen === SUB_SCREENS.baseSelectExploreMapScreen) {
@@ -384,6 +393,57 @@ function showScreen() {
 //     return parts.length > 0 ? parts.join(" / ") : null;
 // }
 
+
+/* ======================
+    ヘッダー・メニュー
+====================== */
+// ヘッダーの描画更新
+function renderHeader() {
+    const hudStatMoney = document.querySelector(`#${gameState.subScreen} .hud-stat.money`);
+    const hudStatDay = document.querySelector(`#${gameState.subScreen} .hud-stat.day`);
+    if (hudStatMoney) {
+        hudStatMoney.innerHTML = `🪙 ${player.money}`;
+    }
+    if (hudStatDay) {
+        hudStatDay.innerHTML = `Day ${player.day}`;
+    }
+    // メニューが開いているならレンダリング
+    const hud = document.querySelector(`#${gameState.subScreen} .hud-party-panel`);
+    if (gameState.isHudOpen) {
+        hud.classList.add("open");
+        buildPartyGrid();
+    } else {
+        hud.classList.remove("open");
+    }
+}
+
+//ヘッダー内パーティー表示の更新
+function buildPartyGrid() {
+    const grid = document.querySelector(`#${gameState.subScreen} .hud-party-grid`);
+    if (!grid) return;
+    grid.innerHTML = player.party.map(unit => {
+        const hp = Math.round(unit.hp/unit.maxHp*100);
+        const mp = Math.round(unit.mp/unit.maxMp*100);
+        return `<div class="hud-party-member">
+        <!-- <div class="hud-party-icon">${unit.icon ?? ""}</div> -->
+        <div class="hud-party-bars">
+            <div class="hud-party-name">${unit.name} Lv${unit.level} (${JOBS[unit.currentJob].name} : ランク${unit.jobs[unit.currentJob].rank})</div>
+            <div class="hud-party-bar-row"><span class="hud-party-bar-label">HP</span><div class="hud-party-bar-track"><div class="hud-party-bar-fill fill-hp" style="width:${hp}%"></div></div><span class="hud-party-bar-val">${unit.hp}</span></div>
+            <div class="hud-party-bar-row"><span class="hud-party-bar-label">MP</span><div class="hud-party-bar-track"><div class="hud-party-bar-fill fill-mp" style="width:${mp}%"></div></div><span class="hud-party-bar-val">${unit.mp}</span></div>
+            <!-- <div class="hud-party-status">${unit.cond}</div> -->
+        </div>
+        </div>`;
+    }).join('');
+    if (player.party.length < 4) {
+        for (let i = player.party.length; i < 4; i++) {
+            grid.innerHTML += `
+                <div class="hud-party-member">
+                    <div class="hud-party-name" style="margin:auto">-- empty --</div>
+                </div>
+            `;
+        }
+    }
+}
 
 /* ======================
     探索マップ選択

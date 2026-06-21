@@ -132,12 +132,13 @@ export let player = new Proxy({
 
 // ゲーム管理用Proxyオブジェクト
 export const gameState = new Proxy({
-        is_debug_mode: false,//デバッグ時に直打ち
+        isDebugMode: false,//デバッグ時に直打ち
         // 強制描画用フラグ
         dirty: false,
         // ページ制御
         screen: null,
         subScreen: null,
+        isHudOpen: false,
         // // モーダル（currentPageと独立して重なる）
         openModal: null,// null | "menu" | "item_discard",
         menuTab: "status",// "status" | "items" | "equipments",
@@ -200,6 +201,20 @@ const displayDexSpan = document.getElementById("display-dex");
 const displaySizeSpan = document.getElementById("display-size");
 const startAdventureButton = document.getElementById("start-adventure-button");
 
+// メニュー
+const baseHuds = document.querySelectorAll(".base-hud");
+baseHuds.forEach(ele => {
+    ele.addEventListener("click", async (e) => {
+        const choice = e.target.closest('.menu-switch-btn');
+        // メニューボタン以外ならステータス表示開閉
+        if (!choice) {
+            gameState.isHudOpen = gameState.isHudOpen ? false : true;
+        } else {
+            console.log("メニュー")
+        }
+    });
+});
+
 // base
 const baseBtnChangeJob = document.getElementById("base-btn-change-job");
 baseBtnChangeJob.addEventListener("click", async () => {
@@ -225,6 +240,7 @@ baseBtnChangeJob.addEventListener("click", async () => {
     });
     saveGame(player);
 });
+
 const baseBtnMansion = document.getElementById("base-btn-mansion");
 baseBtnMansion.addEventListener("click", () => {
     const partyCount = player.party.length;
@@ -549,6 +565,7 @@ const backToTitleFromClearButton = document.getElementById("back-to-title-from-c
  * @param {string} subScreenId
  */
 function moveScreen(screenId, subScreenId = null) {
+    gameState.isHudOpen = false;// hudを閉じる
     if (!SCREENS[screenId.replace(/-([a-z])/g, (match, letter) => letter.toUpperCase())]) {
         throw new Error(`Unknown screen: ${screenId}`);
     }
@@ -616,7 +633,6 @@ function showSelectExploreMap() {
         const map = MAPS[mapId];
         if (map.condition) {
             const isDisabled = checkMapCondition(map.condition);
-            console.log(mapId, isDisabled, map.condition)
             if (isDisabled) {
                 continue;
             }

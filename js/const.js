@@ -46,6 +46,49 @@ export const LABEL = {
     poisoned_all: "毒状態の全員", poisoned_random: "毒状態のランダムな1体", poisoned_one: "毒状態の1体", 
 };
 
+export const RACES = {
+    human: {
+        id: "human",
+        name: "人間",
+    },
+    vampire: {
+        id: "vampire",
+        name: "吸血鬼",
+    },
+    elf: {
+        id: "elf",
+        name: "エルフ",
+    },
+    darkElf: {
+        id: "darkElf",
+        name: "ダークエルフ",
+    },
+    dwarf: {
+        id: "dwarf",
+        name: "ドワーフ",
+    },
+    beastkin: {
+        id: "beastkin",
+        name: "獣人",
+    },
+    winged: {
+        id: "winged",
+        name: "翼人",
+    },
+    nephilim: {
+        id: "nephilim",
+        name: "巨人",
+    },
+    fallen: {
+        id: "fallen",
+        name: "魔人",
+    },
+    monster: {
+        id: "monster",
+        name: "魔物",
+    },
+};
+
 /**
  * 状態異常の一覧
 盲目	👁️‍🗨️❌ / 🙈	

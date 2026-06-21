@@ -83,6 +83,7 @@ const unit_base = {
     dex: 0,
     size: 0,
     multiAction: 1,
+    race: RACES.human.id,
     currentJob: "warrior",// 例
     jobs: {
         // warrior: {// 例
@@ -340,6 +341,7 @@ baseBtnMansion.addEventListener("click", () => {
     unit.hp = unit.maxHp;
     unit.mp = unit.maxMp;
     unit.multiAction = 1;
+    unit.race = RACES.human.id;
     unit.currentJob = null;
     unit.jobs = {};
     unit.equipmentSlot = [];
@@ -1210,6 +1212,7 @@ function initializePlayer() {
     unit.hp = unit.maxHp;
     unit.mp = unit.maxMp;
     unit.multiAction = 1;
+    unit.race = RACES.human.id;
     unit.currentJob = null;
     unit.jobs = {};
     unit.equipmentSlot = [];

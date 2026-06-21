@@ -1,5 +1,7 @@
 //  エネミーデータ定義
 
+import { RACES } from '../const.js';
+
 /**
  * @typedef {object} Enemy
  * @property {string} id // 識別子UUID
@@ -57,6 +59,7 @@ export const ENEMIES = [
             }
         ],
         money: 10,
+        race: RACES.monster.id,
     },
     {
         id: "starving-dog",
@@ -87,6 +90,7 @@ export const ENEMIES = [
             }
         ],
         money: 3,
+        race: RACES.monster.id,
     },
     {
         id: "rotting-crow",
@@ -117,6 +121,7 @@ export const ENEMIES = [
             }
         ],
         money: 2,
+        race: RACES.monster.id,
     },
     {
         id: "twisted-rat",
@@ -147,6 +152,7 @@ export const ENEMIES = [
             }
         ],
         money: 3,
+        race: RACES.monster.id,
     },
     {
         id: "forest-ghoul",
@@ -177,6 +183,7 @@ export const ENEMIES = [
             }
         ],
         money: 5,
+        race: RACES.monster.id,
     },
     {
         id: "thorn-spider",
@@ -207,6 +214,7 @@ export const ENEMIES = [
             }
         ],
         money: 4,
+        race: RACES.monster.id,
     },
     {
         id: "moving-mushroom",
@@ -237,6 +245,7 @@ export const ENEMIES = [
             }
         ],
         money: 8,
+        race: RACES.monster.id,
     },
     {
         id: "wild-boar",
@@ -267,6 +276,7 @@ export const ENEMIES = [
             }
         ],
         money: 10,
+        race: RACES.monster.id,
     },
     {
         id: "moss-golem",
@@ -297,6 +307,7 @@ export const ENEMIES = [
             }
         ],
         money: 20,
+        race: RACES.monster.id,
     },
     {
         id: "rogue-bandit",
@@ -331,6 +342,7 @@ export const ENEMIES = [
             }
         ],
         money: 10,
+        race: RACES.human.id,
     },
     {
         id: "wandering-ghost",
@@ -361,6 +373,7 @@ export const ENEMIES = [
             }
         ],
         money: 13,
+        race: RACES.monster.id,
     },
 
     // ボス
@@ -393,6 +406,7 @@ export const ENEMIES = [
             }
         ],
         money: 50,
+        race: RACES.fallen.id,
     },
     {
         id: "guardian-of-the-forest",
@@ -423,6 +437,7 @@ export const ENEMIES = [
             }
         ],
         money: 70,
+        race: RACES.elf.id,
     },
     {
         id: "messenger-of-Shadows",
@@ -453,6 +468,7 @@ export const ENEMIES = [
             }
         ],
         money: 120,
+        race: RACES.fallen.id,
     },
     {
         id: "guardian-of-the-ruin",
@@ -478,6 +494,7 @@ export const ENEMIES = [
         battleStatus: [],
         dropItems: [],
         money: 100,
+        race: RACES.human.id,
     },
     {
         id: "guardian-of-the-dawn",
@@ -509,5 +526,6 @@ export const ENEMIES = [
             }
         ],
         money: 500,
+        race: RACES.human.id,
     },
 ];

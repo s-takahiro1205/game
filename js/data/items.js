@@ -22,8 +22,8 @@
  * @property {number} uses - 使用回数制限（無制限ならnull）
  * @property {string} use_type - 使用種別
  * @property {string} use_target_type - 使用対象種別
- * @property {object | null} stat_modifier - 増減ステータス（例: { attack: +5, armor: +2 }）
- * @property {"weapon" | "armor" | "shield" | "accessory" | null} equip_type - 装備種別
+ * @property {object | null} stat_modifier - 増減ステータス（例: { atk: +5, def: +2 }）
+ * @property {"weapon" | "def" | "shield" | "accessory" | null} equip_type - 装備種別
  */
 
 /**
@@ -94,7 +94,7 @@ export const ITEMS = [
         effects: [
             {
                 type: "stat_change",
-                stat: "attack",
+                stat: "atk",
                 min: 0,
                 max: 0,
                 fix: 1,
@@ -144,7 +144,7 @@ export const ITEMS = [
         effects: [
             {
                 type: "stat_change",
-                stat: "intel",
+                stat: "int",
                 min: 0,
                 max: 0,
                 fix: 1,
@@ -391,7 +391,7 @@ export const ITEMS = [
         use_type: null,
         use_target_type: null,
         stat_modifier: {
-            attack: 5,
+            atk: 5,
             dex: -1
         },
         dice_modifier: {
@@ -417,7 +417,7 @@ export const ITEMS = [
         uses: null,
         use_type: null,
         use_target_type: null,
-        stat_modifier: { maxHp: 15, armor: 3, speed: -1 },
+        stat_modifier: { maxHp: 15, def: 3, spd: -1 },
         equip_type: "armor",
         uuid: "",
     },
@@ -436,7 +436,7 @@ export const ITEMS = [
         uses: null,
         use_type: null,
         use_target_type: null,
-        stat_modifier: { intel: 10, maxMp: 10 },
+        stat_modifier: { int: 10, maxMp: 10 },
         dice_modifier: {
             dice: 0,
             sides: 0,
@@ -484,7 +484,7 @@ export const ITEMS = [
         uses: null,
         use_type: null,
         use_target_type: null,
-        stat_modifier: { speed: 15, multi_action: 1 },
+        stat_modifier: { spd: 15, multiAction: 1 },
         dice_modifier: {
             dice: 0,
             sides: 5,

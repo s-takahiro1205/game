@@ -14,16 +14,16 @@ const titleScreen = document.getElementById(SCREENS.titleScreen);
 const characterCreationScreen = document.getElementById(SCREENS.characterCreationScreen);
 const playerNameInput = document.getElementById("player-name");
 const hpAllocationInput = document.getElementById("hp-allocation");
-const attackAllocationInput = document.getElementById("attack-allocation");
+const attackAllocationInput = document.getElementById("atk-allocation");
 const remainingPointsSpan = document.getElementById("remaining-points");
 const displayHpSpan = document.getElementById("display-hp");
-const displayAttackSpan = document.getElementById("display-attack");
-const speedAllocationInput = document.getElementById("speed-allocation");
-const intelAllocationInput = document.getElementById("intel-allocation");
+const displayAttackSpan = document.getElementById("display-atk");
+const speedAllocationInput = document.getElementById("spd-allocation");
+const intelAllocationInput = document.getElementById("int-allocation");
 const dexAllocationInput = document.getElementById("dex-allocation");
 const sizeAllocationInput = document.getElementById("size-allocation");
-const displaySpeedSpan = document.getElementById("display-speed");
-const displayIntelSpan = document.getElementById("display-intel");
+const displaySpeedSpan = document.getElementById("display-spd");
+const displayIntelSpan = document.getElementById("display-int");
 const displayDexSpan = document.getElementById("display-dex");
 const displaySizeSpan = document.getElementById("display-size");
 const startAdventureButton = document.getElementById("start-adventure-button");
@@ -36,7 +36,6 @@ const menuTabItems = document.getElementById("menu-tab-items");
 const menuTabSetting = document.getElementById("menu-tab-setting");
 
 const menuTabPartyMemberTabArea = document.getElementById("menu-tab-party-member-tab-area");
-
 
 // 拠点
 const baseScreen = document.getElementById(SCREENS.baseScreen);
@@ -60,23 +59,6 @@ const exploreChoicesList = document.getElementById("explore-choices-list");
 
 const exploreClearScreen = document.getElementById(SUB_SCREENS.exploreClearScreen);
 const exploreGameOverScreen = document.getElementById(SUB_SCREENS.exploreGameOverScreen);
-
-const mainGameScreen = document.getElementById(SCREENS.mainGameScreen);
-const currentPositionSpan = document.getElementById("current-position");
-const playerDisplayName = document.getElementById("player-display-name");
-const playerHpText = document.getElementById("player-hp-text");
-const playerAttackSpan = document.getElementById("player-attack");
-const playerArmorSpan = document.getElementById("player-armor");
-const playerSpeedSpan = document.getElementById("player-speed");
-const playerIntelSpan = document.getElementById("player-intel");
-const playerDexSpan = document.getElementById("player-dex");
-const playerSizeSpan = document.getElementById("player-size");
-const gameHpBarFill = document.getElementById("game-hp-bar-fill");
-const gameMessage = document.getElementById("game-message");
-const choicesContainer = document.getElementById("choices-container");
-const attackButton = document.getElementById("attack-button");
-const battleEndButton = document.getElementById("battle-end");
-const menuButton = document.getElementById("menu-button");
 
 // 戦闘画面
 const battleScreen = document.getElementById(SCREENS.battleScreen);
@@ -243,196 +225,6 @@ function showScreen() {
     }
 }
 
-
-// /**
-//  * メニューモーダルのステータスタブを更新する
-//  * TODO: 再定義
-//  */
-// function renderMenuStats() {
-//     const statusTab = document.getElementById("status-tab");
-//     // TODO: 仮作成
-//     let skill_names = "";
-//     player.party[0].skill_list.forEach(skill => {
-//         skill_names += "<p>・" + skill.name + "</p>";
-//     });
-//     const job = JOBS[player.party[0].currentJob];
-//     const job_history = player.party[0].jobs[player.party[0].currentJob];
-//     const rank_exp = job.maxRank === job_history.rank
-//                     ? "★"
-//                     : job_history.exp + "/" + getRequiredRankExp(job.id, job_history.rank);
-//     statusTab.innerHTML = `
-//         <div class="player-stats-display">
-//             <p>所持金: <span>${player.money}</span>G</p>
-//             <p>名前: <span>${player.party[0].name}</span></p>
-//             <p></p>
-//             <p>レベル: <span>${player.party[0].level}</span></p>
-//             <p>経験値: <span>${player.party[0].exp} / ${getRequiredExp(player.party[0].level)}</span></p>
-//             <p>職業: <span>${job.name} - ランク${job_history.rank}</span></p>
-//             <p>職業経験値: <span>${rank_exp}</span></p>
-//             <p>HP: <span>${player.party[0].hp}</span>/<span>${player.party[0].maxHp}</span></p>
-//             <p>MP: <span>${player.party[0].mp}</span>/<span>${player.party[0].maxMp}</span></p>
-//             <p>攻撃力: <span>${player.party[0].attack}</span></p>
-//             <p>防御力: <span>${player.party[0].armor}</span></p>
-//             <p>速度: <span>${player.party[0].speed}</span></p>
-//             <p>知能: <span>${player.party[0].intel}</span></p>
-//             <p>器用: <span>${player.party[0].dex}</span></p>
-//             <p>体格: <span>${player.party[0].size}</span></p>
-//             <p>行動回数: <span>${player.party[0].multi_action}</span></p>
-//             <p></p>
-//         </div>
-//         <div class="player-stats-display" style="grid-template-columns: 1fr; gap:0;">
-//             <p>習得スキル</p>
-//             ${skill_names}
-//         <div>
-//     `;
-// }
-
-// /**
-//  * メニューモーダルのアイテムタブを更新する
-//  */
-// function renderMenuItems() {
-//     const itemsTab = document.getElementById("items-tab");
-//     const itemGrid = itemsTab.querySelector(".item-grid");
-//     itemGrid.innerHTML = '';
-
-//     if (player.item_slot.length === 0) {
-//         itemGrid.innerHTML = "<p>アイテムはありません。</p>";
-//         return;
-//     }
-
-//     player.item_slot.forEach((item, index) => {
-//         const itemCard = document.createElement("div");
-//         itemCard.classList.add("item-card");
-//         const effectText = formatItemEffect(item);
-//         itemCard.innerHTML = `
-//             <h4>${item.name}</h4>
-//             <p>${item.description}</p>`;
-//         if (item.uses) {
-//             itemCard.innerHTML += `<p style="margin: 0;">残り${item.uses}回</p>`;
-//         }
-//         itemCard.innerHTML += `
-//             ${effectText ? `<p class="item-effect-text">${effectText}</p>` : ""}
-//         `;
-//         if (item.usableIn.explore) {
-//             const useButton = document.createElement("button");
-//             useButton.classList.add("button");
-//             useButton.textContent = "使用";
-//             useButton.addEventListener("click", {item: item, handleEvent: useItem});
-//             itemCard.appendChild(useButton);
-//         }
-
-//         if (item.category === "equipment") {
-//             const equipButton = document.createElement("button");
-//             equipButton.classList.add("button");
-//             equipButton.textContent = "装備";
-//             equipButton.addEventListener("click", {item: item, handleEvent: equip});
-//             itemCard.appendChild(equipButton);
-//         }
-//         itemGrid.appendChild(itemCard);
-//     });
-// }
-
-// /**
-//  * メニューモーダルの装備タブを更新する
-//  * 再定義
-//  */
-// function renderMenuEquip() {
-//     const equipmentTab = document.getElementById("equipment-tab");
-//     const equipmentSlots = equipmentTab.querySelector(".equipment-slots");
-//     equipmentSlots.innerHTML = ''; // クリア
-
-//     if (player.party[0].equipment_slot.length === 0) {
-//         equipmentSlots.innerHTML = "<p>装備中のアイテムはありません。</p>";
-//         return;
-//     }
-
-//     player.party[0].equipment_slot.forEach((item, index) => {
-//         const equipmentSlot = document.createElement("div");
-//         equipmentSlot.classList.add("equipment-slot");
-//         const effectText = formatItemEffect(item);
-//         equipmentSlot.innerHTML = `
-//             <h4>${item.name}</h4>
-//             <p>${item.description}</p>
-//             ${effectText ? `<p class="item-effect-text">${effectText}</p>` : ""}
-//         `;
-//         const unequipButton = document.createElement("button");
-//         unequipButton.classList.add("button");
-//         unequipButton.textContent = "解除";
-//         // unequipButton.dataset.equipmentIndex = index;
-//         unequipButton.addEventListener("click", {item: item, handleEvent: unequip});
-//         equipmentSlot.appendChild(unequipButton);
-//         equipmentSlots.appendChild(equipmentSlot);
-//     });
-// }
-
-// /**
-//  * アイテムの効果を人間が読める形式の文字列に変換する
-//  * @param {Item} item
-//  * @returns {string|null}
-//  */
-// function formatItemEffect(item) {
-//     const parts = [];
-//     if (item.effects && item.effects.length > 0) {
-//         parts.push(`対象 ${LABEL[item.use_target_type]}`)
-//         const diceLabelFun = (ef) => {return ef.fix ? ef.fix : ef.dice + "D" + ef.sides + "+" + ef.flat};
-//         item.effects.forEach(ef => {
-//             switch (ef.type) {
-//                 case "heal":
-//                     parts.push(`HP +` + diceLabelFun(ef));
-//                     break;
-//                 case "damage":
-//                     parts.push(`ダメージ ` + diceLabelFun(ef));
-//                     break;
-//                 case "stat_change": {
-//                     const label = LABEL[ef.stat] || ef.stat;
-//                     const sign = ef.value >= 0 ? "+" : "";
-//                     parts.push(`${label} ${sign}` + diceLabelFun(ef));
-//                     break;
-//                 }
-//                 case "add_state": {
-//                     const label = LABEL[ef.stateId] || ef.stateId;
-//                     parts.push(`${label} 付与(約${ef.turn}ターン)`);
-//                     break;
-//                 }
-//                 case "recover_state": {
-//                     const label = LABEL[ef.stateId] || ef.stateId;
-//                     parts.push(`${label} 解除`);
-//                     break;
-//                 }
-//                 case "revive": {
-//                     const label = LABEL[ef.stateId] || ef.stateId;
-//                     parts.push(`蘇生`);
-//                     break;
-//                 }
-//                 case "dice_check":
-//                     parts.push(`ダイスチェック (閾値:${ef.success_threshold})`);
-//                     break;
-//                 case "acquire_item":
-//                     parts.push("アイテム獲得");
-//                     break;
-//             }
-//         });
-//     }
-
-//     if (item.stat_modifier) {
-//         Object.entries(item.stat_modifier).forEach(([stat, val]) => {
-//             const label = LABEL[stat] || stat;
-//             const sign = val >= 0 ? "+" : "";
-//             parts.push(`${label} ${sign}${val}`);
-//         });
-//     }
-
-//     if (item.dice_modifier) {
-//             const dice = (item.dice_modifier.dice >= 0 ? "" : "-") + item.dice_modifier.dice;
-//             const sides = (item.dice_modifier.sides >= 0 ? "" : "-") + item.dice_modifier.sides;
-//             const flat = (item.dice_modifier.flat >= 0 ? "+" : "-") + item.dice_modifier.flat;
-//             parts.push(`${dice}D${sides}${flat}`);
-//     }
-
-//     return parts.length > 0 ? parts.join(" / ") : null;
-// }
-
-
 /* ======================
     ヘッダー・メニュー
 ====================== */
@@ -531,13 +323,13 @@ function renderMenu() {
                 <div class="status-bar-row"><span class="status-bar-label">MP</span><div class="status-bar-track"><div class="status-bar-fill fill-mp" style="width:${mpP}%"></div></div><span class="status-bar-val">${unit.mp} / ${unit.maxMp}</span></div>
             </div>`;
             const statuses = {
-                attack: unit.attack,
-                armor: unit.armor,
-                speed: unit.speed,
-                intel: unit.intel,
+                atk: unit.atk,
+                def: unit.def,
+                spd: unit.spd,
+                int: unit.int,
                 dex: unit.dex,
                 size: unit.size,
-                multi_action: unit.multi_action,
+                multiAction: unit.multiAction,
             };
             area.innerHTML += `<div class="status-params">
                 ${Object.entries(statuses).map(([k,v])=>`<div class="status-param"><span class="status-param-label">${LABEL[k]}</span><span class="status-param-val">${v}</span></div>`).join('')}</div>
@@ -591,7 +383,7 @@ function renderMenu() {
                 attack:'攻撃', heal:'回復', support:'補助',
                 combat:'物理', magic:'魔法', special:'特殊',
             };
-            area.innerHTML = `<div class="skill-panel">${unit.skill_list.map(s=>`
+            area.innerHTML = `<div class="skill-panel">${unit.skillList.map(s=>`
             <div class="skill-card">
                 <div class="skill-icon">${s.icon ?? ""}</div>
                 <div class="skill-info">
@@ -922,7 +714,7 @@ function renderBattle() {
                 renderTargetPanel(candidates);
                 targetPanel.classList.remove("hidden");
             } else if (gameState.battle.pendingCommand.act === "skill" && gameState.battle.pendingCommand.actDetail) {
-                const skill = gameState.battle.actor.skill_list.find(skill => skill.id === gameState.battle.pendingCommand.actDetail);
+                const skill = gameState.battle.actor.skillList.find(skill => skill.id === gameState.battle.pendingCommand.actDetail);
                 const candidates = TARGET_TYPE_EXTRACTOR[skill.target_type](gameState.battle.party, gameState.battle.enemies);
                 renderTargetPanel(candidates);
                 targetPanel.classList.remove("hidden");
@@ -1076,14 +868,14 @@ function updatePartyStatus() {
         );
         card.querySelector('.hp-label').textContent = `HP ${unit.hp}/${unit.maxHp}`;
         // 状態異常アイコンの描画
-        if (unit.battle_status) {
-            for (const status of unit.battle_status) {
+        if (unit.battleStatus) {
+            for (const status of unit.battleStatus) {
                 const status_def = BATTLE_STATUSES.find(_status => _status.id === status.type);
                 card.querySelector('.hp-label').textContent += status_def.icon;
             }
         }
         // 戦闘不能ならクラスを追加
-        card.classList.toggle("dead", unit.battle_status.some(s => s.type === "dead"));
+        card.classList.toggle("dead", unit.battleStatus.some(s => s.type === "dead"));
 
         const hpFill = card.querySelector('.hp-bar-fill');
         hpFill.style.width = `${hpPercentage}%`;
@@ -1114,14 +906,14 @@ function updateEnemyStatus() {
         );
         card.querySelector('.hp-label').textContent =`HP ${unit.hp}/${unit.maxHp}`;
         // 状態異常アイコンの描画
-        if (unit.battle_status) {
-            for (const status of unit.battle_status) {
+        if (unit.battleStatus) {
+            for (const status of unit.battleStatus) {
                 const status_def = BATTLE_STATUSES.find(_status => _status.id === status.type);
                 card.querySelector('.hp-label').textContent += status_def.icon;
             }
         }
         // 戦闘不能ならクラスを追加
-        card.classList.toggle("dead", unit.battle_status.some(s => s.type === "dead"));
+        card.classList.toggle("dead", unit.battleStatus.some(s => s.type === "dead"));
 
         const hpFill = card.querySelector('.hp-bar-fill');
         hpFill.style.width = `${hpPercentage}%`;
@@ -1276,7 +1068,7 @@ function renderSkillPanel() {
     backButton.textContent = "戻る";
     skillPanel.appendChild(backButton);
 
-    getUsableList(gameState.battle.actor.skill_list, "battle").forEach((skill, index) => {
+    getUsableList(gameState.battle.actor.skillList, "battle").forEach((skill, index) => {
         const button = document.createElement('button');
         button.classList.add('cmd', skill.type);
         button.dataset.actDetail = skill.id;
@@ -1307,8 +1099,8 @@ function renderTargetPanel(candidates) {
         button.dataset.targets = candidate.id;
         button.textContent = candidate.name;
         // 状態異常アイコンの描画
-        if (candidate.battle_status) {
-            for (const status of candidate.battle_status) {
+        if (candidate.battleStatus) {
+            for (const status of candidate.battleStatus) {
                 const status_def = BATTLE_STATUSES.find(_status => _status.id === status.type);
                 button.textContent += status_def.icon;
             }

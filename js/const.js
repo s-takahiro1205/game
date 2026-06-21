@@ -36,7 +36,7 @@ export const BOTTOM_MENU_TABS = {
 };
 
 export const LABEL = {
-    maxHp: "最大HP", maxMp: "最大MP", attack: "攻撃力", armor: "防御力", speed: "速度", intel: "知能", dex: "器用", size: "体格" , multi_action: "行動回数",
+    maxHp: "最大HP", maxMp: "最大MP", atk: "攻撃力", def: "防御力", spd: "速度", int: "知能", dex: "器用", size: "体格" , multiAction: "行動回数",
     poison: "毒", paralyze: "麻痺", sleep: "眠り", stan: "スタン", blind: "盲目", seal: "魔封じ", bind: "捕縛",
     alive_enemy_all: "敵全員", alive_enemy_random: "ランダムな敵1体", alive_enemy_one: "敵1体", damaged_enemy_all: "HPの減っている敵全員", damaged_enemy_random: "HPの減っているランダムな敵1体", damaged_enemy_one: "HPの減っている敵1体", dead_enemy_all: "戦闘不能中の敵全員", dead_enemy_random: "戦闘不能中のランダムな敵1体", dead_enemy_one: "戦闘不能中の敵1体",
     poisoned_enemy_all: "毒状態の敵全員", poisoned_enemy_random: "毒状態のランダムな敵1体", poisoned_enemy_one: "毒状態の敵1体", 
@@ -136,8 +136,8 @@ export const BATTLE_STATUSES = [
  * ステータス変動デバフの効果
  */
 export const DEBUFF_STATUS_MODIFIERS = {
-    weakness: { attack: { rate: -0.2 } },
-    haste:    { speed:  { rate:  0.5 } },
+    weakness: { atk: { rate: -0.2 } },
+    haste:    { spd:  { rate:  0.5 } },
     // poison:   {}, // ダメージ系はターン処理で扱うのでここには書かない
 };
 
@@ -297,12 +297,12 @@ export const TARGET_TYPE_EXTRACTOR = {
  * @param {Object} target 
  */
 export function isDead(unit) {
-    return unit.battle_status.some(s => s.type === "dead");
+    return unit.battleStatus.some(s => s.type === "dead");
 }
 /**
  * 状態異常中か判定する
  * @param {Object} target 
  */
 export function hasStatus(unit, status) {
-    return unit.battle_status.some(s => s.type === status);
+    return unit.battleStatus.some(s => s.type === status);
 }

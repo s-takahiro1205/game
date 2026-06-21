@@ -39,8 +39,8 @@ import { LABEL, SCREENS, SUB_SCREENS, BOTTOM_SHEETS, BOTTOM_MENU_TABS, BATTLE_ST
  * @property {number} uses - 使用回数制限（無制限ならnull）
  * @property {string} use_type - 使用種別
  * @property {string} use_target_type - 使用対象種別
- * @property {object | null} stat_modifier - 増減ステータス（例: { attack: +5, armor: +2 }）
- * @property {"weapon" | "armor" | "shield" | "accessory" | null} equip_type - 装備種別
+ * @property {object | null} stat_modifier - 増減ステータス（例: { atk: +5, def: +2 }）
+ * @property {"weapon" | "def" | "shield" | "accessory" | null} equip_type - 装備種別
  */
 
 // ops["gte"](player.level, value)など
@@ -76,13 +76,13 @@ const unit_base = {
     maxHp: 0,
     mp: 0,
     maxMp: 0,
-    attack: 0,
-    armor: 0,
-    speed: 0,
-    intel: 0,
+    atk: 0,
+    def: 0,
+    spd: 0,
+    int: 0,
     dex: 0,
     size: 0,
-    multi_action: 1,
+    multiAction: 1,
     currentJob: "warrior",// 例
     jobs: {
         // warrior: {// 例
@@ -90,11 +90,11 @@ const unit_base = {
         //     exp: 150
         // },
     },
-    equipment_slot: [], // 最大5
-    skill_list: [ // スキル
+    equipmentSlot: [],
+    skillList: [ // スキル
         // getSkillById("thunder"),// 例
     ],
-    battle_status: [ // 状態異常
+    battleStatus: [ // 状態異常
         // {// 例
         //     id: "weakness",
         //     turn: 3
@@ -170,7 +170,7 @@ export const gameState = new Proxy({
             //   gold: 120,
             //   exp: 80,
             //   items: [ { name: "回復薬", isNew: true }, ... ],あてにならんよ
-            //   levelUps: [ { name: "アレス", oldLv: 3, newLv: 4, statChanges: {maxHp: +10, attack: +2} } ],
+            //   levelUps: [ { name: "アレス", oldLv: 3, newLv: 4, statChanges: {maxHp: +10, atk: +2} } ],
             //   rankUps: [ { name: "アレス", oldRank: "D", newRank: "C" } ],
             },
         }, {set: setAndRender}),
@@ -192,17 +192,17 @@ const characterCreationScreen = document.getElementById(SCREENS.characterCreatio
 const playerNameInput = document.getElementById("player-name");
 const hpAllocationInput = document.getElementById("hp-allocation");
 const mpAllocationInput = document.getElementById("mp-allocation");
-const attackAllocationInput = document.getElementById("attack-allocation");
+const attackAllocationInput = document.getElementById("atk-allocation");
 const remainingPointsSpan = document.getElementById("remaining-points");
 const displayHpSpan = document.getElementById("display-hp");
 const displayMpSpan = document.getElementById("display-mp");
-const displayAttackSpan = document.getElementById("display-attack");
-const speedAllocationInput = document.getElementById("speed-allocation");
-const intelAllocationInput = document.getElementById("intel-allocation");
+const displayAttackSpan = document.getElementById("display-atk");
+const speedAllocationInput = document.getElementById("spd-allocation");
+const intelAllocationInput = document.getElementById("int-allocation");
 const dexAllocationInput = document.getElementById("dex-allocation");
 const sizeAllocationInput = document.getElementById("size-allocation");
-const displaySpeedSpan = document.getElementById("display-speed");
-const displayIntelSpan = document.getElementById("display-intel");
+const displaySpeedSpan = document.getElementById("display-spd");
+const displayIntelSpan = document.getElementById("display-int");
 const displayDexSpan = document.getElementById("display-dex");
 const displaySizeSpan = document.getElementById("display-size");
 const startAdventureButton = document.getElementById("start-adventure-button");
@@ -304,10 +304,10 @@ baseBtnMansion.addEventListener("click", () => {
         unit.name = "センシ";
         unit.maxHp = 45;
         unit.maxMp = 0;
-        unit.attack = 25;
-        unit.armor = 3;
-        unit.speed = 2;
-        unit.intel = 3;
+        unit.atk = 25;
+        unit.def = 3;
+        unit.spd = 2;
+        unit.int = 3;
         unit.dex = 12;
         unit.size = 8;
     } else if (partyCount === 2) {
@@ -315,10 +315,10 @@ baseBtnMansion.addEventListener("click", () => {
         unit.name = "マホウツカイ";
         unit.maxHp = 23;
         unit.maxMp = 30;
-        unit.attack = 3;
-        unit.armor = 0;
-        unit.speed = 3;
-        unit.intel = 18;
+        unit.atk = 3;
+        unit.def = 0;
+        unit.spd = 3;
+        unit.int = 18;
         unit.dex = 3;
         unit.size = 3;
     } else if (partyCount === 1) {
@@ -326,10 +326,10 @@ baseBtnMansion.addEventListener("click", () => {
         unit.name = "ソウリョ";
         unit.maxHp = 28;
         unit.maxMp = 20;
-        unit.attack = 1;
-        unit.armor = 0;
-        unit.speed = 4;
-        unit.intel = 13;
+        unit.atk = 1;
+        unit.def = 0;
+        unit.spd = 4;
+        unit.int = 13;
         unit.dex = 3;
         unit.size = 3;
     }
@@ -339,14 +339,14 @@ baseBtnMansion.addEventListener("click", () => {
     unit.exp = 0;
     unit.hp = unit.maxHp;
     unit.mp = unit.maxMp;
-    unit.multi_action = 1;
+    unit.multiAction = 1;
     unit.currentJob = null;
     unit.jobs = {};
-    unit.equipment_slot = [];
-    unit.skill_list = [
+    unit.equipmentSlot = [];
+    unit.skillList = [
         // getSkillById("wait-and-see"),
     ];
-    unit.battle_status = [];
+    unit.battleStatus = [];
     const result = changeJob(unit, jobId);
     if (!result.success) {
         throw new Error(`Unknown Error: Job change failed`);
@@ -1197,10 +1197,10 @@ function initializePlayer() {
     const atkPts = parseInt(attackAllocationInput.value);
     unit.maxHp = hpPts * 2;
     unit.maxMp = mpPts * 2;
-    unit.attack = atkPts;
-    unit.armor = 0;
-    unit.speed = parseInt(speedAllocationInput.value);
-    unit.intel = parseInt(intelAllocationInput.value);
+    unit.atk = atkPts;
+    unit.def = 0;
+    unit.spd = parseInt(speedAllocationInput.value);
+    unit.int = parseInt(intelAllocationInput.value);
     unit.dex = parseInt(dexAllocationInput.value);
     unit.size = parseInt(sizeAllocationInput.value);
 
@@ -1209,14 +1209,14 @@ function initializePlayer() {
     unit.exp = 0;
     unit.hp = unit.maxHp;
     unit.mp = unit.maxMp;
-    unit.multi_action = 1;
+    unit.multiAction = 1;
     unit.currentJob = null;
     unit.jobs = {};
-    unit.equipment_slot = [];
-    unit.skill_list = [
+    unit.equipmentSlot = [];
+    unit.skillList = [
         // getSkillById("wait-and-see"),
     ];
-    unit.battle_status = [];
+    unit.battleStatus = [];
     const result = changeJob(unit, "warrior");
     if (!result.success) {
         throw new Error(`Unknown Error: Job change failed`);
@@ -1408,7 +1408,7 @@ function systemHealAll(isHpMpHeal = true) {
             unit.hp = unit.maxHp;
             unit.mp = unit.maxMp;
         }
-        unit.battle_status = unit.battle_status.filter(status => false);
+        unit.battleStatus = unit.battleStatus.filter(status => false);
     }
 }
 
@@ -1448,7 +1448,7 @@ function populateDebugEnemySelect() {
     ENEMIES.forEach(enemy => {
         const option = document.createElement("option");
         option.value = enemy.id;
-        option.textContent = `${enemy.name} (HP:${enemy.maxHp} (MP:${enemy.maxMp} ATK:${enemy.attack} ARM:${enemy.armor} SPD:${enemy.speed})`;
+        option.textContent = `${enemy.name} (HP:${enemy.maxHp} (MP:${enemy.maxMp} ATK:${enemy.atk} ARM:${enemy.def} SPD:${enemy.spd})`;
         debugEnemySelect.appendChild(option);
     });
 }
@@ -1614,7 +1614,7 @@ function closeMenuModal() {
 //             } else if (effect.type === "recover_state") {
 //                 for (const target of targets) {
 //                     // その状態異常になっているか
-//                     if (!target.battle_status.some(s => s.type === effect.stateId)) {
+//                     if (!target.battleStatus.some(s => s.type === effect.stateId)) {
 //                         continue;
 //                     }
 //                     const is_success = calculateDiceChance(
@@ -1630,7 +1630,7 @@ function closeMenuModal() {
 //             } else if (effect.type === "revive") {
 //                 for (const target of targets) {
 //                     // その状態異常になっているか
-//                     if (!target.battle_status.some(s => s.type === "dead")) {
+//                     if (!target.battleStatus.some(s => s.type === "dead")) {
 //                         continue;
 //                     }
 //                     const is_success = calculateDiceChance(
@@ -1682,14 +1682,14 @@ function closeMenuModal() {
 //  */
 // export function equip(_) {
 //     // 1. 同タイプチェックを先に
-//     const sameType = player.party[0].equipment_slot.some(e => e.equip_type === this.item.equip_type);
+//     const sameType = player.party[0].equipmentSlot.some(e => e.equip_type === this.item.equip_type);
 //     if (sameType) {
 //         showToast(`すでに${this.item.equip_type}を装備しています`);
 //         return;
 //     }
 
 //     // 2. 枠数チェック
-//     if (player.party[0].equipment_slot.length >= 5) {
+//     if (player.party[0].equipmentSlot.length >= 5) {
 //         showToast("装備枠が一杯です");
 //         return;
 //     }
@@ -1701,7 +1701,7 @@ function closeMenuModal() {
 //         });
 //     }
 
-//     player.party[0].equipment_slot.push(this.item);
+//     player.party[0].equipmentSlot.push(this.item);
 //     player.item_slot = player.item_slot.filter(i => i !== this.item);
 
 //     const equipMsg = `${this.item.name}を装備した`;
@@ -1736,7 +1736,7 @@ function closeMenuModal() {
 //     }
 
 //     player.item_slot.push(this.item);
-//     player.party[0].equipment_slot = player.party[0].equipment_slot.filter(i => i !== this.item);
+//     player.party[0].equipmentSlot = player.party[0].equipmentSlot.filter(i => i !== this.item);
 
 //     const unequipMsg = `${this.item.name}を外した`;
 //     addMessage(unequipMsg);
@@ -1808,7 +1808,7 @@ function applyDamage(target, damage, is_phisycal = false) {
     addMessage(`${target.name} に ${damage} のダメージ！`);
     takeDead(target);
     // 眠りの解除判定 50%で眠り削除
-    if (is_phisycal && target.battle_status.some(s => s.type === "sleep") && Math.random() < 0.5) {
+    if (is_phisycal && target.battleStatus.some(s => s.type === "sleep") && Math.random() < 0.5) {
         recoverBattleStatus("sleep", target);
     }
 }
@@ -1829,21 +1829,21 @@ function calculateDamage(attacker, target, power = 1.00, isMagic = false, fix = 
         damage = fix;
     } else {
         let base = 400;// 防御の逆影響度合い。高ければ薄れ、低ければ高まる
-        let atk =  attacker.attack;
-        let def =  target.armor * (1 - armorPierce);
+        let atk =  attacker.atk;
+        let def =  target.def * (1 - armorPierce);
         const rand = Number((0.95 + Math.random() * 0.1).toFixed(2));// 0.95 ~ 1.05の幅
         if (isMagic) {
             // 魔法なら知力どうしで計算
             base = 500;
-            atk = attacker.intel;
-            def =  target.intel * (1 - armorPierce);
+            atk = attacker.int;
+            def =  target.int * (1 - armorPierce);
         }
         damage += ((atk * power) * (base / (base + def))
                 + add) * rand;
     }
 
     // 防御中なら半減
-    if (target.battle_status.some(s => s.type === "guard")) {
+    if (target.battleStatus.some(s => s.type === "guard")) {
         damage = Math.floor(damage / 2);
     }
 
@@ -1875,7 +1875,7 @@ function calculateHeal(attacker, target, power = 1.00, isMagic = false, fix = 0,
         const rand = Number((0.95 + Math.random() * 0.1).toFixed(2));// 0.95 ~ 1.05の幅
         if (isMagic) {
             // 魔法なら知力どうしで計算
-            atk = attacker.intel;
+            atk = attacker.int;
         }
         heal += ((atk * power) + add) * rand;
     }
@@ -1943,10 +1943,10 @@ async function battleTurnStart() {
     // ランダム順にしてからソートする。速度同値がランダムになるように
     const turnOrder = TARGET_TYPE_EXTRACTOR["alive_all"](gameState.battle.party, gameState.battle.enemies)
         .sort(() => Math.random() - 0.5)
-        .sort((a, b) => getStatus(b, "speed") - getStatus(a, "speed"));
+        .sort((a, b) => getStatus(b, "spd") - getStatus(a, "spd"));
     // 行動回数を反映
     gameState.battle.turnOrder = turnOrder.flatMap(unit =>
-        Array(unit.multi_action ?? 1).fill(unit)
+        Array(unit.multiAction ?? 1).fill(unit)
     );
 
     await sleep(1000);
@@ -2014,7 +2014,7 @@ function decideEnemyActionAndTarget(actor) {
     const enemyActions = [
         "attack", "attack", "attack", "guard",
         // TODO: とりあえず
-        ...(gameState.battle.actor.skill_list)
+        ...(gameState.battle.actor.skillList)
     ];
     const enemyAction = enemyActions[Math.floor(Math.random() * enemyActions.length)];
     const aliveParty = gameState.battle.party.filter(unit => !isDead(unit))
@@ -2077,7 +2077,7 @@ async function battleExecCommand() {
         if (gameState.battle.enemies.includes(actor)) {
             skill = getSkillById(gameState.battle.pendingCommand.actDetail);
         } else {
-            skill = gameState.battle.actor.skill_list.find(skill => skill.id === gameState.battle.pendingCommand.actDetail);
+            skill = gameState.battle.actor.skillList.find(skill => skill.id === gameState.battle.pendingCommand.actDetail);
         }
 
         // カスタムメッセージがあれば表示変更
@@ -2134,7 +2134,7 @@ async function battleExecCommand() {
                         let turn = effect.turn;
                         // 魔法なら持続増減
                         if (is_magic) {
-                            turn *= magicRate(actor.intel);
+                            turn *= magicRate(actor.int);
                             turn = Math.floor(turn);
                         }
                         addBattleStatus(effect.stateId, target, turn);
@@ -2146,7 +2146,7 @@ async function battleExecCommand() {
                         continue;
                     }
                     // その状態異常になっているか
-                    if (!target.battle_status.some(s => s.type === effect.stateId)) {
+                    if (!target.battleStatus.some(s => s.type === effect.stateId)) {
                         continue;
                     }
                     const is_magic = skill.category === "magic";
@@ -2209,7 +2209,7 @@ async function battleExecCommand() {
                         continue;
                     }
                     // その状態異常になっているか
-                    if (!target.battle_status.some(s => s.type === effect.stateId)) {
+                    if (!target.battleStatus.some(s => s.type === effect.stateId)) {
                         continue;
                     }
                     const is_success = roll(effect.fix)
@@ -2305,13 +2305,13 @@ function battleResult(isVictory) {
             }
         }
 
-        const drop_items = rollDropItems(gameState.battle.enemies);
+        const dropItems = rollDropItems(gameState.battle.enemies);
         gameState.battle.result = {
             isVictory: true,
             exp: totalExp,
             rankExp: totalRankExp,
             gold: totalMoney,
-            items: drop_items ?? null,
+            items: dropItems ?? null,
             levelUps: level_ups ?? null,
             rankUps: rank_ups ?? null,
         };
@@ -2350,7 +2350,7 @@ async function onActSelect(e) {
         gameState.battle.pendingCommand.targets = [gameState.battle.actor.id];
         await battleExecCommand();
         return;
-    } else if (act === "skill" && getUsableList(gameState.battle.actor.skill_list, "battle").length === 0) {
+    } else if (act === "skill" && getUsableList(gameState.battle.actor.skillList, "battle").length === 0) {
         gameState.battle.alert = "使用できるスキルがありません";
         gameState.battle.pendingCommand.act = null;
     } else if (act === "item" && !player.item_slot.some((item) => item.usableIn["battle"])) {
@@ -2408,7 +2408,7 @@ async function onActDetailSkillSelect(e) {
         return;
     }
 
-    const skill =  gameState.battle.actor.skill_list.find(skill => skill.id === actDetail);
+    const skill =  gameState.battle.actor.skillList.find(skill => skill.id === actDetail);
     // TODO: コストの支払いチェックメソッド 特殊なの作らない限りはこれでいけそうだけどね
     if ((skill.cost.hp && gameState.battle.actor.hp <= skill.cost.hp)
         || (skill.cost.mp && gameState.battle.actor.mp < skill.cost.mp)
@@ -2510,10 +2510,10 @@ function levelUp(unit) {
     const growthRates = {
         maxHp: 75 + (job.growthRates.maxHp ?? 0),
         maxMp: 50 + (job.growthRates.maxMp ?? 0),
-        attack: 35 + (job.growthRates.attack ?? 0),
-        armor: 35 + (job.growthRates.armor ?? 0),
-        speed: 35 + (job.growthRates.speed ?? 0),
-        intel: 35 + (job.growthRates.intel ?? 0),
+        atk: 35 + (job.growthRates.atk ?? 0),
+        def: 35 + (job.growthRates.def ?? 0),
+        spd: 35 + (job.growthRates.spd ?? 0),
+        int: 35 + (job.growthRates.int ?? 0),
         dex: 35 + (job.growthRates.dex ?? 0),
         size: 35 + (job.growthRates.size ?? 0),
     };
@@ -2667,8 +2667,8 @@ function rankUp(unit, job_history) {
         }
         if (bonus.learnSkills) {
             bonus.learnSkills.forEach(skill_id => {
-                if (!unit.skill_list.some((skill) => skill.id === skill_id)) {
-                    unit.skill_list.push(getSkillById(skill_id));
+                if (!unit.skillList.some((skill) => skill.id === skill_id)) {
+                    unit.skillList.push(getSkillById(skill_id));
                 }
             });
             skills.push(...bonus.learnSkills);
@@ -2687,7 +2687,7 @@ function rollDropItems(enemies) {
     const result = {};
 
     for (const enemy of enemies) {
-        for (const drop of enemy.drop_items ?? []) {
+        for (const drop of enemy.dropItems ?? []) {
             const roll = Math.floor(Math.random() * 100) + 1;
 
             if (roll <= drop.chance) {
@@ -2756,7 +2756,7 @@ async function advanceTimeline(unitId) {
 function applyBatleStatus(timing, target = null) {
     // 処理を格納
     const func = (target, timing) => {
-        for (const status of target.battle_status) {
+        for (const status of target.battleStatus) {
             const status_def = BATTLE_STATUSES.find(_status => _status.id === status.type);
 
             // 効果発揮
@@ -2799,7 +2799,7 @@ function takeDead(target, is_allow_zero = false) {
     // TODO* ゾンビ状態など作るなら判定
     if (!is_allow_zero && target.hp === 0) {
         // 既存の状態異常をすべて除く
-        target.battle_status = target.battle_status.filter(_status => false);
+        target.battleStatus = target.battleStatus.filter(_status => false);
         addBattleStatus("dead", target, -1);
     }
 }
@@ -2819,11 +2819,11 @@ function revive(target, heal, is_allow_zero = false) {
 
 /**
  * 魔法のpowerに乗ずる値をintから計算する
- * @param {number} intel
+ * @param {number} int
  * @returns 
  */
-function magicRate(intel) {
-    const t = intel / 999;
+function magicRate(int) {
+    const t = int / 999;
     return 0.5 + 2.5 * Math.pow(t, 0.7);
 }
 
@@ -2841,9 +2841,9 @@ function addBattleStatus(state_id, target, turn) {
         addMessage(add_message);
     }
 
-    const current_status = target.battle_status.find(s => s.type === state_id);
+    const current_status = target.battleStatus.find(s => s.type === state_id);
     if (!current_status) {
-        target.battle_status.push({type: state_id, turn: turn});
+        target.battleStatus.push({type: state_id, turn: turn});
     } else if (state_id !== "guard") {
         //　防御以外ならターンを最大値に更新する
         current_status.turn = Math.max(current_status.turn, turn);
@@ -2862,7 +2862,7 @@ function recoverBattleStatus(state_id, target) {
     if (sub_message) {
         addMessage(sub_message);
     }
-    target.battle_status = target.battle_status.filter(_status => _status.type !== state_id);
+    target.battleStatus = target.battleStatus.filter(_status => _status.type !== state_id);
 }
 
 /**

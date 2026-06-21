@@ -660,6 +660,162 @@ html, body {
 }
 .explore-choice-btn.disabled .explore-choice-label { color: var(--text-dim); }
 
+/* ══════════════════════════════════
+    拠点メニューモーダル
+══════════════════════════════════ */
+#menu-overlay {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0);
+    pointer-events: none;
+    transition: background .25s;
+    z-index: 200;
+    display: flex; align-items: flex-end; justify-content: center;
+}
+#menu-overlay.open {
+    background: rgba(0,0,0,.82);
+    pointer-events: all;
+}
+#menu-panel {
+    width: 100%; height: 78dvh;
+    background: var(--panel);
+    border-top: 2px solid var(--border);
+    border-radius: 18px 18px 0 0;
+    display: flex; flex-direction: column;
+    transform: translateY(100%);
+    transition: transform .32s cubic-bezier(.32,.72,0,1);
+    overflow: hidden;
+}
+#menu-overlay.open #menu-panel { transform: translateY(0); }
+#menu-handle { width: 38px; height: 4px; background: var(--border); border-radius: 2px; margin: 4px auto 4px; }
+
+#menu-nav {
+    flex: 0 0 auto;
+    background: var(--panel2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 4px;
+    display: flex; align-items: stretch; overflow-x: auto; gap: 0;
+}
+#menu-nav::-webkit-scrollbar { display: none; }
+.menu-nav-tab {
+    flex: 0 0 auto; padding: 10px 10px 8px;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    cursor: pointer; min-width: 54px;
+    border-bottom: 3px solid transparent;
+    transition: border-color .15s, opacity .15s; opacity: .55;
+}
+.menu-nav-tab.active { border-bottom-color: var(--gold); opacity: 1; }
+.menu-nav-tab .nav-icon  { font-size: 18px; line-height: 1; }
+.menu-nav-tab .nav-label { font-size: 8px; color: var(--text); letter-spacing: .5px; white-space: nowrap; }
+
+.menu-tab-content { flex: 1 1 auto; overflow-y: auto; display: none; }
+.menu-tab-content.active { display: flex; flex-direction: column; }
+.menu-tab-content::-webkit-scrollbar { width: 3px; }
+.menu-tab-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* メニューホーム */
+#menu-tab-home { padding: 12px; gap: 6px; }
+.bm-list-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 14px; border-radius: 8px;
+    cursor: pointer; transition: background .12s;
+    background: var(--panel2); border: 1px solid var(--border2);
+}
+.bm-list-item:active { background: var(--panel3); }
+.bm-list-icon {
+    width: 36px; height: 36px;
+    background: var(--panel3); border: 1px solid var(--border2);
+    border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex: 0 0 auto;
+}
+.bm-list-text { flex: 1; }
+.bm-list-label { font-size: 14px; color: var(--text); font-weight: bold; letter-spacing: .5px; }
+.bm-list-sub   { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+.bm-list-arrow { color: var(--border); font-size: 13px; }
+.bm-divider    { height: 1px; background: var(--border2); margin: 4px 0; }
+.bm-danger .bm-list-label { color: var(--red); }
+
+/* パーティ（メニュー内） */
+#menu-tab-party { flex-direction: column; }
+#menu-tab-party.active { display: flex; flex-direction: column; }
+#menu-tab-party-member-tab-area {
+    flex: 0 0 auto; display: flex;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel2);
+}
+.menu-tab-party-member-tab {
+    flex: 1; padding: 8px 4px 6px;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    cursor: pointer; border-bottom: 3px solid transparent;
+    transition: border-color .15s, opacity .15s; opacity: .5;
+}
+.menu-tab-party-member-tab.active { border-bottom-color: var(--gold); opacity: 1; }
+.menu-tab-party-member-tab-icon { font-size: 20px; line-height: 1; }
+.menu-tab-party-member-tab-name { font-size: 8px; color: var(--text); white-space: nowrap; }
+.menu-tab-party-member-tab-hp   { font-size: 7px; color: var(--text-sub); }
+
+.bm-sub-tabs {
+    flex: 0 0 auto; display: flex;
+    border-bottom: 1px solid var(--border); padding: 0 8px;
+}
+.bm-sub-tab {
+    flex: 1; padding: 7px 0 5px; font-size: 10px; color: var(--text-sub);
+    text-align: center; cursor: pointer; letter-spacing: 1px;
+    border-bottom: 2px solid transparent; transition: color .15s, border-color .15s;
+}
+.bm-sub-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+.bm-sub-content { flex: 1; overflow-y: auto; }
+.bm-sub-content::-webkit-scrollbar { width: 3px; }
+.bm-sub-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ステータス */
+.status-panel  { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.status-header { display: flex; align-items: center; gap: 12px; background: var(--panel2); border: 1px solid var(--border2); border-radius: 8px; padding: 12px; }
+.status-avatar { width: 52px; height: 52px; border-radius: 50%; background: var(--panel3); border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 28px; flex: 0 0 auto; }
+.status-name  { font-size: 16px; font-weight: bold; color: var(--text); letter-spacing: 1px; }
+.status-class { font-size: 10px; color: var(--text-sub); margin-top: 2px; }
+.status-lv    { font-size: 11px; color: var(--gold); margin-top: 3px; font-weight: bold; }
+.status-cond  { font-size: 10px; margin-top: 3px; }
+.status-bars-box { background: var(--panel2); border: 1px solid var(--border2); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 7px; }
+.status-bar-row { display: flex; align-items: center; gap: 8px; }
+.status-bar-label { font-size: 10px; color: var(--text-sub); width: 22px; }
+.status-bar-track { flex: 1; height: 8px; background: var(--panel3); border: 1px solid var(--border2); border-radius: 4px; overflow: hidden; }
+.status-bar-fill  { height: 100%; border-radius: 4px; transition: width .5s; }
+.status-bar-val   { font-size: 10px; color: var(--text); width: 56px; text-align: right; font-variant-numeric: tabular-nums; }
+.status-params    { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 6px 12px; }
+.status-param     { background: var(--panel2); border: 1px solid var(--border2); border-radius: 6px; padding: 7px 10px; display: flex; justify-content: space-between; align-items: center; }
+.status-param-label { font-size: 10px; color: var(--text-sub); }
+.status-param-val   { font-size: 13px; font-weight: bold; color: var(--text); }
+
+/* 装備 */
+.equip-panel { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.equip-slot  { background: var(--panel2); border: 1px solid var(--border2); border-radius: 8px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: border-color .15s; }
+.equip-slot:active { background: var(--panel3); }
+.equip-slot-label { font-size: 9px; color: var(--text-dim); width: 40px; flex: 0 0 auto; letter-spacing: .5px; }
+.equip-slot-icon  { width: 36px; height: 36px; border-radius: 6px; background: var(--panel3); border: 1px solid var(--border2); display: flex; align-items: center; justify-content: center; font-size: 20px; flex: 0 0 auto; }
+.equip-slot-info  { flex: 1; min-width: 0; }
+.equip-slot-name  { font-size: 12px; font-weight: bold; color: var(--text); }
+.equip-slot-name.rarity-elite { color: #e8c030; }
+.equip-slot-name.rarity-rare  { color: #6090e0; }
+.equip-slot-stats { font-size: 9px; color: var(--text-sub); margin-top: 2px; }
+.equip-slot-empty { font-size: 11px; color: var(--text-dim); font-style: italic; }
+.equip-slot-arrow { color: var(--text-dim); font-size: 11px; }
+
+/* スキル */
+.skill-panel { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.skill-card  { background: var(--panel2); border: 1px solid var(--border2); border-radius: 8px; padding: 10px 12px; display: flex; align-items: flex-start; gap: 10px; }
+.skill-icon  { width: 40px; height: 40px; border-radius: 8px; background: var(--panel3); border: 1px solid var(--border2); display: flex; align-items: center; justify-content: center; font-size: 22px; flex: 0 0 auto; }
+.skill-info  { flex: 1; }
+.skill-name  { font-size: 12px; font-weight: bold; color: var(--text); margin-bottom: 3px; }
+.skill-tags  { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 4px; }
+.skill-tag   { font-size: 8px; padding: 1px 6px; border-radius: 10px; font-weight: bold; }
+.tag-atk     { background: #3a1010; color: #f07070; border: 1px solid #7a3030; }
+.tag-mag     { background: #1a1040; color: #8080f0; border: 1px solid #4040a0; }
+.tag-heal    { background: #103a10; color: #50d870; border: 1px solid #308030; }
+.tag-buff    { background: #3a3010; color: #d8d050; border: 1px solid #807030; }
+.tag-passive { background: #2a2a2a; color: #a0a0a0; border: 1px solid #606060; }
+.skill-desc  { font-size: 10px; color: var(--text-sub); line-height: 1.5; }
+.skill-cost  { font-size: 9px; color: #5080c0; margin-top: 4px; font-weight: bold; }
 </style>
 </head>
 <body>
@@ -1063,6 +1219,95 @@ html, body {
                 </section>
 
                 <button id="battle-end" class="cmd result-close-btn">探索に戻る</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ══ メニューボトムシート ══ -->
+    <div id="menu-overlay">
+        <div id="menu-panel">
+            <div id="menu-handle"></div>
+            <div id="menu-nav">
+                <div class="menu-nav-tab" data-tab-id="menu-tab-home"><span class="nav-icon">🏠</span><span class="nav-label">メニュー</span></div>
+                <div class="menu-nav-tab" data-tab-id="menu-tab-party"><span class="nav-icon">👥</span><span class="nav-label">パーティ</span></div>
+                <div class="menu-nav-tab" data-tab-id="menu-tab-items"><span class="nav-icon">🎒</span><span class="nav-label">アイテム</span></div>
+                <div class="menu-nav-tab" data-tab-id="menu-tab-setting"><span class="nav-icon">⚙️</span><span class="nav-label">設定</span></div>
+            </div>
+
+            <!-- ホーム -->
+            <div id="menu-tab-home" class="menu-tab-content">
+                <div style="padding:12px;display:flex;flex-direction:column;gap:6px">
+                    あ
+                    <!-- <div class="bm-list-item" onclick="closeBaseMenu();goSub('inn')">
+                        <div class="bm-list-icon">🏥</div>
+                        <div class="bm-list-text"><div class="bm-list-label">待機所へ</div><div class="bm-list-sub">HP/MP回復・状態異常治癒</div></div>
+                        <span class="bm-list-arrow">▶</span>
+                    </div>
+                    <div class="bm-list-item" onclick="closeBaseMenu();goSub('shop')">
+                        <div class="bm-list-icon">🛒</div>
+                        <div class="bm-list-text"><div class="bm-list-label">ショップへ</div><div class="bm-list-sub">武器・道具の購入・売却</div></div>
+                        <span class="bm-list-arrow">▶</span>
+                    </div>
+                    <div class="bm-list-item" onclick="switchBmTabById('bm-party')">
+                        <div class="bm-list-icon">👥</div>
+                        <div class="bm-list-text"><div class="bm-list-label">パーティ情報</div><div class="bm-list-sub">ステータス・装備・スキル確認</div></div>
+                        <span class="bm-list-arrow">▶</span>
+                    </div>
+                    <div class="bm-list-item" onclick="switchBmTabById('bm-items')">
+                        <div class="bm-list-icon">🎒</div>
+                        <div class="bm-list-text"><div class="bm-list-label">所持アイテム</div><div class="bm-list-sub">アイテムの確認・使用</div></div>
+                        <span class="bm-list-arrow">▶</span>
+                    </div>
+                    <div class="bm-divider"></div>
+                    <div class="bm-list-item">
+                        <div class="bm-list-icon">💾</div>
+                        <div class="bm-list-text"><div class="bm-list-label">セーブ</div><div class="bm-list-sub">現在の状態を保存する</div></div>
+                        <span class="bm-list-arrow">▶</span>
+                    </div>
+                    <div class="bm-list-item" onclick="switchBmTabById('bm-save')">
+                        <div class="bm-list-icon">⚙️</div>
+                        <div class="bm-list-text"><div class="bm-list-label">設定</div><div class="bm-list-sub">音量・表示設定</div></div>
+                        <span class="bm-list-arrow">▶</span>
+                    </div>
+                    <div class="bm-list-item bm-danger">
+                        <div class="bm-list-icon">🏠</div>
+                        <div class="bm-list-text"><div class="bm-list-label">タイトルに戻る</div><div class="bm-list-sub">未保存の進行は失われます</div></div>
+                        <span class="bm-list-arrow">▶</span>
+                    </div> -->
+                </div>
+            </div>
+
+            <!-- パーティ -->
+            <div id="menu-tab-party" class="menu-tab-content">
+                <div id="menu-tab-party-member-tab-area"></div>
+                <div class="bm-sub-tabs" id="bm-sub-tabs">
+                    <div class="bm-sub-tab active" data-sub="status" onclick="switchBmSub(this)">ステータス</div>
+                    <div class="bm-sub-tab" data-sub="equip"  onclick="switchBmSub(this)">装備</div>
+                    <div class="bm-sub-tab" data-sub="skill"  onclick="switchBmSub(this)">スキル</div>
+                </div>
+                <div class="bm-sub-content" id="bm-sub-content"></div>
+            </div>
+
+            <!-- アイテム（簡易） -->
+            <div id="menu-tab-items" class="menu-tab-content">
+                う
+                <!-- <div style="padding:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px" id="bm-item-grid"></div> -->
+            </div>
+
+            <!-- 設定 -->
+            <div id="menu-tab-setting" class="menu-tab-content">
+                え
+                <!-- <div style="padding:14px;display:flex;flex-direction:column;gap:10px">
+                    <div class="section-title">設定</div>
+                    <div class="info-card">
+                        <div class="info-row"><span class="info-row-label">BGM音量</span><span class="info-row-val">70%</span></div>
+                        <div class="info-row"><span class="info-row-label">SE音量</span><span class="info-row-val">85%</span></div>
+                        <div class="info-row"><span class="info-row-label">振動フィードバック</span><span class="info-row-val green">ON</span></div>
+                        <div class="info-row"><span class="info-row-label">バトルスピード</span><span class="info-row-val">標準</span></div>
+                    </div>
+                    <button class="action-btn-full btn-gold" onclick="alert('セーブしました！')">💾 セーブする</button>
+                </div> -->
             </div>
         </div>
     </div>

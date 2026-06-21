@@ -8,7 +8,7 @@ import { ENEMIES } from './data/enemies.js';
 import { SKILLS } from './data/skills.js';
 import { JOBS } from './data/jobs.js';
 import { scheduleRender } from './render.js';
-import { LABEL, SCREENS, SUB_SCREENS, BATTLE_STATUSES, DEBUFF_STATUS_MODIFIERS, SELECT_TARGET_TYPE, TARGET_TYPE_EXTRACTOR, isDead } from './const.js';
+import { LABEL, SCREENS, SUB_SCREENS, BOTTOM_SHEETS, BOTTOM_MENU_TABS, BATTLE_STATUSES, DEBUFF_STATUS_MODIFIERS, SELECT_TARGET_TYPE, TARGET_TYPE_EXTRACTOR, isDead } from './const.js';
 
 // ============================================================================
 // 1. グローバル変数とDOM要素
@@ -138,11 +138,17 @@ export const gameState = new Proxy({
         // ページ制御
         screen: null,
         subScreen: null,
+        bottomSheet: null,
+        bottomMenuTabId: BOTTOM_MENU_TABS.menuTabParty,
+        bottomMenuPartyTabIndex: 0,
+        bottomMenuPartyTabSubType: "status",
+        selectExploreMap: null,
+        // ヘッダー開閉
         isHudOpen: false,
-        // // モーダル（currentPageと独立して重なる）
+
+        // // モーダル（currentPageと独立して重なる） 後で消す
         openModal: null,// null | "menu" | "item_discard",
         menuTab: "status",// "status" | "items" | "equipments",
-        selectExploreMap: null,
 
         // 探索画面
         explore: new Proxy({
@@ -210,9 +216,42 @@ baseHuds.forEach(ele => {
         if (!choice) {
             gameState.isHudOpen = gameState.isHudOpen ? false : true;
         } else {
-            console.log("メニュー")
+            if (gameState.bottomSheet !== BOTTOM_SHEETS.menuOverlay) {
+                openBottomSheet(BOTTOM_SHEETS.menuOverlay);
+            } else {
+                closeBottomSheet();
+            }
         }
     });
+});
+// メニュー背景の閉じる制御
+const menuOverlay = document.getElementById("menu-overlay");
+menuOverlay.addEventListener("click", async (e) => {
+    if (e.target.id !== BOTTOM_SHEETS.menuOverlay) {
+        return;
+    }
+    closeBottomSheet();
+});
+// メニュータブ切り替え
+const menuNavTabs = document.querySelectorAll(".menu-nav-tab");
+menuNavTabs.forEach(ele => {
+    ele.addEventListener("click", async (e) => {
+        const choice = e.target.closest('.menu-nav-tab');
+        await sleep(50);
+
+        if (choice) {
+            moveMenuTab(choice.dataset.tabId);
+        }
+    });
+});
+// メニュー：パーティーメンバータブ切り替え
+const menuTabPartyMemberTabArea = document.getElementById("menu-tab-party-member-tab-area");
+menuTabPartyMemberTabArea.addEventListener("click", async (e) => {
+    const choice = e.target.closest('.menu-tab-party-member-tab');
+    if (!choice || !choice.dataset.partyIndex) {
+        return;
+    }
+    gameState.bottomMenuPartyTabIndex = parseInt(choice.dataset.partyIndex);
 });
 
 // base
@@ -565,7 +604,6 @@ const backToTitleFromClearButton = document.getElementById("back-to-title-from-c
  * @param {string} subScreenId
  */
 function moveScreen(screenId, subScreenId = null) {
-    gameState.isHudOpen = false;// hudを閉じる
     if (!SCREENS[screenId.replace(/-([a-z])/g, (match, letter) => letter.toUpperCase())]) {
         throw new Error(`Unknown screen: ${screenId}`);
     }
@@ -576,6 +614,8 @@ function moveScreen(screenId, subScreenId = null) {
     if (player.screen !== screenId && screenId === SCREENS.baseScreen) {
         systemHealAll();
     }
+    gameState.isHudOpen = false;// hudを閉じる
+    gameState.bottomSheet = null;// ボトムシートを閉じる
     gameState.screen = screenId;
     gameState.subScreen = subScreenId ?? screenId;
 }
@@ -586,6 +626,33 @@ function moveScreen(screenId, subScreenId = null) {
 function backSubScreen() {
     gameState.subScreen = null;
     moveScreen(gameState.screen);
+}
+
+/**
+ * ボトムシートを開く
+ */
+function openBottomSheet(bottomSheetId) {
+    if (!BOTTOM_SHEETS[bottomSheetId.replace(/-([a-z])/g, (match, letter) => letter.toUpperCase())]) {
+        throw new Error(`Unknown bottom sheet: ${bottomSheetId}`);
+    }
+    gameState.bottomSheet = bottomSheetId;
+}
+
+/**
+ * ボトムシートを閉じる
+ */
+function closeBottomSheet() {
+    gameState.bottomSheet = null;
+}
+
+/**
+ * メニュータブの移動
+ */
+function moveMenuTab(bottomMenuTabId) {
+    if (!BOTTOM_MENU_TABS[bottomMenuTabId.replace(/-([a-z])/g, (match, letter) => letter.toUpperCase())]) {
+        throw new Error(`Unknown bottom menu tab: ${bottomMenuTabId}`);
+    }
+    gameState.bottomMenuTabId = bottomMenuTabId;
 }
 
 

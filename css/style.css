@@ -19,10 +19,10 @@ body {
 }
 
 .game-container {
-    background-color: #0f0f1a; /* さらに暗いネイビー */
-    border: 2px solid #ffcc00; /* ゴールド */
+    background-color: #0f0f1a;
+    border: 2px solid #ffcc00;
     border-radius: 10px;
-    box-shadow: 0 0 20px rgba(255, 204, 0, 0.5); /* ゴールドの光 */
+    box-shadow: 0 0 20px rgba(255, 204, 0, 0.5);
     padding: 20px;
     width: 90%;
     max-width: 800px;

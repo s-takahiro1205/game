@@ -24,6 +24,17 @@ export const SUB_SCREENS = {
     exploreGameOverScreen: "explore-game-over-screen",// 探索敗北
 };
 
+export const BOTTOM_SHEETS = {
+    menuOverlay: "menu-overlay",// メニュー
+};
+
+export const BOTTOM_MENU_TABS = {
+    menuTabHome: "menu-tab-home",// メイン
+    menuTabParty: "menu-tab-party",// パーティー
+    menuTabItems: "menu-tab-items",// アイテム
+    menuTabSetting: "menu-tab-setting",// 設定
+};
+
 export const LABEL = {
     maxHp: "最大HP", maxMp: "最大MP", attack: "攻撃力", armor: "防御力", speed: "速度", intel: "知能", dex: "器用", size: "体格" , multi_action: "行動回数",
     poison: "毒", paralyze: "麻痺", sleep: "眠り", stan: "スタン", blind: "盲目", seal: "魔封じ", bind: "捕縛",

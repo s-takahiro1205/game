@@ -5,7 +5,7 @@ import { loadGame } from './save.js';
 import { JOBS } from './data/jobs.js';
 import { MAPS } from './data/maps.js';
 import { EVENTS } from './data/events.js';
-import { SCREENS, SUB_SCREENS, LABEL, BATTLE_STATUSES, TARGET_TYPE_EXTRACTOR } from './const.js';
+import { SCREENS, SUB_SCREENS, BOTTOM_SHEETS, BOTTOM_MENU_TABS, LABEL, BATTLE_STATUSES, TARGET_TYPE_EXTRACTOR } from './const.js';
 
 // DOM Elements
 // TODO:精査してね
@@ -29,6 +29,13 @@ const displaySizeSpan = document.getElementById("display-size");
 const startAdventureButton = document.getElementById("start-adventure-button");
 
 // ヘッダー・メニュー
+const menuOverlay = document.getElementById("menu-overlay");
+const menuTabHome = document.getElementById("menu-tab-home");
+const menuTabParty = document.getElementById("menu-tab-party");
+const menuTabItems = document.getElementById("menu-tab-items");
+const menuTabSetting = document.getElementById("menu-tab-setting");
+
+const menuTabPartyMemberTabArea = document.getElementById("menu-tab-party-member-tab-area");
 
 
 // 拠点
@@ -119,10 +126,13 @@ function render() {
     // 各画面固有の描画
     // ============================================================================
 
-    // 拠点-探索メインならヘッダー、メニューの描画
+    // 拠点か探索メインならヘッダー、メニューの描画
     if (gameState.screen === SCREENS.baseScreen || gameState.subScreen === SCREENS.exploreScreen) {
         renderHeader();
-        // renderMenu();
+        // メニューを開いているならメニュー内の描画
+        if (gameState.bottomSheet === BOTTOM_SHEETS.menuOverlay) {
+            renderMenu();
+        }
     }
 
     // 拠点：探索マップ選択
@@ -172,6 +182,15 @@ function showScreen() {
         [SUB_SCREENS.exploreClearScreen]: exploreClearScreen,
         [SUB_SCREENS.exploreGameOverScreen]: exploreGameOverScreen,
     };
+    const bottomSheets = {
+        [BOTTOM_SHEETS.menuOverlay]: menuOverlay,
+    };
+    const bottomMenuTabs = {
+        [BOTTOM_MENU_TABS.menuTabHome]: menuTabHome,
+        [BOTTOM_MENU_TABS.menuTabParty]: menuTabParty,
+        [BOTTOM_MENU_TABS.menuTabItems]: menuTabItems,
+        [BOTTOM_MENU_TABS.menuTabSetting]: menuTabSetting,
+    };
     for (const id in screens) {
         screens[id].classList.add("hidden");
         screens[id].classList.remove("active");
@@ -186,6 +205,17 @@ function showScreen() {
             subScreens[id].classList.remove("open");
         }
     }
+    // ボトムシートの初期化
+    for (const id in bottomSheets) {
+        bottomSheets[id].classList.remove("open");
+    }
+    // メニュータブの初期化
+    for (const id in bottomMenuTabs) {
+        bottomMenuTabs[id].classList.remove("active");
+    }
+    document.querySelectorAll(".menu-nav-tab").forEach(ele => {
+        ele.classList.remove("active");
+    });
     // メインスクリーンなら
     if (gameState.screen === gameState.subScreen) {
         screens[gameState.screen].classList.remove("hidden");
@@ -200,6 +230,15 @@ function showScreen() {
         } else {
             subScreens[gameState.subScreen].classList.remove("close");
             subScreens[gameState.subScreen].classList.add("open");
+        }
+    }
+    // ボトムシートオンなら
+    if (gameState.bottomSheet) {
+        bottomSheets[gameState.bottomSheet].classList.add("open");
+        if (gameState.bottomSheet === BOTTOM_SHEETS.menuOverlay) {
+            bottomMenuTabs[gameState.bottomMenuTabId].classList.add("active");
+            renderMenuTabs();
+            document.querySelector(`.menu-nav-tab[data-tab-id="${gameState.bottomMenuTabId}"]`).classList.add("active");
         }
     }
 }
@@ -442,6 +481,96 @@ function buildPartyGrid() {
                 </div>
             `;
         }
+    }
+}
+
+function renderMenuTabs() {
+    menuTabPartyMemberTabArea.innerHTML = "";
+    for (const index in player.party) {
+        const unit = player.party[index];
+        const hp = Math.round(unit.hp/unit.maxHp*100);
+        const iconMap = ["Ⅰ", "Ⅱ", "Ⅲ", "Ⅳ"];
+        menuTabPartyMemberTabArea.innerHTML += `<div class="menu-tab-party-member-tab${gameState.bottomMenuPartyTabIndex === parseInt(index) ? " active" : ""}" data-party-index="${index}">
+            <span class="menu-tab-party-member-tab-icon">${iconMap[index]}</span>
+            <span class="menu-tab-party-member-tab-name">${unit.name}</span>
+            <span class="menu-tab-party-member-tab-hp">${hp >= 50 ? "🟢" : hp >= 20 ? "🟡" : "🔴"} ${unit.hp + "/" + unit.maxHp}<span>
+        </div>`
+    };
+}
+
+/**
+ * メニュータブ内の描画
+ * 現在のタブの情報のみ更新する
+ */
+function renderMenu() {
+    if (gameState.bottomMenuTabId === BOTTOM_MENU_TABS.menuTabHome) {
+    } else if (gameState.bottomMenuTabId === BOTTOM_MENU_TABS.menuTabParty) {
+        const unit = player.party[gameState.bottomMenuPartyTabIndex];
+        const area = document.getElementById('bm-sub-content');
+        const hpP = Math.round(unit.hp/unit.maxHp*100);
+        const mpP = Math.round(unit.mp/unit.maxMp*100);
+        if (gameState.bottomMenuPartyTabSubType === 'status') {
+            const job = JOBS[unit.currentJob];
+            const jobHistory = unit.jobs[unit.currentJob];
+            const rankExp = job.maxRank === jobHistory.rank
+                            ? "★"
+                            : "ランク経験値: " + jobHistory.exp + " / " + getRequiredRankExp(job.id, jobHistory.rank);
+            const exp = "経験値: " + unit.exp + " / " + getRequiredExp(unit.level);
+            area.innerHTML = `<div class="status-panel">
+            <div class="status-header">
+                <!-- <div class="status-avatar">${unit.icon}</div> -->
+                <div>
+                <div class="status-name">${unit.name}</div>
+                <div class="status-class">${job.name} - ランク${jobHistory.rank} - [${rankExp}]</div>
+                <div class="status-lv">Lv ${unit.level} - [${exp}]</div>
+                <!-- <div class="status-cond">${unit.cond}</div> -->
+                </div>
+            </div>
+            <div class="status-bars-box">
+                <div class="status-bar-row"><span class="status-bar-label">HP</span><div class="status-bar-track"><div class="status-bar-fill fill-hp" style="width:${hpP}%"></div></div><span class="status-bar-val">${unit.hp} / ${unit.maxHp}</span></div>
+                <div class="status-bar-row"><span class="status-bar-label">MP</span><div class="status-bar-track"><div class="status-bar-fill fill-mp" style="width:${mpP}%"></div></div><span class="status-bar-val">${unit.mp} / ${unit.maxMp}</span></div>
+            </div>`;
+            const statuses = {
+                attack: unit.attack,
+                armor: unit.armor,
+                speed: unit.speed,
+                intel: unit.intel,
+                dex: unit.dex,
+                size: unit.size,
+                multi_action: unit.multi_action,
+            };
+            area.innerHTML += `<div class="status-params">
+                ${Object.entries(statuses).map(([k,v])=>`<div class="status-param"><span class="status-param-label">${LABEL[k]}</span><span class="status-param-val">${v}</span></div>`).join('')}</div>
+            </div>`;
+            area.innerHTML += `<div class="status-params">
+                ${Object.entries(unit.jobs).map(([k,v])=>`<div class="status-param"><span class="status-param-label">${JOBS[k].name}</span><span class="status-param-val">ランク${v.rank}</span></div>`).join('')}</div>
+            </div>`;
+        } else if (gameState.bottomMenuPartyTabSubType === 'equip') {
+            area.innerHTML = `<div class="equip-panel">${unit.equip.map(e=>`
+            <div class="equip-slot">
+                <span class="equip-slot-label">${e.slot}</span>
+                <div class="equip-slot-icon">${e.icon||'─'}</div>
+                <div class="equip-slot-info">${e.name
+                ? `<div class="equip-slot-name rarity-${e.rarity}">${e.name}</div><div class="equip-slot-stats">${e.stats}</div>`
+                : `<div class="equip-slot-empty">未装備</div>`}</div>
+                <span class="equip-slot-arrow">▶</span>
+            </div>`).join('')}
+            </div>`;
+        } else if (gameState.bottomMenuPartyTabSubType === "skill") {
+            area.innerHTML = `<div class="skill-panel">${unit.skills.map(s=>`
+            <div class="skill-card">
+                <div class="skill-icon">${s.icon}</div>
+                <div class="skill-info">
+                <div class="skill-name">${s.name}</div>
+                <div class="skill-tags">${s.tags.map(t=>`<span class="skill-tag tag-${t}">${{atk:'物理',mag:'魔法',heal:'回復',buff:'補助',passive:'パッシブ'}[t]}</span>`).join('')}</div>
+                <div class="skill-desc">${s.desc}</div>
+                <div class="skill-cost">${s.cost}</div>
+                </div>
+            </div>`).join('')}
+            </div>`;
+        }
+    } else if (gameState.bottomMenuTabId === BOTTOM_MENU_TABS.menuTabItems) {
+    } else if (gameState.bottomMenuTabId === BOTTOM_MENU_TABS.menuTabSetting) {
     }
 }
 

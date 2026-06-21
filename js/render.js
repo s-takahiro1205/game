@@ -506,7 +506,7 @@ function renderMenu() {
     if (gameState.bottomMenuTabId === BOTTOM_MENU_TABS.menuTabHome) {
     } else if (gameState.bottomMenuTabId === BOTTOM_MENU_TABS.menuTabParty) {
         const unit = player.party[gameState.bottomMenuPartyTabIndex];
-        const area = document.getElementById('bm-sub-content');
+        const area = document.getElementById('menu-tab-party-member-content');
         const hpP = Math.round(unit.hp/unit.maxHp*100);
         const mpP = Math.round(unit.mp/unit.maxMp*100);
         if (gameState.bottomMenuPartyTabSubType === 'status') {
@@ -556,15 +556,52 @@ function renderMenu() {
                 <span class="equip-slot-arrow">▶</span>
             </div>`).join('')}
             </div>`;
+            /*
+            [
+    {
+        "id": "slash",
+        "name": "スラッシュ",
+        "cost": {
+            "hp": 2
+        },
+        "target_type": "alive_enemy_one",
+        "usableIn": {
+            "home": false,
+            "explore": false,
+            "battle": true
+        },
+        "category": "combat",
+        "type": "attack",
+        "effects": [
+            {
+                "type": "damage",
+                "element": "physical",
+                "dice": 0,
+                "sides": 3,
+                "flat": 7,
+                "fix": 0,
+                "armor_pierce": 0
+            }
+        ]
+    }
+]
+            */
         } else if (gameState.bottomMenuPartyTabSubType === "skill") {
-            area.innerHTML = `<div class="skill-panel">${unit.skills.map(s=>`
+            const tagList = {
+                attack:'攻撃', heal:'回復', support:'補助',
+                combat:'物理', magic:'魔法', special:'特殊',
+            };
+            area.innerHTML = `<div class="skill-panel">${unit.skill_list.map(s=>`
             <div class="skill-card">
-                <div class="skill-icon">${s.icon}</div>
+                <div class="skill-icon">${s.icon ?? ""}</div>
                 <div class="skill-info">
-                <div class="skill-name">${s.name}</div>
-                <div class="skill-tags">${s.tags.map(t=>`<span class="skill-tag tag-${t}">${{atk:'物理',mag:'魔法',heal:'回復',buff:'補助',passive:'パッシブ'}[t]}</span>`).join('')}</div>
-                <div class="skill-desc">${s.desc}</div>
-                <div class="skill-cost">${s.cost}</div>
+                    <div class="skill-name">${s.name}</div>
+                    <div class="skill-tags">
+                        ${`<span class="skill-tag tag-${s.type}">${tagList[s.type]}</span>`}
+                        ${`<span class="skill-tag tag-${s.category}">${tagList[s.category]}</span>`}
+                </div>
+                <div class="skill-desc">${s.desc ?? ""}</div>
+                <div class="skill-cost">${Object.keys(s.cost).map(key => key + "" + (-1 * s.cost[key])).join(' ')}</div>
                 </div>
             </div>`).join('')}
             </div>`;

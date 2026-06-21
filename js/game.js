@@ -253,6 +253,15 @@ menuTabPartyMemberTabArea.addEventListener("click", async (e) => {
     }
     gameState.bottomMenuPartyTabIndex = parseInt(choice.dataset.partyIndex);
 });
+// メニュー：パーティーメンバータブ切り替え
+const menuTabPartyMemberSubTabArea = document.getElementById("menu-tab-party-member-sub-tab-area");
+menuTabPartyMemberSubTabArea.addEventListener("click", async (e) => {
+    const choice = e.target.closest('.menu-tab-party-member-sub-tab');
+    if (!choice || !choice.dataset.subType) {
+        return;
+    }
+    gameState.bottomMenuPartyTabSubType = choice.dataset.subType;
+});
 
 // base
 const baseBtnChangeJob = document.getElementById("base-btn-change-job");

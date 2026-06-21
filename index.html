@@ -753,20 +753,20 @@ html, body {
 .menu-tab-party-member-tab-name { font-size: 8px; color: var(--text); white-space: nowrap; }
 .menu-tab-party-member-tab-hp   { font-size: 7px; color: var(--text-sub); }
 
-.bm-sub-tabs {
+#menu-tab-party-member-sub-tab-area {
     flex: 0 0 auto; display: flex;
     border-bottom: 1px solid var(--border); padding: 0 8px;
 }
-.bm-sub-tab {
+.menu-tab-party-member-sub-tab {
     flex: 1; padding: 7px 0 5px; font-size: 10px; color: var(--text-sub);
     text-align: center; cursor: pointer; letter-spacing: 1px;
     border-bottom: 2px solid transparent; transition: color .15s, border-color .15s;
 }
-.bm-sub-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+.menu-tab-party-member-sub-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
 
-.bm-sub-content { flex: 1; overflow-y: auto; }
-.bm-sub-content::-webkit-scrollbar { width: 3px; }
-.bm-sub-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+#menu-tab-party-member-content { flex: 1; overflow-y: auto; }
+#menu-tab-party-member-content::-webkit-scrollbar { width: 3px; }
+#menu-tab-party-member-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
 /* ステータス */
 .status-panel  { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
@@ -809,11 +809,12 @@ html, body {
 .skill-name  { font-size: 12px; font-weight: bold; color: var(--text); margin-bottom: 3px; }
 .skill-tags  { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 4px; }
 .skill-tag   { font-size: 8px; padding: 1px 6px; border-radius: 10px; font-weight: bold; }
-.tag-atk     { background: #3a1010; color: #f07070; border: 1px solid #7a3030; }
-.tag-mag     { background: #1a1040; color: #8080f0; border: 1px solid #4040a0; }
+.tag-attack  { background: #3a1010; color: #f07070; border: 1px solid #7a3030; }
 .tag-heal    { background: #103a10; color: #50d870; border: 1px solid #308030; }
-.tag-buff    { background: #3a3010; color: #d8d050; border: 1px solid #807030; }
-.tag-passive { background: #2a2a2a; color: #a0a0a0; border: 1px solid #606060; }
+.tag-support { background: #3a3010; color: #d8d050; border: 1px solid #807030; }
+.tag-combat  { background: #2a2a2a; color: #a0a0a0; border: 1px solid #606060; }
+.tag-magic   { background: #1a1040; color: #8080f0; border: 1px solid #4040a0; }
+.tag-special { background: #3a3010; color: #d8d050; border: 1px solid #807030; }
 .skill-desc  { font-size: 10px; color: var(--text-sub); line-height: 1.5; }
 .skill-cost  { font-size: 9px; color: #5080c0; margin-top: 4px; font-weight: bold; }
 </style>
@@ -1281,12 +1282,12 @@ html, body {
             <!-- パーティ -->
             <div id="menu-tab-party" class="menu-tab-content">
                 <div id="menu-tab-party-member-tab-area"></div>
-                <div class="bm-sub-tabs" id="bm-sub-tabs">
-                    <div class="bm-sub-tab active" data-sub="status" onclick="switchBmSub(this)">ステータス</div>
-                    <div class="bm-sub-tab" data-sub="equip"  onclick="switchBmSub(this)">装備</div>
-                    <div class="bm-sub-tab" data-sub="skill"  onclick="switchBmSub(this)">スキル</div>
+                <div id="menu-tab-party-member-sub-tab-area">
+                    <div class="menu-tab-party-member-sub-tab" data-sub-type="status">ステータス</div>
+                    <div class="menu-tab-party-member-sub-tab" data-sub-type="equip">装備</div>
+                    <div class="menu-tab-party-member-sub-tab" data-sub-type="skill">スキル</div>
                 </div>
-                <div class="bm-sub-content" id="bm-sub-content"></div>
+                <div id="menu-tab-party-member-content"></div>
             </div>
 
             <!-- アイテム（簡易） -->

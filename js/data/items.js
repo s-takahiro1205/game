@@ -32,7 +32,7 @@
 export const ITEMS = [
     // 消費アイテム
     {
-        id: "noraml_herb",
+        id: "noramlHerb",
         name: "薬草",
         description: "いたって普通の薬草。すりつぶして傷口に塗るとわずかに傷が治る。",
         category: "consumable",
@@ -60,7 +60,7 @@ export const ITEMS = [
         uuid: "",
     },
     {
-        id: "potion_of_decay",
+        id: "potionOfDecay",
         name: "朽ちた回復薬",
         description: "古びた瓶に入った、不気味な色合いの薬。飲むとわずかに活力が戻る。",
         category: "consumable",
@@ -88,7 +88,7 @@ export const ITEMS = [
         uuid: "",
     },
     {
-        id: "elixir_of_shadow",
+        id: "elixirOfShadow",
         name: "影の秘薬",
         description: "闇の奥底から抽出された、禍々しい輝きを放つ秘薬。体に力が漲り存在感が増す。",
         category: "consumable",
@@ -142,7 +142,7 @@ export const ITEMS = [
         uuid: "",
     },
     {
-        id: "scroll_of_oblivion",
+        id: "scrollOfOblivion",
         name: "忘却の巻物",
         description: "古の呪文が記された巻物。使用すると、過去の記憶が薄れる代わりに精神が研ぎ澄まされる。",
         category: "consumable",
@@ -171,7 +171,7 @@ export const ITEMS = [
         uuid: "",
     },
     {
-        id: "scroll_of_sand_storm",
+        id: "scrollOfSandStorm",
         name: "砂嵐の巻物",
         description: "古の呪文が記された巻物。使用すると、激しい砂嵐が身を切り裂く。",
         category: "consumable",
@@ -199,7 +199,7 @@ export const ITEMS = [
         uuid: "",
     },
     {
-        id: "scroll_of_fire_bullet",
+        id: "scrollOfFireBullet",
         name: "火弾の巻物",
         description: "古の呪文が記された巻物。使用すると、激しい砂嵐が身を切り裂く。",
         category: "consumable",
@@ -227,7 +227,7 @@ export const ITEMS = [
         uuid: "",
     },
     {
-        id: "potion_of_poison",
+        id: "potionOfPoison",
         name: "バルサグの毒粉",
         description: "南部地方に生える植物の花粉。多量に吸うと全身に激しい痛みが走る。",
         category: "consumable",
@@ -256,7 +256,7 @@ export const ITEMS = [
         uuid: "",
     },
     {
-        id: "powder_of_sleep",
+        id: "powderOfSleep",
         name: "アンミネルケの粉",
         description: "アンミネルケの花粉を集めたもの。多量に摂取すると意識障害が起きる。",
         category: "consumable",
@@ -285,7 +285,7 @@ export const ITEMS = [
         uuid: "",
     },
     {
-        id: "congas_stomach",
+        id: "congasStomach",
         name: "コンガの胃袋",
         description: "コンガの胃袋。大きく膨らませて破裂させることで、とてつもない爆音が鳴り響く。",
         category: "consumable",
@@ -314,7 +314,7 @@ export const ITEMS = [
         uuid: "",
     },
     {
-        id: "ketsukuru_fruit",
+        id: "ketsukuruFruit",
         name: "ケツクルルの実",
         description: "隣の地区まで流れるほどの悪臭を放つ木の実。栄養満点のうえ、その臭気から気付けにも適している。",
         category: "consumable",
@@ -366,7 +366,7 @@ export const ITEMS = [
         uuid: "",
     },
     {
-        id: "root_of_ambrosius",
+        id: "rootOfAmbrosius",
         name: "アンブロシウスの根",
         description: "肥沃で魔力に富む地域に稀に生える植物の根。その強すぎる強心作用は、毒として利用されることもあるほど。",
         category: "consumable",
@@ -395,11 +395,11 @@ export const ITEMS = [
     },
     // 装備アイテム
     {
-        id: "cursed_dagger",
+        id: "cursedDagger",
         name: "呪われた短剣",
         description: "血に塗れた刃を持つ短剣。装備すると攻撃力が増すが、常に微かな悪寒がつきまとう。",
         category: "equipment",
-        price: 150,
+        price: 800,
         effects: null,
         usableIn: {
             home: false,
@@ -422,11 +422,11 @@ export const ITEMS = [
         uuid: "",
     },
     {
-        id: "chainmail_of_the_undead",
+        id: "chainmailOfTheUndead",
         name: "亡者の鎖帷子",
         description: "死者の骨と錆びた鎖で編まれた鎖帷子。身につけると防御力が増すが、重く動きを鈍らせる。",
         category: "equipment",
-        price: 200,
+        price: 2000,
         effects: null,
         usableIn: {
             home: false,
@@ -441,11 +441,11 @@ export const ITEMS = [
         uuid: "",
     },
     {
-        id: "ring_of_the_ancients",
+        id: "ringOfTheAncients",
         name: "古き者の指輪",
         description: "古代の魔術師が身につけていたとされる指輪。知性を高める力がある。",
         category: "equipment",
-        price: 120,
+        price: 2500,
         effects: null,
         usableIn: {
             home: false,
@@ -465,7 +465,7 @@ export const ITEMS = [
         uuid: "",
     },
     {
-        id: "weary_brand_of_Shadow",
+        id: "wearyBrandOfShadow",
         name: "擦り切れた影の烙印",
         description: "影の大精霊によって紋章を授けられている指輪。長い時間が経ち紋章が風化している。",
         category: "equipment",
@@ -489,7 +489,7 @@ export const ITEMS = [
         uuid: "",
     },
     {
-        id: "emblem_of_windia",
+        id: "emblemOfWindia",
         name: "ウィンディアの紋章",
         description: "風の大精霊によって紋章を授けられているネックレス。身に着けるだけで普段の倍の速さで動けるという。",
         category: "equipment",

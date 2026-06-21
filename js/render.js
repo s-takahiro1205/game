@@ -3,7 +3,8 @@
 import { player, gameState, getUsableList, getRequiredExp, getRequiredRankExp } from './game.js';
 import { loadGame } from './save.js';
 import { JOBS } from './data/jobs.js';
-import { MAPS, EVENTS } from './data/maps.js';
+import { MAPS } from './data/maps.js';
+import { EVENTS } from './data/events.js';
 import { SCREENS, SUB_SCREENS, LABEL, BATTLE_STATUSES, TARGET_TYPE_EXTRACTOR } from './const.js';
 
 // DOM Elements

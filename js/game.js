@@ -1,7 +1,8 @@
 // ゲームロジック・状態管理・メインループ
 
 import { saveGame, loadGame, deleteSaveData } from './save.js';
-import { MAPS, EVENTS, EVENT_TABLES, ITEM_TABLES, MONSTER_GROUPS, ENCOUNTER_TABLES } from './data/maps.js';
+import { MAPS, EVENT_TABLES, ITEM_TABLES, MONSTER_GROUPS, ENCOUNTER_TABLES } from './data/maps.js';
+import { EVENTS } from './data/events.js';
 import { ITEMS } from './data/items.js';
 import { ENEMIES } from './data/enemies.js';
 import { SKILLS } from './data/skills.js';
@@ -327,7 +328,6 @@ const exploreGameOverBack = document.getElementById("explore-game-over-back");
 exploreClearBack.addEventListener("click", async (e) => {
     await sleep(100);
     const mapName = MAPS[player.explore.mapId].name;
-    player.explore = null;
     // 初クリアなら実績を追加
     if (!player.achievement.mapClear[player.explore.mapId]) {
         player.achievement.mapClear[player.explore.mapId] = {
@@ -337,6 +337,7 @@ exploreClearBack.addEventListener("click", async (e) => {
     } else {
         player.achievement.mapClear[player.explore.mapId].count += 1;
     }
+    player.explore = null;
     moveScreen(SCREENS.baseScreen);
     showToast(`${mapName}を制覇した！`);
 });
@@ -594,7 +595,7 @@ function showCharacterCreationScreen() {
     moveScreen(SCREENS.characterCreationScreen);
 
     // 初期値を設定
-    playerNameInput.value = "名もなき探訪者";
+    playerNameInput.value = "";
     hpAllocationInput.value = 10;
     mpAllocationInput.value = 5;
     attackAllocationInput.value = 10;
@@ -606,14 +607,21 @@ function showCharacterCreationScreen() {
 }
 
 /**
- * 探索画面を表示する
+ * 探索マップ選択画面を表示する
  */
 function showSelectExploreMap() {
     gameState.selectExploreMap = new Proxy({}, {set: setAndRender});
     const unlockMaps = [];
-    for (const map in MAPS) {
-        // TODO: 解放条件のチェック
-        unlockMaps.push(MAPS[map]);
+    for (const mapId in MAPS) {
+        const map = MAPS[mapId];
+        if (map.condition) {
+            const isDisabled = checkMapCondition(map.condition);
+            console.log(mapId, isDisabled, map.condition)
+            if (isDisabled) {
+                continue;
+            }
+        }
+        unlockMaps.push(map);
     }
     gameState.selectExploreMap.mapList = unlockMaps;
     moveScreen(SCREENS.baseScreen, SUB_SCREENS.baseSelectExploreMapScreen);
@@ -974,11 +982,37 @@ function checkChoiceCondition(condition) {
         switch (key) {
             case "partyCount": {
                 isDisabled = !ops[op](player.party.length, value);
-                console.log(1, isDisabled, player.party.length, value)
                 break;
             } case "level": {
                 isDisabled = !player.party.some(unit => ops[op](unit.level, value));
-                console.log(isDisabled)
+                break;
+            } default: {
+                throw new Error(`Unknown condition key: ${key}`);
+            }
+        }
+        if (isDisabled) {
+            return true;
+        }
+    }
+    return false
+}
+
+/**
+ * mapのconditionsをチェックしdisabledかを返す
+ * @param {*} condition
+ * @return {boolean}
+ */
+function checkMapCondition(condition) {
+    let isDisabled = false;
+    for (const key in condition) {
+        const obj = condition[key];
+        const op = Object.keys(obj)[0];
+        const value = obj[op];
+        switch (key) {
+            case "mapClear": {
+                for (const mapId in value) {
+                    isDisabled = !ops[op](player.achievement.mapClear[mapId]?.count ?? 0, value[mapId])
+                }
                 break;
             } default: {
                 throw new Error(`Unknown condition key: ${key}`);
@@ -1303,10 +1337,12 @@ function checkJobCondition(unit, condition) {
 }
 
 // パーティーメンバーの全回復処理
-function systemHealAll() {
+function systemHealAll(isHpMpHeal = true) {
     for (const unit of player.party) {
-        unit.hp = unit.maxHp;
-        unit.mp = unit.maxMp;
+        if (isHpMpHeal) {
+            unit.hp = unit.maxHp;
+            unit.mp = unit.maxMp;
+        }
         unit.battle_status = unit.battle_status.filter(status => false);
     }
 }
@@ -2526,6 +2562,7 @@ async function onTargetSelect(e) {
  */
 async function battleEnd() {
     const result = gameState.battle.result;
+    systemHealAll(false);// 状態異常だけ初期化
     if (result.isVictory) {
         player.money += result.gold;
         player.currentEventCompleted = true; // 戦闘イベント完了
@@ -2977,15 +3014,18 @@ loadGameButton.addEventListener("click", async () => {
         if (player.explore.phase === "waitingTileSelect") {
             moveScreen(SCREENS.exploreScreen);
             showToast("探索を再開します。");
+            return;
         } else if (player.explore.phase === "waitingChoiceSelect") {
             moveScreen(SCREENS.exploreScreen, SUB_SCREENS.exploreEventScreen);
+            return;
         } else if (player.explore.phase === "battle") {
             await battleInit(player.explore.event.data.enemyIds.map(id => getEnemyById(id)));
+            return;
         } else if (player.explore.phase === "gameOver" || player.explore.phase === "clear") {
             player.explore = null;
-            moveScreen(SCREENS.baseScreen);
-            showToast("おかえりなさい！");
         }
+        moveScreen(SCREENS.baseScreen);
+        showToast("おかえりなさい！");
     } else {
         addMessage("セーブデータが見つかりませんでした。", false);
         loadGameButton.classList.add("hidden"); // ボタンを非表示にする

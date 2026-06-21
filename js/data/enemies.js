@@ -30,6 +30,37 @@
 export const ENEMIES = [
     // 一般エネミー
     {
+        id: "mana-rabbit",
+        name: "マナラビット",
+        level: 1,
+        exp: 10,
+        hp: 10,
+        maxHp: 10,
+        mp: 15,
+        maxMp: 15,
+        attack: 6,
+        description: "魔力によって大きく成長したウサギ。習性や食性には変化がないため、住処を荒らさない限り脅威にはならない。",
+        isBoss: false,
+        armor: 0,
+        speed: 4,
+        intel: 8,
+        dex: 3,
+        size: 3,
+        multi_action: 1,
+        currentJob: null,
+        jobs: {},
+        equipment_slot: [],
+        skill_list: ["bite"],
+        battle_status: [],
+        drop_items: [
+            {
+                id: "potionOfDecay",
+                chance: 33
+            }
+        ],
+        money: 10,
+    },
+    {
         id: "starving-dog",
         name: "飢えた野犬",
         level: 2,
@@ -54,7 +85,7 @@ export const ENEMIES = [
         battle_status: [],
         drop_items: [
             {
-                id: "potion_of_decay",
+                id: "potionOfDecay",
                 chance: 1
             }
         ],
@@ -85,7 +116,7 @@ export const ENEMIES = [
         battle_status: [],
         drop_items: [
             {
-                id: "potion_of_decay",
+                id: "potionOfDecay",
                 chance: 1
             }
         ],
@@ -116,7 +147,7 @@ export const ENEMIES = [
         battle_status: [],
         drop_items: [
             {
-                id: "potion_of_decay",
+                id: "potionOfDecay",
                 chance: 1
             }
         ],
@@ -147,7 +178,7 @@ export const ENEMIES = [
         battle_status: [],
         drop_items: [
             {
-                id: "potion_of_decay",
+                id: "potionOfDecay",
                 chance: 1
             }
         ],
@@ -178,7 +209,7 @@ export const ENEMIES = [
         battle_status: [],
         drop_items: [
             {
-                id: "potion_of_decay",
+                id: "potionOfDecay",
                 chance: 1
             }
         ],
@@ -209,7 +240,7 @@ export const ENEMIES = [
         battle_status: [],
         drop_items: [
             {
-                id: "potion_of_decay",
+                id: "potionOfDecay",
                 chance: 1
             }
         ],
@@ -240,7 +271,7 @@ export const ENEMIES = [
         battle_status: [],
         drop_items: [
             {
-                id: "potion_of_decay",
+                id: "potionOfDecay",
                 chance: 1
             }
         ],
@@ -271,7 +302,7 @@ export const ENEMIES = [
         battle_status: [],
         drop_items: [
             {
-                id: "potion_of_decay",
+                id: "potionOfDecay",
                 chance: 1
             }
         ],
@@ -302,11 +333,11 @@ export const ENEMIES = [
         battle_status: [],
         drop_items: [
             {
-                id: "potion_of_decay",
+                id: "potionOfDecay",
                 chance: 10
             },
             {
-                id: "cursed_dagger",
+                id: "cursedDagger",
                 chance: 5
             }
         ],
@@ -337,7 +368,7 @@ export const ENEMIES = [
         battle_status: [],
         drop_items: [
             {
-                id: "elixir_of_shadow",
+                id: "elixirOfShadow",
                 chance: 5
             }
         ],
@@ -370,8 +401,8 @@ export const ENEMIES = [
         battle_status: [],
         drop_items: [
             {
-                id: "chainmail_of_the_undead",
-                chance: 10
+                id: "chainmailOfTheUndead",
+                chance: 1
             }
         ],
         money: 50,
@@ -401,8 +432,8 @@ export const ENEMIES = [
         battle_status: [],
         drop_items: [
             {
-                id: "ring_of_the_ancients",
-                chance: 10
+                id: "ringOfTheAncients",
+                chance: 1
             }
         ],
         money: 70,
@@ -432,11 +463,37 @@ export const ENEMIES = [
         battle_status: [],
         drop_items: [
             {
-                id: "weary_brand_of_Shadow",
-                chance: 10
+                id: "wearyBrandOfShadow",
+                chance: 1
             }
         ],
         money: 120,
+    },
+    {
+        id: "guardian-of-the-ruin",
+        name: "祠の番人",
+        level: 5,
+        exp: 40,
+        hp: 100,
+        maxHp: 100,
+        mp: 20,
+        maxMp: 20,
+        attack: 10,
+        description: "森の祠を守っていた静かなる武人。加護は切れてもその繋がりは消えず。",
+        isBoss: true,
+        armor: 1,
+        speed: 3,
+        intel: 3,
+        dex: 3,
+        size: 10,
+        multi_action: 2,
+        currentJob: null,
+        jobs: {},
+        equipment_slot: [],
+        skill_list: ["slash", "wait-and-see"],
+        battle_status: [],
+        drop_items: [],
+        money: 100,
     },
     {
         id: "guardian-of-the-dawn",
@@ -464,7 +521,7 @@ export const ENEMIES = [
         battle_status: [],
         drop_items: [
             {
-                id: "emblem_of_windia",
+                id: "emblemOfWindia",
                 chance: 10
             }
         ],

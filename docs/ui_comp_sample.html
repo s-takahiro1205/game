@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Game UI Sample</title>
+<style>
+  /* ── Reset & Base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0D0F14;
+    --panel:     #1A1D26;
+    --panel2:    #222638;
+    --border:    #2E3347;
+    --gold:      #C8A96E;
+    --gold-dim:  #8A6E3E;
+    --teal:      #4ECDC4;
+    --teal-dim:  #2A7A75;
+    --text:      #E8EAF0;
+    --sub:       #8B9BB4;
+    --danger:    #E05C5C;
+    --success:   #5CE07A;
+    --radius:    8px;
+    --font-mono: 'Courier New', Courier, monospace;
+    --font-ui:   system-ui, -apple-system, sans-serif;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: 14px;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  /* ── Layout ── */
+  #app {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    max-width: 480px;
+    margin: 0 auto;
+    position: relative;
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+  }
+
+  /* ── Header ── */
+  #header {
+    flex: 0 0 auto;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    padding: 0 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 10px;
+    padding-bottom: 8px;
+    position: relative;
+  }
+
+  #game-title {
+    font-family: var(--font-mono);
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--gold);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    text-shadow: 0 0 12px rgba(200,169,110,0.5);
+  }
+
+  #map-name {
+    font-size: 11px;
+    color: var(--sub);
+    letter-spacing: 2px;
+    margin-top: 2px;
+  }
+
+  /* ステータスバー（右上） */
+  #status-row {
+    position: absolute;
+    right: 12px;
+    top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    align-items: flex-end;
+  }
+
+  .stat-bar {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10px;
+  }
+  .stat-label { color: var(--sub); width: 16px; text-align: right; }
+  .bar-track {
+    width: 60px;
+    height: 5px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.4s ease;
+  }
+  .bar-hp  { background: var(--danger); }
+  .bar-mp  { background: var(--teal); }
+  .bar-exp { background: var(--gold); }
+
+  /* ── Map / Scene Area ── */
+  #scene {
+    flex: 1 1 auto;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #map-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+  }
+
+  /* フローティングボタン群 */
+  #float-btns {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .float-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: rgba(26,29,38,0.85);
+    color: var(--gold);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, transform 0.1s;
+    backdrop-filter: blur(4px);
+  }
+  .float-btn:active { transform: scale(0.9); background: var(--panel2); }
+
+  /* ── Bottom Panel ── */
+  #bottom-panel {
+    flex: 0 0 auto;
+    height: 42vh;
+    min-height: 200px;
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* タブ切り替え */
+  #tab-bar {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    flex: 0 0 auto;
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 8px 0;
+    background: none;
+    border: none;
+    color: var(--sub);
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: color 0.15s, border-bottom 0.15s;
+    border-bottom: 2px solid transparent;
+    position: relative;
+    top: 1px;
+  }
+  .tab-btn.active {
+    color: var(--gold);
+    border-bottom-color: var(--gold);
+  }
+
+  /* コンテンツ領域 */
+  .tab-content {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    display: none;
+    padding: 10px 14px;
+    scroll-behavior: smooth;
+  }
+  .tab-content.active { display: block; }
+  .tab-content::-webkit-scrollbar { width: 3px; }
+  .tab-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ログ */
+  .log-line {
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(46,51,71,0.4);
+    line-height: 1.5;
+    font-size: 13px;
+  }
+  .log-line:last-child { border-bottom: none; }
+  .log-sys   { color: var(--gold); }
+  .log-dmg   { color: var(--danger); }
+  .log-heal  { color: var(--success); }
+  .log-info  { color: var(--sub); font-size: 11px; }
+
+  /* 選択肢 */
+  .choice-btn {
+    display: block;
+    width: 100%;
+    margin-bottom: 8px;
+    padding: 10px 14px;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 13px;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.15s, background 0.15s, transform 0.1s;
+    position: relative;
+    overflow: hidden;
+  }
+  .choice-btn::before {
+    content: '▶';
+    color: var(--teal);
+    margin-right: 8px;
+    font-size: 10px;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .choice-btn:hover { border-color: var(--teal-dim); background: #252A3A; }
+  .choice-btn:hover::before { opacity: 1; }
+  .choice-btn:active { transform: scale(0.98); }
+  .choice-btn.disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+
+  /* ── ボトムシート ── */
+  #sheet-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0);
+    pointer-events: none;
+    transition: background 0.3s;
+    z-index: 10;
+  }
+  #sheet-overlay.open {
+    background: rgba(0,0,0,0.6);
+    pointer-events: all;
+  }
+
+  #bottom-sheet {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    border-radius: 16px 16px 0 0;
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+    z-index: 11;
+    padding: 0 16px 24px;
+    max-height: 75%;
+    overflow-y: auto;
+  }
+  #bottom-sheet.open { transform: translateY(0); }
+
+  .sheet-handle {
+    width: 36px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 10px auto 16px;
+  }
+  .sheet-title {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--gold);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .sheet-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .item-cell {
+    aspect-ratio: 1;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.1s;
+    position: relative;
+  }
+  .item-cell:active { transform: scale(0.92); }
+  .item-cell:hover { border-color: var(--gold-dim); }
+  .item-cell .qty {
+    position: absolute;
+    bottom: 4px;
+    right: 6px;
+    font-size: 9px;
+    color: var(--sub);
+  }
+  .item-cell .item-name {
+    font-size: 9px;
+    color: var(--sub);
+    margin-top: 2px;
+  }
+  .sheet-close-btn {
+    width: 100%;
+    padding: 10px;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--sub);
+    font-size: 12px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: color 0.15s;
+  }
+  .sheet-close-btn:hover { color: var(--text); }
+
+  /* ── 確認モーダル ── */
+  #modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 20;
+    transition: background 0.2s;
+  }
+  #modal-overlay.open {
+    background: rgba(0,0,0,0.7);
+    pointer-events: all;
+  }
+
+  #modal-box {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px 20px 18px;
+    width: 280px;
+    transform: scale(0.85) translateY(10px);
+    opacity: 0;
+    transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), opacity 0.2s;
+  }
+  #modal-overlay.open #modal-box {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+
+  .modal-icon { font-size: 28px; text-align: center; margin-bottom: 10px; }
+  .modal-title {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--gold);
+    letter-spacing: 1.5px;
+    text-align: center;
+    margin-bottom: 8px;
+  }
+  .modal-body {
+    font-size: 13px;
+    color: var(--sub);
+    text-align: center;
+    line-height: 1.6;
+    margin-bottom: 18px;
+  }
+  .modal-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .modal-btn {
+    padding: 9px 0;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    font-size: 12px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  .modal-btn:active { transform: scale(0.96); }
+  .modal-btn.cancel { background: var(--panel2); color: var(--sub); }
+  .modal-btn.confirm { background: var(--danger); border-color: var(--danger); color: #fff; }
+  .modal-btn.confirm-ok { background: var(--teal-dim); border-color: var(--teal); color: #fff; }
+
+  /* ── 通知トースト ── */
+  #toast-area {
+    position: absolute;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    pointer-events: none;
+    width: 90%;
+  }
+  .toast {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px 14px;
+    font-size: 12px;
+    color: var(--text);
+    animation: toastIn 0.25s ease forwards;
+    backdrop-filter: blur(6px);
+    text-align: center;
+  }
+  .toast.gold  { border-color: var(--gold-dim); color: var(--gold); }
+  .toast.teal  { border-color: var(--teal-dim); color: var(--teal); }
+  .toast.red   { border-color: var(--danger); color: var(--danger); }
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── デモコントロール（画面外） ── */
+  #demo-controls {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 42vh;
+    padding: 6px 10px;
+    background: rgba(13,15,20,0.9);
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    z-index: 5;
+    backdrop-filter: blur(4px);
+  }
+  .demo-btn {
+    padding: 5px 10px;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--sub);
+    font-size: 10px;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .demo-btn:hover { color: var(--text); border-color: var(--gold-dim); }
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ヘッダー -->
+  <header id="header">
+    <div id="game-title">LOST CODEX</div>
+    <div id="map-name">◆ 廃墟の回廊 B2F ◆</div>
+    <div id="status-row">
+      <div class="stat-bar">
+        <span class="stat-label">HP</span>
+        <div class="bar-track"><div class="bar-fill bar-hp" id="bar-hp" style="width:72%"></div></div>
+      </div>
+      <div class="stat-bar">
+        <span class="stat-label">MP</span>
+        <div class="bar-track"><div class="bar-fill bar-mp" id="bar-mp" style="width:55%"></div></div>
+      </div>
+      <div class="stat-bar">
+        <span class="stat-label">XP</span>
+        <div class="bar-track"><div class="bar-fill bar-exp" id="bar-exp" style="width:40%"></div></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- マップ描画 -->
+  <section id="scene">
+    <canvas id="map-canvas"></canvas>
+    <!-- フローティングアクション -->
+    <div id="float-btns">
+      <button class="float-btn" title="アイテム" onclick="openSheet()">🎒</button>
+      <button class="float-btn" title="メニュー" onclick="showModal('menu')">⚙️</button>
+    </div>
+  </section>
+
+  <!-- デモ用ボタン行（シーンと下パネルの間） -->
+  <div id="demo-controls">
+    <button class="demo-btn" onclick="addLog('sys','エネミーが現れた！【スライム × 3】')">⚔ 戦闘ログ</button>
+    <button class="demo-btn" onclick="addLog('dmg','スライムの攻撃！ 12ダメージ！')">💥 ダメージ</button>
+    <button class="demo-btn" onclick="addLog('heal','回復ポーションを使用。 +35 HP')">💊 回復</button>
+    <button class="demo-btn" onclick="setChoices()">📋 選択肢</button>
+    <button class="demo-btn" onclick="openSheet()">🎒 ボトムシート</button>
+    <button class="demo-btn" onclick="showModal('confirm')">⚠️ 確認モーダル</button>
+    <button class="demo-btn" onclick="showModal('info')">ℹ️ 情報モーダル</button>
+    <button class="demo-btn" onclick="showToast('gold','💰 ゴールド +120 入手！')">🍞 トースト</button>
+    <button class="demo-btn" onclick="animateBars()">📊 バー変動</button>
+  </div>
+
+  <!-- 下パネル（ログ・選択肢） -->
+  <div id="bottom-panel">
+    <div id="tab-bar">
+      <button class="tab-btn active" onclick="switchTab('log',this)">ログ</button>
+      <button class="tab-btn" onclick="switchTab('choice',this)">選択肢</button>
+    </div>
+    <div id="tab-log" class="tab-content active"></div>
+    <div id="tab-choice" class="tab-content"></div>
+  </div>
+
+  <!-- シートオーバーレイ -->
+  <div id="sheet-overlay" onclick="closeSheet()"></div>
+
+  <!-- ボトムシート -->
+  <div id="bottom-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">── アイテム袋 ──</div>
+    <div class="sheet-grid" id="item-grid"></div>
+    <button class="sheet-close-btn" onclick="closeSheet()">閉じる</button>
+  </div>
+
+  <!-- モーダルオーバーレイ -->
+  <div id="modal-overlay" onclick="onModalOverlayClick(event)">
+    <div id="modal-box">
+      <div class="modal-icon" id="modal-icon">⚠️</div>
+      <div class="modal-title" id="modal-title">CONFIRM</div>
+      <div class="modal-body" id="modal-body">本当に逃げますか？</div>
+      <div class="modal-actions" id="modal-actions"></div>
+    </div>
+  </div>
+
+  <!-- トーストエリア -->
+  <div id="toast-area"></div>
+
+</div>
+
+<script>
+// ── マップ描画 ──────────────────────────────────────
+const canvas = document.getElementById('map-canvas');
+const ctx = canvas.getContext('2d');
+const TILE = 24;
+
+// タイルマップ (0=壁, 1=床, 2=扉, 3=宝箱, 4=プレイヤー)
+const MAP = [
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,1,1,1,0,1,1,1,1,1,0,1,1,1,0],
+  [0,1,0,1,2,1,0,0,0,1,0,1,0,1,0],
+  [0,1,0,1,0,1,0,3,0,1,2,1,0,1,0],
+  [0,1,1,1,0,1,0,0,0,1,0,1,1,1,0],
+  [0,0,2,0,0,0,1,1,1,0,0,0,2,0,0],
+  [0,1,1,1,0,0,0,0,0,0,0,1,1,1,0],
+  [0,1,0,4,0,1,1,1,1,1,0,1,0,1,0],
+  [0,1,0,1,0,1,0,0,0,1,0,1,0,1,0],
+  [0,1,1,1,2,1,0,0,0,1,2,1,1,1,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+];
+
+const COLORS = {
+  wall:   '#0a0c10',
+  floor:  '#1e2235',
+  door:   '#8A6E3E',
+  chest:  '#C8A96E',
+  player: '#4ECDC4',
+  grid:   'rgba(255,255,255,0.03)',
+};
+
+let playerPos = { x: 3, y: 7 };
+let animT = 0;
+
+function resizeCanvas() {
+  const scene = document.getElementById('scene');
+  canvas.width = scene.clientWidth;
+  canvas.height = scene.clientHeight;
+}
+
+function drawMap() {
+  const cw = canvas.width, ch = canvas.height;
+  const cols = MAP[0].length, rows = MAP.length;
+  const tileW = Math.floor(cw / cols);
+  const tileH = Math.floor(ch / rows);
+  const t = TILE;
+
+  ctx.clearRect(0, 0, cw, ch);
+
+  // グリッド背景
+  ctx.fillStyle = '#0D0F14';
+  ctx.fillRect(0, 0, cw, ch);
+
+  const offX = Math.floor((cw - cols * tileW) / 2);
+  const offY = Math.floor((ch - rows * tileH) / 2);
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const cell = MAP[r][c];
+      const x = offX + c * tileW;
+      const y = offY + r * tileH;
+      const w = tileW - 1, h = tileH - 1;
+
+      if (cell === 0) {
+        ctx.fillStyle = COLORS.wall;
+        ctx.fillRect(x, y, tileW, tileH);
+        // 壁のテクスチャライン
+        ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+        ctx.lineWidth = 0.5;
+        ctx.strokeRect(x+1, y+1, w-1, h-1);
+      } else {
+        // 床
+        ctx.fillStyle = COLORS.floor;
+        ctx.fillRect(x, y, tileW, tileH);
+        // 床のドット
+        ctx.fillStyle = 'rgba(255,255,255,0.04)';
+        ctx.fillRect(x + tileW-3, y + tileH-3, 1, 1);
+
+        if (cell === 2) {
+          // 扉
+          ctx.fillStyle = COLORS.door;
+          const dw = Math.floor(tileW * 0.35);
+          ctx.fillRect(x + Math.floor(tileW/2) - Math.floor(dw/2), y+1, dw, h);
+          ctx.fillStyle = '#C8A96E44';
+          ctx.fillRect(x + Math.floor(tileW/2) - Math.floor(dw/2), y+1, dw, h);
+        } else if (cell === 3) {
+          // 宝箱
+          ctx.fillStyle = COLORS.chest;
+          const bx = x + Math.floor(tileW*0.2), by = y + Math.floor(tileH*0.3);
+          const bw2 = Math.floor(tileW*0.6), bh2 = Math.floor(tileH*0.45);
+          ctx.fillRect(bx, by, bw2, bh2);
+          ctx.fillStyle = '#8A6E3E';
+          ctx.fillRect(bx, by, bw2, Math.floor(bh2*0.4));
+          // 輝き
+          const glow = Math.sin(animT * 0.05) * 0.4 + 0.6;
+          ctx.fillStyle = `rgba(200,169,110,${glow * 0.3})`;
+          ctx.fillRect(x, y, tileW, tileH);
+        } else if (cell === 4) {
+          // プレイヤー（アニメーション）
+          const bob = Math.sin(animT * 0.08) * 1.5;
+          const px = x + Math.floor(tileW*0.5);
+          const py = y + Math.floor(tileH*0.5) + bob;
+          const pr = Math.min(tileW, tileH) * 0.28;
+
+          // 影
+          ctx.fillStyle = 'rgba(0,0,0,0.4)';
+          ctx.beginPath();
+          ctx.ellipse(px, py + pr*1.4, pr*0.8, pr*0.3, 0, 0, Math.PI*2);
+          ctx.fill();
+
+          // 本体
+          ctx.fillStyle = COLORS.player;
+          ctx.beginPath();
+          ctx.arc(px, py, pr, 0, Math.PI*2);
+          ctx.fill();
+
+          // グロー
+          const pulse = Math.sin(animT * 0.06) * 0.3 + 0.5;
+          ctx.fillStyle = `rgba(78,205,196,${pulse * 0.25})`;
+          ctx.beginPath();
+          ctx.arc(px, py, pr * 1.6, 0, Math.PI*2);
+          ctx.fill();
+        }
+      }
+    }
+  }
+
+  animT++;
+  requestAnimationFrame(drawMap);
+}
+
+resizeCanvas();
+window.addEventListener('resize', () => { resizeCanvas(); });
+drawMap();
+
+
+// ── タブ切り替え ──────────────────────────────────────
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+
+// ── ログ ──────────────────────────────────────────────
+const logEl = document.getElementById('tab-log');
+function addLog(type, text) {
+  const div = document.createElement('div');
+  div.className = 'log-line log-' + type;
+  div.textContent = text;
+  logEl.appendChild(div);
+  logEl.scrollTop = logEl.scrollHeight;
+  // ログタブに切り替え
+  document.querySelectorAll('.tab-btn')[0].click();
+}
+
+// 初期ログ
+const initLogs = [
+  ['sys', '── 廃墟の回廊 B2F に入った ──'],
+  ['info', '足元から冷たい風が漂ってくる。'],
+  ['sys', '遠くから足音が聞こえる……'],
+];
+initLogs.forEach(([t,m]) => addLog(t, m));
+
+
+// ── 選択肢 ────────────────────────────────────────────
+function setChoices() {
+  const el = document.getElementById('tab-choice');
+  el.innerHTML = '';
+  const choices = [
+    { label: '扉を開けて進む',   action: () => { addLog('sys','扉をゆっくりと開いた。先は暗い……'); closeChoices(); } },
+    { label: '宝箱を調べる',     action: () => { addLog('gold','宝箱から ポーション ×2 を入手！'); showToast('gold','💰 ポーション ×2 入手！'); closeChoices(); } },
+    { label: '来た道を戻る',     action: () => { showModal('confirm'); } },
+    { label: '魔法を使う',       action: () => { addLog('info','MPが不足している…（required: 30MP）'); closeChoices(); }, disabled: true },
+  ];
+  choices.forEach(c => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn' + (c.disabled ? ' disabled' : '');
+    btn.textContent = c.label;
+    if (!c.disabled) btn.onclick = c.action;
+    el.appendChild(btn);
+  });
+  // 選択肢タブへ
+  document.querySelectorAll('.tab-btn')[1].click();
+}
+
+function closeChoices() {
+  document.getElementById('tab-choice').innerHTML = '<p style="color:var(--sub);font-size:12px;padding:10px 0">── 選択肢なし ──</p>';
+  document.querySelectorAll('.tab-btn')[0].click();
+}
+
+
+// ── ボトムシート ──────────────────────────────────────
+const ITEMS = [
+  { icon:'🧪', name:'ポーション',   qty:3 },
+  { icon:'🔮', name:'マジックボム', qty:1 },
+  { icon:'🗝️',  name:'古い鍵',       qty:2 },
+  { icon:'📜', name:'地図の欠片',   qty:1 },
+  { icon:'⚔️',  name:'鉄の剣',       qty:0 },
+  { icon:'🛡️',  name:'木の盾',       qty:0 },
+  { icon:'👟', name:'軽装の靴',     qty:0 },
+  { icon:'💎', name:'原石',         qty:5 },
+];
+
+function openSheet() {
+  const grid = document.getElementById('item-grid');
+  grid.innerHTML = '';
+  ITEMS.forEach(item => {
+    const cell = document.createElement('div');
+    cell.className = 'item-cell';
+    cell.innerHTML = `<span>${item.icon}</span><span class="item-name">${item.name}</span>${item.qty > 0 ? `<span class="qty">×${item.qty}</span>` : ''}`;
+    cell.onclick = () => {
+      showToast('teal', `${item.icon} ${item.name} を選択`);
+    };
+    grid.appendChild(cell);
+  });
+  document.getElementById('sheet-overlay').classList.add('open');
+  document.getElementById('bottom-sheet').classList.add('open');
+}
+
+function closeSheet() {
+  document.getElementById('sheet-overlay').classList.remove('open');
+  document.getElementById('bottom-sheet').classList.remove('open');
+}
+
+
+// ── 確認モーダル ──────────────────────────────────────
+let currentModalType = null;
+
+function showModal(type) {
+  currentModalType = type;
+  const icon = document.getElementById('modal-icon');
+  const title = document.getElementById('modal-title');
+  const body = document.getElementById('modal-body');
+  const actions = document.getElementById('modal-actions');
+  actions.innerHTML = '';
+
+  if (type === 'confirm') {
+    icon.textContent = '⚠️';
+    title.textContent = 'RETREAT';
+    body.textContent = '来た道を戻りますか？\n進行状況は失われません。';
+    actions.innerHTML = `
+      <button class="modal-btn cancel" onclick="closeModal()">とどまる</button>
+      <button class="modal-btn confirm" onclick="onConfirm()">撤退する</button>
+    `;
+  } else if (type === 'info') {
+    icon.textContent = 'ℹ️';
+    title.textContent = 'SYSTEM';
+    body.textContent = 'ゲームデータを自動保存しました。\nセーブポイント：廃墟の回廊 B2F';
+    actions.innerHTML = `
+      <button class="modal-btn confirm-ok" style="grid-column:1/-1" onclick="closeModal()">了解</button>
+    `;
+  } else if (type === 'menu') {
+    icon.textContent = '⚙️';
+    title.textContent = 'PAUSE';
+    body.textContent = 'ゲームを一時停止中';
+    actions.innerHTML = `
+      <button class="modal-btn cancel" onclick="closeModal()">再開</button>
+      <button class="modal-btn confirm" onclick="closeModal(); showToast('red','タイトルに戻りました')">タイトルへ</button>
+    `;
+  }
+
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+
+function onConfirm() {
+  closeModal();
+  addLog('sys','── 来た道を引き返した ──');
+  showToast('teal', '✓ セーブされました');
+}
+
+function onModalOverlayClick(e) {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+}
+
+
+// ── トースト ──────────────────────────────────────────
+function showToast(type, msg, duration = 2200) {
+  const area = document.getElementById('toast-area');
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.textContent = msg;
+  area.appendChild(el);
+  setTimeout(() => {
+    el.style.transition = 'opacity 0.3s';
+    el.style.opacity = '0';
+    setTimeout(() => el.remove(), 320);
+  }, duration);
+}
+
+
+// ── バー変動アニメ ────────────────────────────────────
+function animateBars() {
+  const hp  = Math.max(10, Math.round(Math.random() * 100));
+  const mp  = Math.max(10, Math.round(Math.random() * 100));
+  const exp = Math.min(100, Math.round(Math.random() * 100));
+  document.getElementById('bar-hp').style.width  = hp  + '%';
+  document.getElementById('bar-mp').style.width  = mp  + '%';
+  document.getElementById('bar-exp').style.width = exp + '%';
+  addLog('info', `HP: ${hp}% / MP: ${mp}% / XP: ${exp}%`);
+}
+</script>
+</body>
+</html>

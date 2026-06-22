@@ -846,11 +846,18 @@ html, body {
 .storage-item {
     background: var(--panel2); border: 1px solid var(--border2);
     border-radius: 8px; padding: 9px 10px;
-    display: flex; align-items: center; gap: 8px;
+    /* display: flex; align-items: center; gap: 8px; */
     cursor: pointer; position: relative;
     transition: border-color .12s, background .12s;
 }
-.storage-item:active { background: var(--panel3); }
+.storage-item-main {
+    /* background: var(--panel2); border: 1px solid var(--border2);
+    border-radius: 8px; padding: 9px 10px; */
+    display: flex; align-items: center; gap: 8px;
+    /* cursor: pointer; position: relative; */
+    /* transition: border-color .12s, background .12s; */
+}
+.storage-item-main:active { background: var(--panel3); }
 .storage-item-icon {
     width: 36px; height: 36px; border-radius: 6px;
     background: var(--panel3); border: 1px solid var(--border2);
@@ -860,6 +867,37 @@ html, body {
 .storage-item-name { font-size: 11px; font-weight: bold; color: var(--text); }
 .storage-item-sub  { font-size: 9px; color: var(--text-dim); margin-top: 2px; }
 .storage-item-qty  { position: absolute; top: 5px; right: 7px; font-size: 9px; color: var(--text-sub); font-weight: bold; }
+
+/* ボタン領域：カードの下部に横並び */
+.storage-item-buttons {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+}
+/* 使用/破棄ボタン */
+.storage-btn {
+    flex: 1;
+    padding: 4px 0;
+    font-size: 9px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    line-height: 1;
+}
+.storage-btn-use {
+    background: var(--accent, #4a8);
+    color: #fff;
+}
+.storage-btn-use:active {
+    background: var(--accent-dark, #396);
+}
+.storage-btn-discard {
+    background: var(--panel3, #555);
+    color: #ccc;
+}
+.storage-btn-discard:active {
+    background: #444;
+}
 </style>
 </head>
 <body>

@@ -386,10 +386,10 @@ function renderMenu() {
                     <div class="skill-tags">
                         ${`<span class="skill-tag tag-${s.type}">${tagList[s.type]}</span>`}
                         ${`<span class="skill-tag tag-${s.category}">${tagList[s.category]}</span>`}
-                </div>
-                <div class="skill-desc">${LABEL[s.target_type]}</div>
-                ${effectLabels.map(label => `<div class="skill-desc">${label}</div>`)}
-                <div class="skill-cost">${Object.keys(s.cost).map(key => key + "" + (-1 * s.cost[key])).join(' ')}</div>
+                    </div>
+                    <div class="skill-desc">${LABEL[s.target_type]}</div>
+                    ${effectLabels.map(label => `<div class="skill-desc">${label}</div>`)}
+                    <div class="skill-cost">${Object.keys(s.cost).map(key => key + "" + (-1 * s.cost[key])).join(' ')}</div>
                 </div>
             </div>`}).join('')}
             </div>`;
@@ -428,12 +428,20 @@ function renderMenuItems() {
             weapon: "⚔️", mainArmor: "🛡️", subArmor: "⛨", accessory: "💍",
         };
         return `
-        <div class="storage-item" style="background:var(--panel2)">
-        <div class="storage-item-icon" style="width:32px;height:32px;font-size:18px">${item.use_type ? iconMap[item.use_type] : (item.equipType ? iconMap[item.equipType] : "")}</div>
-        <div>
-            <div class="storage-item-name" style="font-size:10px">${item.name}</div>
-            <div class="storage-item-sub" style="font-size:8px">${effectLabels||'—'}</div>
-        </div>
+        <!-- 上段：既存コンテンツをrowでまとめる -->
+        <div class="storage-item" data-item-uuid="${item.uuid}">
+            <div class="storage-item-main" style="background:var(--panel2)">
+                <div class="storage-item-icon" style="width:32px;height:32px;font-size:18px">${item.use_type ? iconMap[item.use_type] : (item.equipType ? iconMap[item.equipType] : "")}</div>
+                <div>
+                    <div class="storage-item-name" style="font-size:10px">${item.name}</div>
+                    <div class="storage-item-sub" style="font-size:8px">${effectLabels||'—'}</div>
+                </div>
+            </div>
+            <!-- 下段：ボタン -->
+            <div class="storage-item-buttons">
+                <button class="storage-btn storage-btn-use">使用</button>
+                <button class="storage-btn storage-btn-discard">破棄</button>
+            </div>
         ${item.uses>=1?`<div class="storage-item-qty">${item.uses}回</div>`:''}
         </div>`}).join('');
 }

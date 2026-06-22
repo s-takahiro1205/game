@@ -14,7 +14,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
     --bg:         #1a1a2e;
-    --bg-explore:  #1a1a2e;
+    --bg-explore: #1a1a2e;
     --bg-battle:  #1e1608;
     --bg-warm:    #f5ead0;
     --panel:      #2c1f0e;
@@ -40,6 +40,7 @@
     --red:        #e85858;
     --yellow:     #f8d040;
     --teal:       #40d0b8;
+    --panel:      #1A1D26;
     /* タイル用 */
     --enemy:       #500000; /* 危険 */
     --eliteEnemy:  #801111; /* 強敵 */
@@ -898,6 +899,11 @@ html, body {
 .storage-btn-discard:active {
     background: #444;
 }
+.storage-btn:disabled {
+    background-color: #555;
+    color: #bbb;
+    cursor: not-allowed;
+}
 </style>
 </head>
 <body>
@@ -1395,6 +1401,16 @@ html, body {
 
     <!-- Toast Notification -->
     <div id="toast"></div>
+
+    <!-- モーダルウィンドウ -->
+    <div id="modal-overlay">
+        <div id="modal-box">
+            <!-- <div id="modal-icon"></div> -->
+            <div id="modal-title"></div>
+            <div id="modal-body"></div>
+            <div id="modal-actions"></div>
+        </div>
+    </div>
 
     <!-- Debug Panel -->
     <div id="debug-panel" class="debug-panel hidden">

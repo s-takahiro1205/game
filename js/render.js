@@ -37,6 +37,13 @@ const menuTabSetting = document.getElementById("menu-tab-setting");
 
 const menuTabPartyMemberTabArea = document.getElementById("menu-tab-party-member-tab-area");
 
+// モーダル
+const modalOverlay = document.getElementById("modal-overlay");
+const modalIcon = document.getElementById("modal-icon");
+const modalTitle = document.getElementById("modal-title");
+const modalBody = document.getElementById("modal-body");
+const modalActions = document.getElementById("modal-actions");
+
 // 拠点
 const baseScreen = document.getElementById(SCREENS.baseScreen);
 const baseSelectExploreMapScreen = document.getElementById(SUB_SCREENS.baseSelectExploreMapScreen);
@@ -99,6 +106,11 @@ function render() {
         gameState.dirty = false;
         return;// dirty=falseでもう一度走るためreturn
     }
+    const isShowModal = showModal();
+    if (isShowModal) {
+        return;
+    }
+
     showScreen();
 
     // デバッグパネルの表示/非表示
@@ -231,6 +243,31 @@ function showScreen() {
             document.querySelector(`.menu-tab-party-member-sub-tab[data-sub-type="${gameState.bottomMenuPartyTabSubType}"]`).classList.add("active");
         }
     }
+}
+
+/**
+ * モーダルを表示する
+ * @returns boolean
+ */
+function showModal() {
+    if(!gameState.modal) {
+        modalOverlay.classList.remove("active");
+        return false;
+    }
+
+    modalTitle.innerHTML = gameState.modal.title;
+    modalBody.innerHTML = gameState.modal.body;
+    // modalIcon.innerHTML = gameState.modal.icon ?? "ⓘ";
+
+    const actions = gameState.modal.actions.map(button => {
+        const data = Object.keys(button.data).map(key => {
+            return ` data-${key}="${button.data[key]}"`;
+        });
+        return `<button class="modal-btn ${button.type ?? ""}" ${data}>${button.text}</button>`;
+    });
+    modalActions.innerHTML = actions.join("");
+    modalOverlay.classList.add("active");
+    return true;
 }
 
 /* ======================
@@ -427,6 +464,9 @@ function renderMenuItems() {
             attack: "💥", heal: "💚", mod_status: "💪",
             weapon: "⚔️", mainArmor: "🛡️", subArmor: "⛨", accessory: "💍",
         };
+        // 使用タイミングを満たさないか、対象がいないならfalse
+        const isDisabled = !item.usableIn[gameState.screen === SCREENS.baseScreen ? "home" : "explore"]
+            || TARGET_TYPE_EXTRACTOR[item.use_target_type](player.party).length === 0;
         return `
         <!-- 上段：既存コンテンツをrowでまとめる -->
         <div class="storage-item" data-item-uuid="${item.uuid}">
@@ -439,7 +479,7 @@ function renderMenuItems() {
             </div>
             <!-- 下段：ボタン -->
             <div class="storage-item-buttons">
-                <button class="storage-btn storage-btn-use">使用</button>
+                <button class="storage-btn storage-btn-use"${isDisabled ? " disabled" : ""}>使用</button>
                 <button class="storage-btn storage-btn-discard">破棄</button>
             </div>
         ${item.uses>=1?`<div class="storage-item-qty">${item.uses}回</div>`:''}

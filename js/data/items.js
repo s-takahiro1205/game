@@ -3,9 +3,9 @@
 import { EQUIP_TYPES } from '../const.js';
 /**
  * @typedef {object} Effect
- * @property {string} type - 効果のタイプ (例: "heal", "stat_change")
+ * @property {string} type - 効果のタイプ (例: "heal", "statChange")
  * @property {number} [value] - 効果量（固定値の場合）
- * @property {string} [stat] - 変更するステータス名（stat_changeの場合）
+ * @property {string} [stat] - 変更するステータス名（statChangeの場合）
  * @property {string} [rate_reference] - 割合の参照元ステータス（rateと併用）
  * @property {string} [text] - 効果メッセージ（個別のメッセージが必要な場合）
  * @property {string} [itemId] - 取得するアイテムのID（acquire_itemの場合）
@@ -94,7 +94,7 @@ export const ITEMS = [
         price: 200,
         effects: [
             {
-                type: "stat_change",
+                type: "statChange",
                 stat: "atk",
                 min: 0,
                 max: 0,
@@ -102,7 +102,7 @@ export const ITEMS = [
                 text: "影の秘薬を飲んだ。攻撃力が1上昇した！"
             },
             {
-                type: "stat_change",
+                type: "statChange",
                 stat: "size",
                 min: 0,
                 max: 0,
@@ -110,7 +110,7 @@ export const ITEMS = [
                 text: "体格が1上昇した！"
             },
             {
-                type: "stat_change",
+                type: "statChange",
                 stat: "maxHp",
                 min: 0,
                 max: 0,

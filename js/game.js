@@ -16,9 +16,9 @@ import { LABEL, SCREENS, SUB_SCREENS, BOTTOM_SHEETS, BOTTOM_MENU_TABS, BATTLE_ST
 
 /**
  * @typedef {object} Effect
- * @property {string} type - 効果のタイプ (例: "heal", "stat_change")
+ * @property {string} type - 効果のタイプ (例: "heal", "statChange")
  * @property {number} [value] - 効果量（固定値の場合）
- * @property {string} [stat] - 変更するステータス名（stat_changeの場合）
+ * @property {string} [stat] - 変更するステータス名（statChangeの場合）
  * @property {number} [min] - 効果量の最小値（ランダム値の場合）
  * @property {number} [max] - 効果量の最大値（ランダム値の場合）
  * @property {number} [rate] - 割合（rate_referenceと併用）
@@ -140,7 +140,7 @@ export let player = new Proxy({
 
 // ゲーム管理用Proxyオブジェクト
 export const gameState = new Proxy({
-        isDebugMode: false,//デバッグ時に直打ち
+        isDebugMode: true,//デバッグ時に直打ち
         // 強制描画用フラグ
         dirty: false,
         // ページ制御
@@ -153,6 +153,15 @@ export const gameState = new Proxy({
         selectExploreMap: null,
         // ヘッダー開閉
         isHudOpen: false,
+        // モーダル
+        modal: null,
+        // {
+        //     title: "",
+        //     body: "",
+        //     actions: [{text:"", data:"", type:""}],
+        //     execEventName: "",
+        //     icon: "",
+        // },
 
         // // モーダル（currentPageと独立して重なる） 後で消す
         openModal: null,// null | "menu" | "item_discard",
@@ -395,6 +404,105 @@ baseSelectExploreMapScreenBack.addEventListener("click", async () => {
     backSubScreen();
 });
 
+/* モーダル */
+const modalOverlay = document.getElementById("modal-overlay");
+const modalActions = document.getElementById("modal-actions");
+modalActions.addEventListener("click", async (e) => {
+    const choice = e.target.closest('.modal-btn');
+    const eventName = choice.dataset.eventName;
+    if (!choice || !eventName) {
+        return
+    };
+    // キャンセル選択ならモーダルを閉じる
+    if (eventName === "cancel") {
+        modalEvents["cancel"]();
+        return;
+    }
+    modalEvents[eventName](choice.dataset);
+});
+
+// モーダル選択肢選択後のイベントマップ
+const modalEvents = {
+    cancel: modalCancel,
+    modalUseItem: modalUseItem,
+    modalDiscardItem: modalDiscardItem,
+};
+
+// モーダル：閉じる
+function modalCancel() {
+    gameState.modal = null;
+}
+
+// モーダル：アイテム使用
+function modalUseItem(dataset) {
+    useItem(
+        dataset.itemUuid,
+        dataset.unitId === "all" ? player.party.map(unit => unit.id) : [dataset.unitId]
+    );
+    gameState.modal = null;
+    gameState.dirty = true;
+}
+
+// モーダル：アイテム破棄
+function modalDiscardItem(dataset) {
+    discardItem(dataset.itemUuid);
+    gameState.modal = null;
+    gameState.dirty = true;
+}
+
+/* メニュー */
+const menuTabItemGrid = document.getElementById("menu-tab-item-grid");
+menuTabItemGrid.addEventListener("click", async (e) => {
+    const choice = e.target.closest('.storage-btn');
+    const itemUuid = e.target.closest('.storage-item')?.dataset.itemUuid;
+    const item = player.itemSlot.find(item => item.uuid === itemUuid);
+    if (!choice || !itemUuid || !item) return;
+
+    // 使用ボタン押下時
+    if (choice.classList.contains("storage-btn-use")) {
+        // 単体対象ならモーダルで対象選択
+        if (SELECT_TARGET_TYPE.includes(item.use_target_type)) {
+            const list = TARGET_TYPE_EXTRACTOR[item.use_target_type](player.party);
+            const actions = list.map(unit => {
+                const data = {
+                    "event-name": "modalUseItem",
+                    "unit-id": unit.id,
+                    "item-uuid": item.uuid
+                };
+                return {text: unit.name, data: data, type: "safe"}}
+            )
+            showModal(
+                "誰に使用しますか？",
+                `${item.name}<br>${item.description}`,
+                [
+                    ...actions,
+                    {text: "キャンセル", data: {"event-name": "cancel"}, type: "cancel"}
+                ],
+            );
+        } else {
+            showModal(
+                `${item.name}を使用します`,
+                `${item.description}`,
+                [
+                    {text: "OK", data: {"event-name": "modalUseItem", "unit-id": "all", "item-uuid": item.uuid}, type: "safe"},
+                    {text: "キャンセル", data: {"event-name": "cancel"}, type: "cancel"}
+                ],
+            );
+        }
+    } else if (choice.classList.contains("storage-btn-discard")) {
+    // 破棄ボタン押下時
+        showModal(
+            `${item.name}を本当に破棄しますか？`,
+            `${item.description}`,
+            [
+                {text: "OK", data: {"event-name": "modalDiscardItem", "item-uuid": item.uuid}, type: "danger"},
+                {text: "キャンセル", data: {"event-name": "cancel"}, type: "cancel"}
+            ],
+        );
+    }
+});
+
+/* 探索 */
 const exploreTileGrid = document.getElementById("explore-tile-grid");
 exploreTileGrid.addEventListener("click", async (e) => {
     const choice = e.target.closest('.base-btn');
@@ -1580,6 +1688,31 @@ function showToast(message, duration = 3000) {
 }
 
 /**
+ * モーダルウィンドウを表示する
+ * @param {string} title
+ * @param {string} body
+ * @param {Array<Object>} actions
+ * @param {string} execEventName
+ * @param {string} icon
+ */
+function showModal(title, body, actions, execEventName, icon = "") {
+    gameState.modal = {
+        title: title,
+        body: body,
+        actions: actions,
+        execEventName: execEventName,
+        // icon: icon,
+    };
+}
+
+/**
+ * モーダルウィンドウを閉じる
+ */
+function closeModal() {
+    gameState.modal = null;
+}
+
+/**
  * メニューモーダルを開く
  */
 function openMenuModal() {
@@ -1596,110 +1729,103 @@ function closeMenuModal() {
 
 /**
  * 使用ボタンのイベント
+ * TODO: 戦闘との共通化を考えた方がいい
  */
-// export async function useItem(_) {
-//         // TODO: 戦闘中と共通化したいね。。無理か
-//         const targets = [player.party[0]]; 
-//         const actor = player.party[0]; 
-//         for (const effect of this.item.effects) {
-//             if (effect.type === "damage") {
-//                 for (const target of targets) {
-//                     const damage = calculateDiceDamage(
-//                         actor, target,
-//                         effect.dice, effect.sides, effect.flat,
-//                         false,
-//                         effect.fix ?? 0, effect.armor_pierce ?? 0
-//                     );
-//                     applyDamage(target, damage, false)
-//                 }
-//             } else if (effect.type === "heal") {
-//                 for (const target of targets) {
-//                     const heal = calculateDiceHeal(
-//                         actor, target,
-//                         effect.dice, effect.sides, effect.flat,
-//                         false,
-//                         effect.fix ?? 0
-//                     );
-//                     target.hp = Math.min(target.maxHp, target.hp + heal);
-//                     addMessage(`${target.name} は ${heal} 回復した！`);
-//                 }
-//             } else if (effect.type === "addState") {
-//                 for (const target of targets) {
-//                     const is_success = calculateDiceChance(
-//                         actor, target, effect.stateId,
-//                         effect.dice, effect.sides, effect.flat,
-//                         false,
-//                         effect.fix ?? 0
-//                     );
-//                     if (is_success) {
-//                         const turn = effect.turn;
-//                         addBattleStatus(effect.stateId, target, turn);
-//                     }
-//                 }
-//             } else if (effect.type === "recoverState") {
-//                 for (const target of targets) {
-//                     // その状態異常になっているか
-//                     if (!target.battleStatus.some(s => s.type === effect.stateId)) {
-//                         continue;
-//                     }
-//                     const is_success = calculateDiceChance(
-//                         actor, target, effect.stateId,
-//                         effect.dice, effect.sides, effect.flat,
-//                         false,
-//                         effect.fix ?? 0
-//                     );
-//                     if (is_success) {
-//                         recoverBattleStatus(effect.stateId, target)
-//                     }
-//                 }
-//             } else if (effect.type === "revive") {
-//                 for (const target of targets) {
-//                     // その状態異常になっているか
-//                     if (!target.battleStatus.some(s => s.type === "dead")) {
-//                         continue;
-//                     }
-//                     const is_success = calculateDiceChance(
-//                         actor, target, "dead",
-//                         effect.dice, effect.sides, effect.flat,
-//                         false,
-//                         effect.fix ?? 0
-//                     );
-//                     if (is_success) {
-//                         revive(target, effect.heal)
-//                     }
-//                 }
-//             } else if (effect.type === "stat_change") {
-//                 for (const target of targets) {
-//                     const mod = calculateDiceHeal(
-//                         actor, target,
-//                         effect.dice, effect.sides, effect.flat,
-//                         false,
-//                         effect.fix ?? 0
-//                     );
-//                     target[effect.stat] += mod;
-//                     addMessage(`${target.name} の ${effect.stat} が ${mod} ` + (mod > 0 ? "上がった！" : "下がった！"));
-//                 }
-//             }
-//         }
+async function useItem(itemUuid, unitIds) {
+    const item = player.itemSlot.find(item => item.uuid === itemUuid);
+    // 対象を取り直して対象となっているユニットにのみ使用する
+    const list = TARGET_TYPE_EXTRACTOR[item.use_target_type](player.party);
+    const targets =  list.filter(unit =>
+        unitIds.some(id => id === unit.id)
+    );
+    if (targets.length === 0) {
+        showToast('対象がいませんでした')
+        return;
+    }
+    for (const effect of item.effects) {
+        if (effect.type === "damage") {
+            for (const target of targets) {
+                if (isDead(target)) {
+                    continue;
+                }
+                const damage = effect.fix ? effect.fix : getRandom(effect.min, effect.max);
+                applyDamage(target, damage, false)
+                showToast(`${target.name} に ${damage} のダメージ！`);
+            }
+        } else if (effect.type === "heal") {
+            for (const target of targets) {
+                if (isDead(target)) {
+                    continue;
+                }
+                const heal = effect.fix ? effect.fix : getRandom(effect.min, effect.max);
+                target.hp = Math.min(target.maxHp, target.hp + heal);
+                showToast(`${target.name} は ${heal} 回復した！`);
+            }
+        // } else if (effect.type === "addState") {
+        //     for (const target of targets) {
+        //         if (isDead(target)) {
+        //             continue;
+        //         }
+        //         const is_success = roll(effect.fix);
+        //         if (is_success) {
+        //             const turn = effect.turn;
+        //             addBattleStatus(effect.stateId, target, turn);
+        //         }
+        //     }
+        // } else if (effect.type === "recoverState") {
+        //     for (const target of targets) {
+        //         if (isDead(target)) {
+        //             continue;
+        //         }
+        //         // その状態異常になっているか
+        //         if (!target.battleStatus.some(s => s.type === effect.stateId)) {
+        //             continue;
+        //         }
+        //         const is_success = roll(effect.fix)
+        //         if (is_success) {
+        //             recoverBattleStatus(effect.stateId, target)
+        //         }
+        //     }
+        } else if (effect.type === "revive") {
+            for (const target of targets) {
+                if (!isDead(target)) {
+                    continue;
+                }
+                const is_success = roll(effect.fix)
+                if (is_success) {
+                    revive(target, effect.heal)
+                }
+            }
+        } else if (effect.type === "statChange") {
+            for (const target of targets) {
+                const mod = effect.fix ? effect.fix : getRandom(effect.min, effect.max);
+                target[effect.stat] += mod;
+                addMessage(`${target.name} の ${effect.stat} が ${mod} ` + (mod > 0 ? "上がった！" : "下がった！"));
+            }
+        }
+    }
+    // 無制限でないものは使用回数を減らす
+    if (item.uses) {
+        item.uses -= 1;
+    }
+    if (item.uses !== null && item.uses <= 0) {
+        player.itemSlot = player.itemSlot.filter(i => i.uuid !== item.uuid);
+        const msg = `${item.name} を使い切った！`;
+        showToast(msg);
+    } else {
+        const msg = `${item.name} を使用した！`;
+        showToast(msg);
+    }
 
-//     // 無制限でないものは使用回数を減らす
-//     if (this.item.uses) {
-//         this.item.uses -= 1;
-//     }
-//     if (this.item.uses !== null && this.item.uses <= 0) {
-//         player.itemSlot = player.itemSlot.filter(i => i !== this.item);
-//         const msg = `${this.item.name} を使い切った！`;
-//         addMessage(msg);
-//         showToast(msg);
-//     } else {
-//         const msg = `${this.item.name} を使用した！`;
-//         addMessage(msg);
-//         showToast(msg);
-//     }
+    saveGame(player);
+}
 
-//     gameState.dirty = true;
-//     saveGame(player);
-// }
+async function discardItem(itemUuid) {
+    const item = player.itemSlot.find(item => item.uuid === itemUuid);
+    player.itemSlot = player.itemSlot.filter(i => i.uuid !== item.uuid);
+    const msg = `${item.name} を破棄しました`;
+    showToast(msg);
+}
 
 // /**
 //  * 装備ボタンのイベント
@@ -1832,7 +1958,6 @@ export function getUsableList(skills, timing) {
  */
 function applyDamage(target, damage, is_phisycal = false) {
     target.hp = Math.max(0, target.hp - damage);
-    addMessage(`${target.name} に ${damage} のダメージ！`);
     takeDead(target);
     // 眠りの解除判定 50%で眠り削除
     if (is_phisycal && target.battleStatus.some(s => s.type === "sleep") && Math.random() < 0.5) {
@@ -2090,6 +2215,7 @@ async function battleExecCommand() {
         for (const target of targets) {
             const damage = calculateDamage(actor, target);
             applyDamage(target, damage, true);
+            addMessage(`${target.name} に ${damage} のダメージ！`);
         }
     } else if (cmd.act === "guard") {
         console.log("防御コマンドが実行されました")
@@ -2137,6 +2263,7 @@ async function battleExecCommand() {
                         effect.fix, effect.add, effect.armor_pierce
                     );
                     applyDamage(target, damage, skill.category !== "magic");
+                    addMessage(`${target.name} に ${damage} のダメージ！`);
                 }
             } else if (effect.type === "heal") {
                 for (const target of targets) {
@@ -2210,6 +2337,7 @@ async function battleExecCommand() {
                     }
                     const damage = effect.fix ? effect.fix : getRandom(effect.min, effect.max);
                     applyDamage(target, damage, false)
+                    addMessage(`${target.name} に ${damage} のダメージ！`);
                 }
             } else if (effect.type === "heal") {
                 for (const target of targets) {
@@ -2880,17 +3008,18 @@ function addBattleStatus(state_id, target, turn) {
 
 /**
  * 状態異常を解除する
- * @param {string} state_id 
+ * @param {string} stateId 
  * @param {Object} target 
  * @param {number} turn 
  */
-function recoverBattleStatus(state_id, target) {
-    const status_def = BATTLE_STATUSES.find(_status => _status.id === state_id);
-    const sub_message = status_def.subMessageGen(target.name);
-    if (sub_message) {
-        addMessage(sub_message);
+function recoverBattleStatus(stateId, target) {
+    const statusDef = BATTLE_STATUSES.find(_status => _status.id === stateId);
+    const subMessage = statusDef.subMessageGen(target.name);
+    // TODO: これどうしよ探索中に復活したらメッセージ表示できない むしろ戦闘中ならログに落として戦闘以外ならトーストにすべきか
+    if (subMessage) {
+        addMessage(subMessage);
     }
-    target.battleStatus = target.battleStatus.filter(_status => _status.type !== state_id);
+    target.battleStatus = target.battleStatus.filter(_status => _status.type !== stateId);
 }
 
 /**

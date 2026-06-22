@@ -557,6 +557,74 @@ input[type="number"] {
     margin-right: 6px;
 }
 
+
+/* ── 確認モーダル ── */
+#modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 2000;
+    transition: background 0.2s;
+}
+#modal-overlay.active {
+    background: rgba(0,0,0,0.7);
+    pointer-events: all;
+}
+
+#modal-box {
+    background: #1A1D26;
+    border: 1px solid 8px;
+    border-radius: 12px;
+    padding: 22px 20px 18px;
+    width: 280px;
+    transform: scale(0.85) translateY(10px);
+    opacity: 0;
+    transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), opacity 0.2s;
+}
+#modal-overlay.active #modal-box {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+}
+
+/* #modal-icon { font-size: 28px; text-align: center; margin-bottom: 10px; } */
+#modal-title {
+    /* font-family: var(--font-mono); */
+    font-size: 13px;
+    color: #f8c030;/*--gold*/
+    letter-spacing: 1.5px;
+    text-align: center;
+    margin-bottom: 8px;
+}
+#modal-body {
+    font-size: 13px;
+    color: #8B9BB4;/*--sub*/
+    text-align: center;
+    line-height: 1.6;
+    margin-bottom: 18px;
+}
+#modal-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+.modal-btn {
+    padding: 9px 0;
+    border-radius: 8px;
+    border: 1px solid #2E3347;
+    font-size: 12px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: opacity 0.15s, transform 0.1s;
+    background: #BBCBF4; color: #222638;
+}
+.modal-btn.cancel { background: #222638; color: #BBCBF4; }
+.modal-btn.danger { background: #E05C5C; border-color: #E05C5C; color: #fff; }
+.modal-btn.safe { background: #2A7A75; border-color: #4ECDC4; color: #fff; }
+
 /* Item effect text in menu cards */
 .item-effect-text {
     color: #ffcc00;

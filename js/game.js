@@ -308,7 +308,7 @@ baseBtnMansion.addEventListener("click", () => {
 
     let jobId = "";
     if (partyCount === 3) {
-        jobId = "warrior";
+        jobId = "scout";
         unit.name = "セッコ";
         unit.maxHp = 28;
         unit.maxMp = 0;

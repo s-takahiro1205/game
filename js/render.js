@@ -405,7 +405,8 @@ function renderMenu() {
 function renderMenuItems() {
     const grid = document.getElementById('menu-tab-item-grid');
     grid.innerHTML = player.itemSlot.map(item => {
-        const effectLabels = item.effects.map(ef => {
+        const effectLabels = item.effects
+            ? item.effects.map(ef => {
                 if(ef.type === "damage" || ef.type === "heal") {
                     return `威力 ${ef.fix ? ef.fix : (ef.min + "～" + ef.max)}`;
                 } else if(ef.type === "addState") {
@@ -416,9 +417,14 @@ function renderMenuItems() {
                     return `蘇生 ${ef.fix}%`;
                 }
                 return 
-            });
+            }) : [];
+        if (item.stat_modifier) {
+            effectLabels.push(...Object.keys(item.stat_modifier).map(key => {
+                    return `${LABEL[key]}${item.stat_modifier[key] >= 0 ? "+" + item.stat_modifier[key] : item.stat_modifier[key]}`;
+                }));
+        }
         const iconMap = {
-            attack: "💥", heal: "💖", mod_status: "💪",
+            attack: "💥", heal: "💚", mod_status: "💪",
             weapon: "⚔️", mainArmor: "🛡️", subArmor: "⛨", accessory: "💍",
         };
         return `

@@ -40,6 +40,13 @@
     --red:        #e85858;
     --yellow:     #f8d040;
     --teal:       #40d0b8;
+    /* タイル用 */
+    --enemy:       #500000; /* 危険 */
+    --eliteEnemy:  #801111; /* 強敵 */
+    --boss:        #20034a; /* ボス */
+    --event:       #504008; /* イベント */
+    --rest:        #032f10; /* 休息 */
+    --adventurer:  #401140; /* 冒険者 */
 }
 html, body {
     height: 100%;
@@ -306,27 +313,6 @@ html, body {
 .base-btn-badge.new { background: var(--teal); color: #0a2a26; }
 .base-btn-badge.gold-badge { background: var(--gold-dim); color: #1a0c00; }
 
-/* 探索ボタン（大・横幅フル） */
-#base-btn-explore {
-    grid-column: 1 / -1;
-    flex-direction: row;
-    padding: 14px 20px;
-    background: linear-gradient(135deg, #3a1a04, #6a3010, #3a1a04);
-    border-color: #c86020;
-    min-height: auto; gap: 14px;
-    box-shadow: 0 2px 12px rgba(200,96,32,0.3);
-}
-#base-btn-explore::before {
-    background: linear-gradient(90deg, transparent, rgba(248,160,32,0.4), transparent);
-}
-#base-btn-explore:active {
-    border-color: var(--gold);
-    box-shadow: 0 0 20px rgba(248,160,32,0.4);
-}
-#base-btn-explore .base-btn-icon { font-size: 32px; }
-#base-btn-explore .base-btn-label { font-size: 16px; letter-spacing: 3px; color: var(--gold); }
-#base-btn-explore .base-btn-sub { font-size: 10px; color: #c88050; text-align: left; }
-
 /* ステータス帯 */
 .base-footer {
     position: relative; z-index: 2;
@@ -425,7 +411,7 @@ html, body {
     margin-top: 12px;
 }
 
-/* 探索ボタン（大・横幅フル） */
+/* ボタン（大・横幅フル） */
 .base-btn-wide {
     grid-column: 1 / -1;
     flex-direction: row;
@@ -474,6 +460,16 @@ html, body {
     font-size: 14px; color: var(--text-dim);
     letter-spacing: 1px; flex: 0 0 auto;
 }
+
+#explore-tile-grid .base-btn-sub {
+    color: var(--gold-dim);
+}
+.base-btn.enemy {background: var(--enemy)}
+.base-btn.eliteEnemy {background: var(--eliteEnemy)}
+.base-btn.boss {background: var(--boss)}
+.base-btn.event {background: var(--event)}
+.base-btn.rest {background: var(--rest)}
+.base-btn.adventurer {background: var(--adventurer)}
 
 /* ══════════════ イラストエリア ══════════════ */
 #explore-event-illust {

@@ -6,7 +6,7 @@ export const EVENT_TABLES = {
     },
     lostForestShallow01: {
         battle: 0.05,
-        eliteBattle: 0.02,
+        eliteEnemy: 0.02,
         rest: 0.03,
         treasureSmall: 0.30,
         smallHerb: 0.30,

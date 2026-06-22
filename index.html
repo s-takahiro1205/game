@@ -852,11 +852,7 @@ html, body {
     transition: border-color .12s, background .12s;
 }
 .storage-item-main {
-    /* background: var(--panel2); border: 1px solid var(--border2);
-    border-radius: 8px; padding: 9px 10px; */
     display: flex; align-items: center; gap: 8px;
-    /* cursor: pointer; position: relative; */
-    /* transition: border-color .12s, background .12s; */
 }
 .storage-item-main:active { background: var(--panel3); }
 .storage-item-icon {
@@ -903,6 +899,50 @@ html, body {
     background-color: #555;
     color: #bbb;
     cursor: not-allowed;
+}
+
+/* 装備候補表示 */
+.equip-grid {
+    padding:10px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+}
+.equip-item {
+    background: var(--panel2); border: 1px solid var(--border2);
+    border-radius: 8px; padding: 9px 10px;
+    /* display: flex; align-items: center; gap: 8px; */
+    cursor: pointer; position: relative;
+    /* transition: border-color .12s, background .12s; */
+
+    display: inline-block;
+    padding: 12px 24px;
+    /* アニメーション */
+    transition:
+        background-color 0.15s,
+        transform 0.1s,
+        box-shadow 0.1s;
+}
+.equip-item-main {
+    display: flex; align-items: center; gap: 8px;
+}
+/* .equip-item-main:active { background: var(--panel3); } */
+.equip-item-icon {
+    width: 36px; height: 36px; border-radius: 6px;
+    background: var(--panel3); border: 1px solid var(--border2);
+    display: flex; align-items: center; justify-content: center; font-size: 20px;
+    flex: 0 0 auto;
+}
+.equip-item-name { font-size: 11px; font-weight: bold; color: var(--text); }
+.equip-item-sub  { font-size: 9px; color: var(--text-dim); margin-top: 2px; }
+.equip-item:hover {
+    color: #e6b800;
+    text-decoration: none;
+}
+.equip-item:active {
+    transform: translateY(2px);
+    background: #444;
+    box-shadow: 0 2px 4px rgba(0,0,0,.2);
+}
+.equip-item:active .equip-item-icon {
+    background: #444;
 }
 </style>
 </head>
@@ -1113,7 +1153,7 @@ html, body {
             <div class="base-footer">
                 <div class="base-footer-stat base-btn base-btn-only-label" id="base-select-explore-map-screen-back">
                     <span class="base-btn-label">戻る</span>
-                </div><div class="base-footer-stat"></div><!-- 幅調整用 -->
+                </div><div class="base-footer-stat hidden"></div><!-- 幅調整用 -->
             </div>
         </div>
     </div>
@@ -1372,6 +1412,7 @@ html, body {
                 <div id="menu-tab-party-member-sub-tab-area">
                     <div class="menu-tab-party-member-sub-tab" data-sub-type="status">ステータス</div>
                     <div class="menu-tab-party-member-sub-tab" data-sub-type="equip">装備</div>
+                    <div class="menu-tab-party-member-sub-tab hidden" data-sub-type="equipChange">装備変更</div>
                     <div class="menu-tab-party-member-sub-tab" data-sub-type="skill">スキル</div>
                 </div>
                 <div id="menu-tab-party-member-content"></div>
@@ -1379,7 +1420,7 @@ html, body {
 
             <!-- アイテム（簡易） -->
             <div id="menu-tab-items" class="menu-tab-content">
-                <div style="padding:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px" id="menu-tab-item-grid"></div>
+                <div style="padding:10px;" class="storage-grid" id="menu-tab-item-grid"></div>
             </div>
 
             <!-- 設定 -->

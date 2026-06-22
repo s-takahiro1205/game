@@ -95,7 +95,7 @@ export const RACES = {
     },
 };
 
-export const EQUIP_TYPES = {
+export const EQUIP_CATEGORIES = {
     weapon: {id: "weapon", name: "武器"},
     mainArmor: {id: "mainArmor", name: "主防具"},
     subArmor: {id: "subArmor", name: "副防具"},

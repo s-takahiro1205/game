@@ -8,7 +8,7 @@ import { ENEMIES } from './data/enemies.js';
 import { SKILLS } from './data/skills.js';
 import { JOBS } from './data/jobs.js';
 import { scheduleRender } from './render.js';
-import { LABEL, SCREENS, SUB_SCREENS, BOTTOM_SHEETS, BOTTOM_MENU_TABS, BATTLE_STATUSES, DEBUFF_STATUS_MODIFIERS, SEXES, RACES, EQUIP_TYPES, SELECT_TARGET_TYPE, TARGET_TYPE_EXTRACTOR, isDead } from './const.js';
+import { LABEL, SCREENS, SUB_SCREENS, BOTTOM_SHEETS, BOTTOM_MENU_TABS, BATTLE_STATUSES, DEBUFF_STATUS_MODIFIERS, SEXES, RACES, EQUIP_CATEGORIES, SELECT_TARGET_TYPE, TARGET_TYPE_EXTRACTOR, isDead } from './const.js';
 
 // ============================================================================
 // 1. グローバル変数とDOM要素
@@ -40,7 +40,7 @@ import { LABEL, SCREENS, SUB_SCREENS, BOTTOM_SHEETS, BOTTOM_MENU_TABS, BATTLE_ST
  * @property {string} use_type - 使用種別
  * @property {string} use_target_type - 使用対象種別
  * @property {object | null} stat_modifier - 増減ステータス（例: { atk: +5, def: +2 }）
- * @property {"weapon" | "def" | "shield" | "accessory" | null} equipType - 装備種別
+ * @property {"weapon" | "def" | "shield" | "accessory" | null} equipCategory - 装備種別
  */
 
 // ops["gte"](player.level, value)など
@@ -93,11 +93,11 @@ const unit_base = {
         // },
     },
     equipmentSlot: [
-        {id: "weapon_1", category: EQUIP_TYPES.weapon.id, equippedItem: null},
-        {id: "mainArmor_1", category: EQUIP_TYPES.mainArmor.id, equippedItem: null},
-        {id: "subArmor_1", category: EQUIP_TYPES.subArmor.id, equippedItem: null},
-        {id: "accessory_1", category: EQUIP_TYPES.accessory.id, equippedItem: null},
-        {id: "accessory_2", category: EQUIP_TYPES.accessory.id, equippedItem: null},
+        {id: "weapon_1", category: EQUIP_CATEGORIES.weapon.id, equippedItem: null},
+        {id: "mainArmor_1", category: EQUIP_CATEGORIES.mainArmor.id, equippedItem: null},
+        {id: "subArmor_1", category: EQUIP_CATEGORIES.subArmor.id, equippedItem: null},
+        {id: "accessory_1", category: EQUIP_CATEGORIES.accessory.id, equippedItem: null},
+        {id: "accessory_2", category: EQUIP_CATEGORIES.accessory.id, equippedItem: null},
     ],
     skillList: [ // スキル
         // getSkillById("thunder"),// 例
@@ -150,6 +150,7 @@ export const gameState = new Proxy({
         bottomMenuTabId: BOTTOM_MENU_TABS.menuTabParty,
         bottomMenuPartyTabIndex: 0,
         bottomMenuPartyTabSubType: "status",
+        equipChangeSlotId: null,
         selectExploreMap: null,
         // ヘッダー開閉
         isHudOpen: false,
@@ -268,9 +269,14 @@ menuTabPartyMemberTabArea.addEventListener("click", async (e) => {
     if (!choice || !choice.dataset.partyIndex) {
         return;
     }
+    // 装備変更中なら初期化して装備タブに変更
+    if(gameState.bottomMenuPartyTabSubType === "equipSet") {
+        gameState.equipChangeSlotId = null;
+        gameState.bottomMenuPartyTabSubType = "equip";
+    }
     gameState.bottomMenuPartyTabIndex = parseInt(choice.dataset.partyIndex);
 });
-// メニュー：パーティーメンバータブ切り替え
+// メニュー：メンバータブ2切り替え
 const menuTabPartyMemberSubTabArea = document.getElementById("menu-tab-party-member-sub-tab-area");
 menuTabPartyMemberSubTabArea.addEventListener("click", async (e) => {
     const choice = e.target.closest('.menu-tab-party-member-sub-tab');
@@ -362,11 +368,11 @@ baseBtnMansion.addEventListener("click", () => {
     unit.currentJob = null;
     unit.jobs = {};
     unit.equipmentSlot = [
-        {id: "weapon_1", category: EQUIP_TYPES.weapon.id, equippedItem: null},
-        {id: "mainArmor_1", category: EQUIP_TYPES.mainArmor.id, equippedItem: null},
-        {id: "subArmor_1", category: EQUIP_TYPES.subArmor.id, equippedItem: null},
-        {id: "accessory_1", category: EQUIP_TYPES.accessory.id, equippedItem: null},
-        {id: "accessory_2", category: EQUIP_TYPES.accessory.id, equippedItem: null},
+        {id: "weapon_1", category: EQUIP_CATEGORIES.weapon.id, equippedItem: null},
+        {id: "mainArmor_1", category: EQUIP_CATEGORIES.mainArmor.id, equippedItem: null},
+        {id: "subArmor_1", category: EQUIP_CATEGORIES.subArmor.id, equippedItem: null},
+        {id: "accessory_1", category: EQUIP_CATEGORIES.accessory.id, equippedItem: null},
+        {id: "accessory_2", category: EQUIP_CATEGORIES.accessory.id, equippedItem: null},
     ];
     unit.skillList = [
         // getSkillById("wait-and-see"),
@@ -404,53 +410,47 @@ baseSelectExploreMapScreenBack.addEventListener("click", async () => {
     backSubScreen();
 });
 
-/* モーダル */
-const modalOverlay = document.getElementById("modal-overlay");
-const modalActions = document.getElementById("modal-actions");
-modalActions.addEventListener("click", async (e) => {
-    const choice = e.target.closest('.modal-btn');
-    const eventName = choice.dataset.eventName;
-    if (!choice || !eventName) {
-        return
-    };
-    // キャンセル選択ならモーダルを閉じる
-    if (eventName === "cancel") {
-        modalEvents["cancel"]();
+/* メニュー装備スロット選択 */
+/* 装備アイテム選択 */
+const menuTabPartyMemberContent = document.getElementById("menu-tab-party-member-content");
+menuTabPartyMemberContent.addEventListener("click", async (e) => {
+    await sleep(50);
+    const equipSlot = e.target.closest('.equip-slot');
+    const equipItem = e.target.closest('.equip-item');
+    const equipItemUnequip = e.target.closest('.equip-item-unequip');
+    const equipItemBack = e.target.closest('.equip-item-back');
+    if (equipSlot) {
+        // 装備スロット選択
+        const slotId = equipSlot.dataset.slotId;
+        if (!slotId) {
+            return;
+        }
+        gameState.equipChangeSlotId = slotId;
+        gameState.bottomMenuPartyTabSubType = "equipChange";
         return;
+    } else if (equipItem) {
+        // 装備アイテム選択
+        const itemUuid = equipItem.dataset.itemUuid;
+        if (!itemUuid) {
+            return;
+        }
+        equip(itemUuid, gameState.equipChangeSlotId, player.party[gameState.bottomMenuPartyTabIndex]);
+        gameState.equipChangeSlotId = null;
+        gameState.bottomMenuPartyTabSubType = "equip";
+        return;
+    } else if (equipItemUnequip) {
+        // 装備解除
+        unequip(gameState.equipChangeSlotId, player.party[gameState.bottomMenuPartyTabIndex]);
+        gameState.equipChangeSlotId = null;
+        gameState.bottomMenuPartyTabSubType = "equip";
+        return;
+    } else if (equipItemBack) {
+        // 装備アイテム選択から戻る
+        gameState.equipChangeSlotId = null;
+        gameState.bottomMenuPartyTabSubType = "equip";
     }
-    modalEvents[eventName](choice.dataset);
 });
-
-// モーダル選択肢選択後のイベントマップ
-const modalEvents = {
-    cancel: modalCancel,
-    modalUseItem: modalUseItem,
-    modalDiscardItem: modalDiscardItem,
-};
-
-// モーダル：閉じる
-function modalCancel() {
-    gameState.modal = null;
-}
-
-// モーダル：アイテム使用
-function modalUseItem(dataset) {
-    useItem(
-        dataset.itemUuid,
-        dataset.unitId === "all" ? player.party.map(unit => unit.id) : [dataset.unitId]
-    );
-    gameState.modal = null;
-    gameState.dirty = true;
-}
-
-// モーダル：アイテム破棄
-function modalDiscardItem(dataset) {
-    discardItem(dataset.itemUuid);
-    gameState.modal = null;
-    gameState.dirty = true;
-}
-
-/* メニュー */
+/* メニューアイテム選択 */
 const menuTabItemGrid = document.getElementById("menu-tab-item-grid");
 menuTabItemGrid.addEventListener("click", async (e) => {
     const choice = e.target.closest('.storage-btn');
@@ -501,6 +501,52 @@ menuTabItemGrid.addEventListener("click", async (e) => {
         );
     }
 });
+
+/* モーダル */
+const modalOverlay = document.getElementById("modal-overlay");
+const modalActions = document.getElementById("modal-actions");
+modalActions.addEventListener("click", async (e) => {
+    const choice = e.target.closest('.modal-btn');
+    const eventName = choice.dataset.eventName;
+    if (!choice || !eventName) {
+        return
+    };
+    // キャンセル選択ならモーダルを閉じる
+    if (eventName === "cancel") {
+        modalEvents["cancel"]();
+        return;
+    }
+    modalEvents[eventName](choice.dataset);
+});
+
+// モーダル選択肢選択後のイベントマップ
+const modalEvents = {
+    cancel: modalCancel,
+    modalUseItem: modalUseItem,
+    modalDiscardItem: modalDiscardItem,
+};
+
+// モーダル：閉じる
+function modalCancel() {
+    gameState.modal = null;
+}
+
+// モーダル：アイテム使用
+function modalUseItem(dataset) {
+    useItem(
+        dataset.itemUuid,
+        dataset.unitId === "all" ? player.party.map(unit => unit.id) : [dataset.unitId]
+    );
+    gameState.modal = null;
+    gameState.dirty = true;
+}
+
+// モーダル：アイテム破棄
+function modalDiscardItem(dataset) {
+    discardItem(dataset.itemUuid);
+    gameState.modal = null;
+    gameState.dirty = true;
+}
 
 /* 探索 */
 const exploreTileGrid = document.getElementById("explore-tile-grid");
@@ -1340,11 +1386,11 @@ function initializePlayer() {
     unit.currentJob = null;
     unit.jobs = {};
     unit.equipmentSlot = [
-        {id: "weapon_1", category: EQUIP_TYPES.weapon.id, equippedItem: null},
-        {id: "mainArmor_1", category: EQUIP_TYPES.mainArmor.id, equippedItem: null},
-        {id: "subArmor_1", category: EQUIP_TYPES.subArmor.id, equippedItem: null},
-        {id: "accessory_1", category: EQUIP_TYPES.accessory.id, equippedItem: null},
-        {id: "accessory_2", category: EQUIP_TYPES.accessory.id, equippedItem: null},
+        {id: "weapon_1", category: EQUIP_CATEGORIES.weapon.id, equippedItem: null},
+        {id: "mainArmor_1", category: EQUIP_CATEGORIES.mainArmor.id, equippedItem: null},
+        {id: "subArmor_1", category: EQUIP_CATEGORIES.subArmor.id, equippedItem: null},
+        {id: "accessory_1", category: EQUIP_CATEGORIES.accessory.id, equippedItem: null},
+        {id: "accessory_2", category: EQUIP_CATEGORIES.accessory.id, equippedItem: null},
     ];
     unit.skillList = [
         // getSkillById("wait-and-see"),
@@ -1827,74 +1873,62 @@ async function discardItem(itemUuid) {
     showToast(msg);
 }
 
-// /**
-//  * 装備ボタンのイベント
-//  * TODO: キャラ指定対応
-//  */
-// export function equip(_) {
-//     // 1. 同タイプチェックを先に
-//     const sameType = player.party[0].equipmentSlot.some(e => e.equipType === this.item.equipType);
-//     if (sameType) {
-//         showToast(`すでに${this.item.equipType}を装備しています`);
-//         return;
-//     }
+/**
+ * 装備イベント
+ */
+export function equip(itemUuid, slotId, unit) {
+    const item = player.itemSlot.find(item => item.uuid === itemUuid);
+    const isCanEquip = canEquip(unit, item);
+    const equipSlot = unit.equipmentSlot.find(s => s.id === slotId);
+    if (!isCanEquip || item.equipCategory !== equipSlot.category) {
+        throw new Error('UnEquip item');
+    }
 
-//     // 2. 枠数チェック
-//     if (player.party[0].equipmentSlot.length >= 5) {
-//         showToast("装備枠が一杯です");
-//         return;
-//     }
+    // 装備しているなら先に外す
+    if (equipSlot.equippedItem) {
+        unequip(slotId, unit);
+    }
 
-//     // 3. stat_modifierをプレイヤーに反映
-//     if (this.item.stat_modifier) {
-//         Object.entries(this.item.stat_modifier).forEach(([stat, val]) => {
-//             player.party[0][stat] += val;
-//         });
-//     }
+    equipSlot.equippedItem = item;
+    if (item.stat_modifier) {
+        Object.entries(item.stat_modifier).forEach(([stat, val]) => {
+            unit[stat] += val;
+        });
+    }
+    player.itemSlot = player.itemSlot.filter(i => i.uuid !== item.uuid);
+    showToast(`${unit.name}は${item.name}を装備した。`);
+    gameState.dirty = true;
+    saveGame(player);
+}
 
-//     player.party[0].equipmentSlot.push(this.item);
-//     player.itemSlot = player.itemSlot.filter(i => i !== this.item);
+/**
+ * 装備解除ボタンのイベント
+ */
+export function unequip(slotId, unit) {
+    const equipSlot = unit.equipmentSlot.find(s => s.id === slotId);
+    const item = equipSlot.equippedItem;
 
-//     const equipMsg = `${this.item.name}を装備した`;
-//     addMessage(equipMsg);
-//     showToast(equipMsg);
-//     gameState.dirty = true;
-//     saveGame(player);
-// }
+    // stat_modifierを戻す
+    if (item.stat_modifier) {
+        Object.entries(item.stat_modifier).forEach(([stat, val]) => {
+            unit[stat] -= val;
+        });
+        if (unit.hp > unit.maxHp) {
+            unit.hp = unit.maxHp;
+        }
+        if (unit.mp > unit.maxMp) {
+            unit.mp = unit.maxMp;
+        }
+    }
 
-// /**
-//  * 装備解除ボタンのイベント
-//  */
-// export function unequip(_) {
-//     // 1. アイテム枠チェック
-//     if (player.itemSlot.length >= 20) {
-//         // addMessage("アイテム枠が一杯で外せません");
-//         showToast("アイテム枠が一杯で外せません");
-//         return;
-//     }
+    player.itemSlot.push(item);
+    equipSlot.equippedItem = null;
 
-//     // 2. stat_modifierを戻す
-//     if (this.item.stat_modifier) {
-//         Object.entries(this.item.stat_modifier).forEach(([stat, val]) => {
-//             player.party[0][stat] -= val;
-//         });
-//         if (player.party[0].hp > player.party[0].maxHp) {
-//             player.party[0].hp = player.party[0].maxHp;
-//         }
-//         if (player.party[0].mp > player.party[0].maxMp) {
-//             player.party[0].mp = player.party[0].maxMp;
-//         }
-//     }
-
-//     player.itemSlot.push(this.item);
-//     player.party[0].equipmentSlot = player.party[0].equipmentSlot.filter(i => i !== this.item);
-
-//     const unequipMsg = `${this.item.name}を外した`;
-//     addMessage(unequipMsg);
-//     showToast(unequipMsg);
-//     gameState.dirty = true;
-//     saveGame(player);
-// }
+    const unequipMsg = `${item.name}を外した`;
+    showToast(unequipMsg);
+    gameState.dirty = true;
+    saveGame(player);
+}
 
 /**
  * IDをキーにアイテムデータをマスタから取得してクローンを返す
@@ -3048,6 +3082,46 @@ function getPartyUnitById(id) {
 function getUnitById(id) {
     return gameState.battle.party.find(unit => unit.id === id) ||
         gameState.battle.enemies.find(unit => unit.id === id);
+}
+
+/**
+ * アイテムが装備可能か
+ * TODO: 条件拡充
+ * @param {Object} unit
+ * @param {string} id 
+ * @returns {Proxy}
+ */
+export function canEquip(unit, item) {
+    // 装備出ないならfalse
+    if (item.category !== "equipment") {
+        return false;
+    }
+    // 条件なしならOK
+    if (!item.equipCondition) {
+        return true;
+    }
+    // 条件チェック
+    let isNot = false;
+    const conds = item.equipCondition;
+    Object.keys(conds).some(type => {
+        switch (type) {
+            case "job": {
+                // ジョブ指定なら1つでも一致しなければアウト
+                isNot = !conds[type].some(jobId => unit.currentJob === jobId);
+                break;
+            } case "notJob": {
+                // 不可ジョブ指定なら1つでも一致したらアウト
+                isNot = conds[type].some(jobId => unit.currentJob === jobId);
+                break;
+            } default : {
+                throw new Error(`Unknown EquipCondition type: ${type}`)
+            }
+        }
+        if (isNot) {
+            return false;
+        }
+    });
+    return true;
 }
 
 

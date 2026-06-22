@@ -1,6 +1,7 @@
 // アイテムデータ定義
 
-import { EQUIP_TYPES } from '../const.js';
+import { EQUIP_CATEGORIES } from '../const.js';
+import { JOBS } from './jobs.js';
 /**
  * @typedef {object} Effect
  * @property {string} type - 効果のタイプ (例: "heal", "statChange")
@@ -24,7 +25,8 @@ import { EQUIP_TYPES } from '../const.js';
  * @property {string} use_type - 使用種別
  * @property {string} use_target_type - 使用対象種別
  * @property {object | null} stat_modifier - 増減ステータス（例: { atk: +5, def: +2 }）
- * @property {"weapon" | "def" | "shield" | "accessory" | null} equipType - 装備種別
+ * @property {"weapon" | "def" | "shield" | "accessory" | null} equipCategory - 装備種別
+ * @property {array} equipCondition - 装備条件
  */
 
 /**
@@ -56,7 +58,8 @@ export const ITEMS = [
         use_type: "heal",
         use_target_type: "damaged_ally_one",
         stat_modifier: null,
-        equipType: null,
+        equipCategory: null,
+        equipCondition: null,
         uuid: "",
     },
     {
@@ -83,7 +86,8 @@ export const ITEMS = [
         use_type: "heal",
         use_target_type: "damaged_ally_one",
         stat_modifier: null,
-        equipType: null,
+        equipCategory: null,
+        equipCondition: null,
         uuid: "",
     },
     {
@@ -133,7 +137,8 @@ export const ITEMS = [
         use_type: "mod_status",
         use_target_type: "alive_ally_one",
         stat_modifier: null,
-        equipType: null,
+        equipCategory: null,
+        equipCondition: null,
         uuid: "",
     },
     {
@@ -161,7 +166,8 @@ export const ITEMS = [
         use_type: "mod_status",
         use_target_type: "alive_ally_one",
         stat_modifier: null,
-        equipType: null,
+        equipCategory: null,
+        equipCondition: null,
         uuid: "",
     },
     {
@@ -187,7 +193,8 @@ export const ITEMS = [
         use_type: "attack",
         use_target_type: "alive_enemy_all",
         stat_modifier: null,
-        equipType: null,
+        equipCategory: null,
+        equipCondition: null,
         uuid: "",
     },
     {
@@ -213,7 +220,8 @@ export const ITEMS = [
         use_type: "attack",
         use_target_type: "alive_enemy_one",
         stat_modifier: null,
-        equipType: null,
+        equipCategory: null,
+        equipCondition: null,
         uuid: "",
     },
     {
@@ -241,7 +249,8 @@ export const ITEMS = [
         use_type: "attack",
         use_target_type: "alive_enemy_one",
         stat_modifier: null,
-        equipType: null,
+        equipCategory: null,
+        equipCondition: null,
         uuid: "",
     },
     {
@@ -269,7 +278,8 @@ export const ITEMS = [
         use_type: "attack",
         use_target_type: "alive_enemy_one",
         stat_modifier: null,
-        equipType: null,
+        equipCategory: null,
+        equipCondition: null,
         uuid: "",
     },
     {
@@ -297,7 +307,8 @@ export const ITEMS = [
         use_type: "attack",
         use_target_type: "alive_enemy_one",
         stat_modifier: null,
-        equipType: null,
+        equipCategory: null,
+        equipCondition: null,
         uuid: "",
     },
     {
@@ -345,7 +356,8 @@ export const ITEMS = [
         use_type: "heal",
         use_target_type: "alive_ally_one",
         stat_modifier: null,
-        equipType: null,
+        equipCategory: null,
+        equipCondition: null,
         uuid: "",
     },
     {
@@ -372,7 +384,8 @@ export const ITEMS = [
         use_type: "heal",
         use_target_type: "dead_ally_one",
         stat_modifier: null,
-        equipType: null,
+        equipCategory: null,
+        equipCondition: null,
         uuid: "",
     },
     // 装備アイテム
@@ -395,7 +408,8 @@ export const ITEMS = [
             atk: 5,
             dex: -1
         },
-        equipType: EQUIP_TYPES.weapon.id,
+        equipCategory: EQUIP_CATEGORIES.weapon.id,
+        equipCondition: null,
         uuid: "",
     },
     {
@@ -414,7 +428,8 @@ export const ITEMS = [
         use_type: null,
         use_target_type: null,
         stat_modifier: { maxHp: 15, def: 3, spd: -1 },
-        equipType: EQUIP_TYPES.mainArmor.id,
+        equipCategory: EQUIP_CATEGORIES.mainArmor.id,
+        equipCondition: null,
         uuid: "",
     },
     {
@@ -433,7 +448,8 @@ export const ITEMS = [
         use_type: null,
         use_target_type: null,
         stat_modifier: { int: 5, maxMp: 5 },
-        equipType: EQUIP_TYPES.accessory.id,
+        equipCategory: EQUIP_CATEGORIES.accessory.id,
+        equipCondition: null,
         uuid: "",
     },
     {
@@ -452,7 +468,8 @@ export const ITEMS = [
         use_type: null,
         use_target_type: null,
         stat_modifier: { maxMp: 50, int: 10 },
-        equipType: EQUIP_TYPES.accessory.id,
+        equipCategory: EQUIP_CATEGORIES.accessory.id,
+        equipCondition: null,
         uuid: "",
     },
     {
@@ -471,7 +488,8 @@ export const ITEMS = [
         use_type: null,
         use_target_type: null,
         stat_modifier: { spd: 15, multiAction: 1 },
-        equipType: EQUIP_TYPES.accessory.id,
+        equipCategory: EQUIP_CATEGORIES.accessory.id,
+        equipCondition: {notJob: [JOBS.warrior]},
         uuid: "",
     },
 ];

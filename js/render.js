@@ -1,11 +1,11 @@
 // 画面描画
 
-import { player, gameState, getUsableList, getRequiredExp, getRequiredRankExp } from './game.js';
+import { player, gameState, getUsableList, getRequiredExp, getRequiredRankExp, canEquip } from './game.js';
 import { loadGame } from './save.js';
 import { JOBS } from './data/jobs.js';
 import { MAPS } from './data/maps.js';
 import { EVENTS } from './data/events.js';
-import { SCREENS, SUB_SCREENS, BOTTOM_SHEETS, BOTTOM_MENU_TABS, LABEL, BATTLE_STATUSES, SEXES, RACES, EQUIP_TYPES, TARGET_TYPE_EXTRACTOR } from './const.js';
+import { SCREENS, SUB_SCREENS, BOTTOM_SHEETS, BOTTOM_MENU_TABS, LABEL, BATTLE_STATUSES, SEXES, RACES, EQUIP_CATEGORIES, TARGET_TYPE_EXTRACTOR } from './const.js';
 
 // DOM Elements
 // TODO:精査してね
@@ -388,8 +388,8 @@ function renderMenu() {
                             ? Object.keys(e.equippedItem.stat_modifier).map(st => LABEL[st] + (e.equippedItem.stat_modifier[st] >= 0 ? "+" + e.equippedItem.stat_modifier[st] : e.equippedItem.stat_modifier[st])).join(" ")
                             : "";
                 return `
-            <div class="equip-slot">
-                <span class="equip-slot-label">${EQUIP_TYPES[e.category].name}</span>
+            <div class="equip-slot" data-slot-id="${e.id}">
+                <span class="equip-slot-label">${EQUIP_CATEGORIES[e.category].name}</span>
                 <div class="equip-slot-icon">${e.icon||'─'}</div>
                 <div class="equip-slot-info">${e.equippedItem
                 ? `<div class="equip-slot-name rarity-${e.rarity ?? ""}">${e.equippedItem.name}</div><div class="equip-slot-stats">${stats}</div>`
@@ -397,6 +397,9 @@ function renderMenu() {
                 <span class="equip-slot-arrow">▶</span>
             </div>`}).join('')}
             </div>`;
+        } else if (gameState.bottomMenuPartyTabSubType === 'equipChange') {
+            area.innerHTML = "";
+            renderEquipChange(area, unit);
         } else if (gameState.bottomMenuPartyTabSubType === "skill") {
             const tagList = {
                 attack:'攻撃', heal:'回復', support:'補助',
@@ -437,6 +440,57 @@ function renderMenu() {
     }
 }
 
+/**
+ * 装備変更タブを描画する
+ * @param {Object} area 
+ */
+function renderEquipChange(area, unit) {
+    const grid = document.createElement("div");
+    grid.classList.add("equip-grid");
+    const slot = unit.equipmentSlot.find(s => s.id === gameState.equipChangeSlotId);
+    const sameTypeItems = player.itemSlot.filter(item => item.category === "equipment" && item.equipCategory === slot.category);
+    grid.innerHTML = sameTypeItems.map(item => {
+        const effectLabels = item.effects
+            ? item.effects.map(ef => {
+                if(ef.type === "damage" || ef.type === "heal") {
+                    return `威力 ${ef.fix ? ef.fix : (ef.min + "～" + ef.max)}`;
+                } else if(ef.type === "addState") {
+                    return `付与:${LABEL[ef.stateId]} 約${ef.turn}ターン ${ef.fix}%`;
+                } else if(ef.type === "recoverState") {
+                    return `治癒:${LABEL[ef.stateId]} ${ef.fix}%`;
+                } else if(ef.type === "revive") {
+                    return `蘇生 ${ef.fix}%`;
+                }
+                return 
+            }) : [];
+        if (item.stat_modifier) {
+            effectLabels.push(...Object.keys(item.stat_modifier).map(key => {
+                    return `${LABEL[key]}${item.stat_modifier[key] >= 0 ? "+" + item.stat_modifier[key] : item.stat_modifier[key]}`;
+                }));
+        }
+        const iconMap = {
+            attack: "💥", heal: "💚", mod_status: "💪",
+            weapon: "⚔️", mainArmor: "🛡️", subArmor: "⛨", accessory: "💍",
+        };
+        // 装備できないならfalse
+        const isDisabled = !canEquip(unit, item);
+        return `
+        <div class="equip-item" data-item-uuid="${item.uuid}">
+            <div class="equip-item-main">
+                <div class="equip-item-icon" style="width:32px;height:32px;font-size:18px">${item.use_type ? iconMap[item.use_type] : (item.equipCategory ? iconMap[item.equipCategory] : "")}</div>
+                <div>
+                    <div class="equip-item-name" style="font-size:10px">${item.name}</div>
+                    <div class="equip-item-sub" style="font-size:8px">${effectLabels||'—'}</div>
+                </div>
+            </div>
+    </div>`}).join('');
+    area.innerHTML += `<div class="equip-item-back base-btn base-btn-wide highlight" style="margin: 1em 2em; display: block;"><div class="base-btn-label" style="margin: auto;">戻る</div></div>`;
+    // すでにそのスロットで装備しているなら装備解除ボタンを表示
+    if (slot.equippedItem) {
+        area.innerHTML += `<div class="equip-item-unequip base-btn base-btn-wide highlight" style="margin: 1em 2em; display: block;"><div class="base-btn-label" style="margin: auto; color: #FFF">装備解除</div></div>`;
+    }
+    area.appendChild(grid);
+}
 
 /* メニュー内アイテム */
 function renderMenuItems() {
@@ -471,7 +525,7 @@ function renderMenuItems() {
         <!-- 上段：既存コンテンツをrowでまとめる -->
         <div class="storage-item" data-item-uuid="${item.uuid}">
             <div class="storage-item-main" style="background:var(--panel2)">
-                <div class="storage-item-icon" style="width:32px;height:32px;font-size:18px">${item.use_type ? iconMap[item.use_type] : (item.equipType ? iconMap[item.equipType] : "")}</div>
+                <div class="storage-item-icon" style="width:32px;height:32px;font-size:18px">${item.use_type ? iconMap[item.use_type] : (item.equipCategory ? iconMap[item.equipCategory] : "")}</div>
                 <div>
                     <div class="storage-item-name" style="font-size:10px">${item.name}</div>
                     <div class="storage-item-sub" style="font-size:8px">${effectLabels||'—'}</div>

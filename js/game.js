@@ -1471,7 +1471,7 @@ function addUnitForEnemyId(enemyId, sex = null) {
         jobId: enemy.currentJob,
     }
 
-    const unit = createUnit(unitData, {}, null, !enemyId.skillList ? [] : enemyId.skillList.filter(skillId => IGNORE_PARTY_SKILL.some(id !== skillId)));
+    const unit = createUnit(unitData, {}, null, !enemy.skillList ? [] : enemy.skillList.filter(skillId => IGNORE_PARTY_SKILL.some(id !== skillId)));
     return unit;
 }
 

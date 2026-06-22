@@ -1056,6 +1056,13 @@ function updateEnemyStatus() {
         hpFill.style.width = `${hpPercentage}%`;
         hpFill.classList.toggle('low-hp', hpPercentage <= 25);
     });
+    gameState.battle.dominations.forEach(unit => {
+        const card = document.querySelector(
+            `.enemy-card[data-id="${unit.id}"]:not(.hidden)`
+        );
+        if (!card) return;
+        card.classList.add("hidden");
+    });
 }
 
 /**

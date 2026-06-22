@@ -251,7 +251,7 @@ export const JOBS = {
         name: "魔物",
         grade: 1,
         maxRank: 30,
-        rateExp: 1.0,
+        rateExp: 0.5,
         unlockConditions: [
             {
                 type: "level",
@@ -362,14 +362,14 @@ export const JOBS = {
             {
                 rank: 25,
                 status: {
-                    maxHp: 3,
-                    maxMp: 3,
-                    atk: 1,
-                    def: 1,
-                    spd: 1,
-                    int: 1,
-                    dex: 1,
-                    size: 1,
+                    maxHp: 5,
+                    maxMp: 5,
+                    atk: 5,
+                    def: 5,
+                    spd: 5,
+                    int: 5,
+                    dex: 5,
+                    size: 5,
                 }
             },
             {

@@ -207,7 +207,7 @@ export const SKILLS = [
 
     // 戦技 戦技はHP消費
     {
-        id: "domination-curse-mark",
+        id: "domination",
         name: "支配の呪印",
         cost: {},
         target_type: "alive_enemy_one",

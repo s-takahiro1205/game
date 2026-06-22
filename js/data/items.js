@@ -653,7 +653,9 @@ export const ITEMS = [
         useTargetType: null,
         statModifier: { spd: 15, multiAction: 1 },
         equipCategory: EQUIP_CATEGORIES.accessory.id,
-        equipCondition: {notJob: [JOBS.warrior.id]},
+        equipCondition: {
+            // notJob: [JOBS.warrior.id]
+        },
         uuid: "",
     },
 ];

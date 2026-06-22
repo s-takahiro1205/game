@@ -546,12 +546,36 @@ const exploreGameOverBack = document.getElementById("explore-game-over-back");
 exploreClearBack.addEventListener("click", async (e) => {
     await sleep(100);
     const mapName = MAPS[player.explore.mapId].name;
-    // 初クリアなら実績を追加
+    // 初クリアなら実績を追加し、クリア報酬を追加
     if (!player.achievement.mapClear[player.explore.mapId]) {
         player.achievement.mapClear[player.explore.mapId] = {
             count: 1,
             firstDay: player.day
         };
+        // TODO: クリア報酬のメソッド化+描画
+        if (MAPS[player.explore.mapId].clearBonus) {
+            const firstBonus = MAPS[player.explore.mapId].clearBonus.first;
+            if (firstBonus) {
+                Object.keys(firstBonus).forEach(type => {
+                    switch (type) {
+                        case "addSkill": {
+                            // イベント。主人公指定で付与 TODO: 重複チェック
+                            const skillList = player.party.find(unit => unit.myUnit)?.skillList ?? [];
+                            firstBonus[type].forEach(skillId => {
+                                if (!skillList.some((skill) => skill.id === skillId)) {
+                                    const skill = getSkillById(skillId);
+                                    skillList.push(skill);
+                                    showToast(`${skill.name}を覚えた！`);
+                                }
+                            });
+                            break;
+                        } default : {
+                            throw new Error(`Unknown map clear bonus type: ${type}`)
+                        }
+                    }
+                });
+            }
+        }
     } else {
         player.achievement.mapClear[player.explore.mapId].count += 1;
     }
@@ -1363,7 +1387,8 @@ function initializePlayer() {
         jobId: "warrior",
     }
 
-    const unit = createUnit(unitData, {}, null, ["domination-curse-mark"]);
+    const unit = createUnit(unitData);
+    unit.myUnit = true;
     player.party[0] = unit;
 
     gameState.dirty = true;
@@ -3096,6 +3121,10 @@ function addBattleStatus(state_id, target, turn) {
     const current_status = target.battleStatus.find(s => s.type === state_id);
     if (!current_status) {
         target.battleStatus.push({type: state_id, turn: turn});
+    } else if (state_id === "domination") {
+        //　支配なら加算する
+        current_status.turn += turn;
+        addMessage(`支配：${current_status.turn}`)
     } else if (state_id !== "guard") {
         //　防御以外ならターンを最大値に更新する
         current_status.turn = Math.max(current_status.turn, turn);
@@ -3106,6 +3135,9 @@ function addBattleStatus(state_id, target, turn) {
         addMessage(`${target.name}を支配した！`);
         gameState.battle.enemies = gameState.battle.enemies.filter(unit => unit.id !== target.id);
         gameState.battle.dominations.push(target);
+        // 後処理
+        gameState.battle.turnOrder = gameState.battle.turnOrder.filter(order => target.id !== order.id);
+        advanceTimeline(target.id);
     }
 }
 

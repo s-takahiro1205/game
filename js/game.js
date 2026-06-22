@@ -5,7 +5,7 @@ import { MAPS, EVENT_TABLES, ITEM_TABLES, MONSTER_GROUPS, ENCOUNTER_TABLES } fro
 import { EVENTS } from './data/events.js';
 import { ITEMS } from './data/items.js';
 import { ENEMIES } from './data/enemies.js';
-import { SKILLS } from './data/skills.js';
+import { IGNORE_PARTY_SKILL, SKILLS } from './data/skills.js';
 import { JOBS } from './data/jobs.js';
 import { scheduleRender } from './render.js';
 import { LABEL, SCREENS, SUB_SCREENS, BOTTOM_SHEETS, BOTTOM_MENU_TABS, BATTLE_STATUSES, DEBUFF_STATUS_MODIFIERS, SEXES, RACES, EQUIP_CATEGORIES, SELECT_TARGET_TYPE, TARGET_TYPE_EXTRACTOR, isDead } from './const.js';
@@ -140,7 +140,7 @@ export let player = new Proxy({
 
 // ゲーム管理用Proxyオブジェクト
 export const gameState = new Proxy({
-        isDebugMode: true,//デバッグ時に直打ち
+        isDebugMode: false,//デバッグ時に直打ち
         // 強制描画用フラグ
         dirty: false,
         // ページ制御
@@ -178,6 +178,7 @@ export const gameState = new Proxy({
         battle: new Proxy({
             party: [],// 味方キャラProxy配列
             enemies: [],// 敵キャラProxy配列
+            dominations: [],// 支配キャラProxy配列
             turnOrder: [],// 行動順のparty+enemies
             turn: 0,// ターン数
             phase: null,// string画面制御用フラグ[start|turn_start|pending|command_waiting|exec|result]
@@ -319,71 +320,54 @@ baseBtnMansion.addEventListener("click", () => {
         showToast("パーティーがいっぱいです。");
         return;
     }
-    const unit = new Proxy(structuredClone(unit_base), {set: setAndRender});
 
-    let jobId = "";
+    const unitData = {
+        id: self.crypto.randomUUID(),
+        level: 1,
+        exp: 0,
+        multiAction: 1,
+        sex: SEXES.female.id,
+        race: RACES.human.id,
+        currentJob: null,
+    }
+
     if (partyCount === 3) {
-        jobId = "scout";
-        unit.name = "セッコ";
-        unit.maxHp = 28;
-        unit.maxMp = 0;
-        unit.atk = 12;
-        unit.def = 3;
-        unit.spd = 8;
-        unit.int = 3;
-        unit.dex = 8;
-        unit.size = 4;
+        unitData.jobId = "scout";
+        unitData.name = "セッコ";
+        unitData.maxHp = 28;
+        unitData.maxMp = 0;
+        unitData.atk = 12;
+        unitData.def = 3;
+        unitData.spd = 8;
+        unitData.int = 3;
+        unitData.dex = 8;
+        unitData.size = 4;
     } else if (partyCount === 2) {
-        jobId = "mage";
-        unit.name = "マホカ";
-        unit.maxHp = 23;
-        unit.maxMp = 30;
-        unit.atk = 3;
-        unit.def = 0;
-        unit.spd = 3;
-        unit.int = 18;
-        unit.dex = 3;
-        unit.size = 3;
+        unitData.jobId = "mage";
+        unitData.name = "マホカ";
+        unitData.maxHp = 23;
+        unitData.maxMp = 30;
+        unitData.atk = 3;
+        unitData.def = 0;
+        unitData.spd = 3;
+        unitData.int = 18;
+        unitData.dex = 3;
+        unitData.size = 3;
     } else if (partyCount === 1) {
-        jobId = "priest";
-        unit.name = "ソウ";
-        unit.maxHp = 28;
-        unit.maxMp = 20;
-        unit.atk = 1;
-        unit.def = 0;
-        unit.spd = 4;
-        unit.int = 13;
-        unit.dex = 3;
-        unit.size = 3;
+        unitData.jobId = "priest";
+        unitData.name = "ソウ";
+        unitData.maxHp = 28;
+        unitData.maxMp = 20;
+        unitData.atk = 1;
+        unitData.def = 0;
+        unitData.spd = 4;
+        unitData.int = 13;
+        unitData.dex = 3;
+        unitData.size = 3;
     }
 
-    unit.id = self.crypto.randomUUID();
-    unit.level = 1;
-    unit.exp = 0;
-    unit.hp = unit.maxHp;
-    unit.mp = unit.maxMp;
-    unit.multiAction = 1;
-    unit.sex = getRandom(1,3) <= 2 ? SEXES.female.id : getRandom(1,2) === 1 ? SEXES.male.id : SEXES.none.id;
-    unit.race = RACES.human.id;
-    unit.currentJob = null;
-    unit.jobs = {};
-    unit.equipmentSlot = [
-        {id: "weapon_1", category: EQUIP_CATEGORIES.weapon.id, equippedItem: null},
-        {id: "mainArmor_1", category: EQUIP_CATEGORIES.mainArmor.id, equippedItem: null},
-        {id: "subArmor_1", category: EQUIP_CATEGORIES.subArmor.id, equippedItem: null},
-        {id: "accessory_1", category: EQUIP_CATEGORIES.accessory.id, equippedItem: null},
-        {id: "accessory_2", category: EQUIP_CATEGORIES.accessory.id, equippedItem: null},
-    ];
-    unit.skillList = [
-        // getSkillById("wait-and-see"),
-    ];
-    unit.battleStatus = [];
-    const result = changeJob(unit, jobId);
-    if (!result.success) {
-        throw new Error(`Unknown Error: Job change failed`);
-    } else {
-        showToast(`${unit.name} が加入しました！`, 5000);
-    }
+    const unit = createUnit(unitData, {}, null, ["domination-curse-mark"]);
+    showToast(`${unit.name} が加入しました！`, 5000);
     player.party.push(unit);
 
     gameState.dirty = true;
@@ -1360,52 +1344,110 @@ document.querySelectorAll('.character-creation-stat-minus').forEach(btn => {
  * プレイヤーオブジェクトを初期化する
  */
 function initializePlayer() {
-    const unit = new Proxy(structuredClone(unit_base), {set: setAndRender});
-    unit.name = playerNameInput.value || "名もなき探訪者";
+    const unitData = {
+        name: playerNameInput.value || "名もなき探訪者",
+        maxHp: parseInt(hpAllocationInput.value) * 2,
+        maxMp: parseInt(mpAllocationInput.value) * 2,
+        atk: parseInt(attackAllocationInput.value),
+        def: 3,
+        spd: parseInt(speedAllocationInput.value),
+        int: parseInt(intelAllocationInput.value),
+        dex: parseInt(dexAllocationInput.value),
+        size: parseInt(sizeAllocationInput.value),
+        id: self.crypto.randomUUID(),
+        level: 1,
+        exp: 0,
+        multiAction: 1,
+        sex: getRandom(1,3) <= 2 ? SEXES.female.id : getRandom(1,2) === 1 ? SEXES.male.id : SEXES.none.id,
+        race: RACES.human.id,
+        jobId: "warrior",
+    }
 
-    const hpPts = parseInt(hpAllocationInput.value);
-    const mpPts = parseInt(mpAllocationInput.value);
-    const atkPts = parseInt(attackAllocationInput.value);
-    unit.maxHp = hpPts * 2;
-    unit.maxMp = mpPts * 2;
-    unit.atk = atkPts;
-    unit.def = 0;
-    unit.spd = parseInt(speedAllocationInput.value);
-    unit.int = parseInt(intelAllocationInput.value);
-    unit.dex = parseInt(dexAllocationInput.value);
-    unit.size = parseInt(sizeAllocationInput.value);
+    const unit = createUnit(unitData, {}, null, ["domination-curse-mark"]);
+    player.party[0] = unit;
+
+    gameState.dirty = true;
+    console.log("Player initialized:", player);
+    saveGame(player);
+}
+
+/**
+ * 各種データからユニットを生成する
+ * @param {*} unitData 
+ * @param {*} jobs 
+ * @param {*} equipmentSlot 
+ * @param {*} skillIds 
+ * @returns 
+ */
+function createUnit(unitData, jobs = {}, equipmentSlot = null, skillIds = []) {
+    const unit = new Proxy(structuredClone(unit_base), {set: setAndRender});
 
     unit.id = self.crypto.randomUUID();
-    unit.level = 1;
-    unit.exp = 0;
+    unit.name = unitData.name;
+    unit.level = unitData.level;
+    unit.exp = unitData.exp;
+    unit.maxHp = unitData.maxHp;
     unit.hp = unit.maxHp;
+    unit.maxMp = unitData.maxMp;
     unit.mp = unit.maxMp;
-    unit.multiAction = 1;
-    unit.sex = getRandom(1,3) <= 2 ? SEXES.female.id : getRandom(1,2) === 1 ? SEXES.male.id : SEXES.none.id;
-    unit.race = RACES.human.id;
+    unit.atk = unitData.atk;
+    unit.def = unitData.def;
+    unit.spd = unitData.spd;
+    unit.int = unitData.int;
+    unit.dex = unitData.dex;
+    unit.size = unitData.size;
+    unit.multiAction = unitData.multiAction;
+    unit.sex = unitData.sex;
+    unit.race = unitData.race;
     unit.currentJob = null;
-    unit.jobs = {};
-    unit.equipmentSlot = [
+
+    unit.jobs = jobs;
+    unit.equipmentSlot = equipmentSlot ? equipmentSlot : [
         {id: "weapon_1", category: EQUIP_CATEGORIES.weapon.id, equippedItem: null},
         {id: "mainArmor_1", category: EQUIP_CATEGORIES.mainArmor.id, equippedItem: null},
         {id: "subArmor_1", category: EQUIP_CATEGORIES.subArmor.id, equippedItem: null},
         {id: "accessory_1", category: EQUIP_CATEGORIES.accessory.id, equippedItem: null},
         {id: "accessory_2", category: EQUIP_CATEGORIES.accessory.id, equippedItem: null},
     ];
-    unit.skillList = [
-        // getSkillById("wait-and-see"),
-    ];
+    unit.skillList = skillIds
+                    ? skillIds.map(skillId => getSkillById(skillId))
+                    : [];
     unit.battleStatus = [];
-    const result = changeJob(unit, "warrior");
+
+    const result = changeJob(unit, unitData.jobId, true);
     if (!result.success) {
         throw new Error(`Unknown Error: Job change failed`);
     }
-    player.party[0] = unit;
+    return unit;
+}
 
-    gameState.dirty = true;
+/**
+ * エネミー定義からユニットを生成して返す
+ * @param {*} enemyId 
+ */
+function addUnitForEnemyId(enemyId, sex = null) {
+    const enemy = getEnemyById(enemyId);
+    const unitData = {
+        name: enemy.name,
+        maxHp: enemy.maxHp,
+        maxMp: enemy.maxMp,
+        atk: enemy.atk,
+        def: enemy.def,
+        spd: enemy.spd,
+        int: enemy.int,
+        dex: enemy.dex,
+        size: enemy.size,
+        id: self.crypto.randomUUID(),
+        level: enemy.level,
+        exp: getRequiredExp(enemy.level - 1),
+        multiAction: enemy.multiAction,
+        sex: sex ? SEXES.female.id : getRandom(1,2) === 1 ? SEXES.male.id : SEXES.none.id,
+        race: enemy.race,
+        jobId: enemy.currentJob,
+    }
 
-    console.log("Player initialized:", player);
-    saveGame(player);
+    const unit = createUnit(unitData, {}, null, !enemyId.skillList ? [] : enemyId.skillList.filter(skillId => IGNORE_PARTY_SKILL.some(id !== skillId)));
+    return unit;
 }
 
 /**
@@ -1450,86 +1492,87 @@ async function acquireItem(item) {
     }
 }
 
-/**
- * アイテム破棄モーダルを開き、プレイヤーのアイテムを表示する。
- * プレイヤーがアイテムを破棄するか、キャンセルするまで待機する。
- * @returns {Promise<boolean>} アイテムが破棄された場合はtrue、キャンセルされた場合はfalseを返すPromise
- */
-function openDiscardItemModal() {
-    return new Promise(resolve => {
-        discardItemList.innerHTML = ''; // リストをクリア
-        selectedItemToDiscardIndex = -1; // 選択状態をリセット
-        discardSelectedItemButton.disabled = true; // ボタンを無効化
+// /**
+//  * アイテム破棄モーダルを開き、プレイヤーのアイテムを表示する。
+//  * プレイヤーがアイテムを破棄するか、キャンセルするまで待機する。
+//  * @returns {Promise<boolean>} アイテムが破棄された場合はtrue、キャンセルされた場合はfalseを返すPromise
+//  */
+// function openDiscardItemModal() {
+//     return new Promise(resolve => {
+//         discardItemList.innerHTML = ''; // リストをクリア
+//         selectedItemToDiscardIndex = -1; // 選択状態をリセット
+//         discardSelectedItemButton.disabled = true; // ボタンを無効化
 
-        if (player.itemSlot.length === 0) {
-            discardItemList.innerHTML = '<p>所持アイテムがありません。</p>';
-            // アイテムがない場合は破棄できないので、自動的にキャンセル扱い
-            addMessage("破棄できるアイテムがありません。アイテムの取得を諦めます。");
-            discardItemModal.classList.add("hidden");
-            resolve(false);
-            return;
-        }
+//         if (player.itemSlot.length === 0) {
+//             discardItemList.innerHTML = '<p>所持アイテムがありません。</p>';
+//             // アイテムがない場合は破棄できないので、自動的にキャンセル扱い
+//             addMessage("破棄できるアイテムがありません。アイテムの取得を諦めます。");
+//             discardItemModal.classList.add("hidden");
+//             resolve(false);
+//             return;
+//         }
 
-        player.itemSlot.forEach((item, index) => {
-            const listItem = document.createElement("li");
-            listItem.textContent = `${item.name}`;// - ${item.description}
-            listItem.dataset.index = index;
-            listItem.addEventListener("click", () => {
-                // 選択状態を切り替える
-                if (selectedItemToDiscardIndex === index) {
-                    selectedItemToDiscardIndex = -1;
-                    listItem.classList.remove("selected");
-                } else {
-                    // 他の選択を解除
-                    const previouslySelected = discardItemList.querySelector(".selected");
-                    if (previouslySelected) {
-                        previouslySelected.classList.remove("selected");
-                    }
-                    selectedItemToDiscardIndex = index;
-                    listItem.classList.add("selected");
-                }
-                discardSelectedItemButton.disabled = selectedItemToDiscardIndex === -1;
-            });
-            discardItemList.appendChild(listItem);
-        });
+//         player.itemSlot.forEach((item, index) => {
+//             const listItem = document.createElement("li");
+//             listItem.textContent = `${item.name}`;// - ${item.description}
+//             listItem.dataset.index = index;
+//             listItem.addEventListener("click", () => {
+//                 // 選択状態を切り替える
+//                 if (selectedItemToDiscardIndex === index) {
+//                     selectedItemToDiscardIndex = -1;
+//                     listItem.classList.remove("selected");
+//                 } else {
+//                     // 他の選択を解除
+//                     const previouslySelected = discardItemList.querySelector(".selected");
+//                     if (previouslySelected) {
+//                         previouslySelected.classList.remove("selected");
+//                     }
+//                     selectedItemToDiscardIndex = index;
+//                     listItem.classList.add("selected");
+//                 }
+//                 discardSelectedItemButton.disabled = selectedItemToDiscardIndex === -1;
+//             });
+//             discardItemList.appendChild(listItem);
+//         });
 
-        discardItemModal.classList.remove("hidden");
-        document.body.style.overflow = "hidden"; // 背景のスクロールを禁止
+//         discardItemModal.classList.remove("hidden");
+//         document.body.style.overflow = "hidden"; // 背景のスクロールを禁止
 
-        // 閉じるボタンのイベントリスナー (モーダルを閉じてキャンセル)
-        const closeHandler = () => {
-            discardItemModal.classList.add("hidden");
-            document.body.style.overflow = "auto";
-            discardCloseButton.removeEventListener("click", closeHandler);
-            discardSelectedItemButton.removeEventListener("click", discardHandler);
-            resolve(false); // キャンセル
-        };
-        discardCloseButton.addEventListener("click", closeHandler);
+//         // 閉じるボタンのイベントリスナー (モーダルを閉じてキャンセル)
+//         const closeHandler = () => {
+//             discardItemModal.classList.add("hidden");
+//             document.body.style.overflow = "auto";
+//             discardCloseButton.removeEventListener("click", closeHandler);
+//             discardSelectedItemButton.removeEventListener("click", discardHandler);
+//             resolve(false); // キャンセル
+//         };
+//         discardCloseButton.addEventListener("click", closeHandler);
 
-        // 破棄ボタンのイベントリスナー
-        const discardHandler = () => {
-            if (selectedItemToDiscardIndex !== -1) {
-                const discardedItem = player.itemSlot.splice(selectedItemToDiscardIndex, 1)[0];
-                addMessage(`${discardedItem.name} を捨てました。`);
-                discardItemModal.classList.add("hidden");
-                document.body.style.overflow = "auto";
-                saveGame(player);
-                discardCloseButton.removeEventListener("click", closeHandler);
-                discardSelectedItemButton.removeEventListener("click", discardHandler);
-                resolve(true); // 破棄成功
-            }
-        };
-        discardSelectedItemButton.addEventListener("click", discardHandler);
-    });
-}
+//         // 破棄ボタンのイベントリスナー
+//         const discardHandler = () => {
+//             if (selectedItemToDiscardIndex !== -1) {
+//                 const discardedItem = player.itemSlot.splice(selectedItemToDiscardIndex, 1)[0];
+//                 addMessage(`${discardedItem.name} を捨てました。`);
+//                 discardItemModal.classList.add("hidden");
+//                 document.body.style.overflow = "auto";
+//                 saveGame(player);
+//                 discardCloseButton.removeEventListener("click", closeHandler);
+//                 discardSelectedItemButton.removeEventListener("click", discardHandler);
+//                 resolve(true); // 破棄成功
+//             }
+//         };
+//         discardSelectedItemButton.addEventListener("click", discardHandler);
+//     });
+// }
 
 /**
  * 転職
  * @param {Object} unit 
  * @param {string} job_id 
+ * @param {boolean} force 条件を無視して強制的に転職させる
  * @returns 
  */
-function changeJob(unit, job_id) {
+function changeJob(unit, job_id, force = false) {
     const jobData = JOBS[job_id];
     if (!jobData) {
         throw new Error(`Unknown job: ${job_id}`);
@@ -1541,12 +1584,15 @@ function changeJob(unit, job_id) {
 
     // 未経験職なら転職条件チェック
     if (!unit.jobs[job_id]) {
-        for (const condition of jobData.unlockConditions) {
-            if (!checkJobCondition(unit, condition)) {
-                return {
-                    success: false,
-                    reason: "requirements",
-                };
+        // 強制なら条件チェック無視
+        if (!force) {
+            for (const condition of jobData.unlockConditions) {
+                if (!checkJobCondition(unit, condition)) {
+                    return {
+                        success: false,
+                        reason: "requirements",
+                    };
+                }
             }
         }
 
@@ -2096,6 +2142,7 @@ async function battleInit(enemies) {
                 id: self.crypto.randomUUID(),
             }, {set: setAndRender})
         ),
+        dominations: [],
         turnOrder: [],
         turn: 0,
         phase: null,
@@ -2500,6 +2547,7 @@ function battleResult(isVictory) {
             isVictory: true,
             exp: totalExp,
             rankExp: totalRankExp,
+            dominations: gameState.battle.dominations,
             gold: totalMoney,
             items: dropItems ?? null,
             levelUps: level_ups ?? null,
@@ -2667,6 +2715,20 @@ async function battleEnd() {
                 };
             } else {
                 player.achievement.defeatedMonsters[enemy.defId].count += 1;
+            }
+        }
+        for (const domination of result.dominations) {
+            if (player.party.length >= 4) {
+                showToast(`パーティーがいっぱいのため仲間に加えられません。`);
+                return;
+            }
+            // モンスターなら定義から再取得してユニット化
+            if (domination.defId) {
+                const unit = addUnitForEnemyId(domination.defId, domination.sex);
+                player.party.push(unit);
+                showToast(`${unit.name}が仲間に加わった！`);
+            } else {
+                // TODO: 冒険者なら
             }
         }
     }
@@ -3037,6 +3099,13 @@ function addBattleStatus(state_id, target, turn) {
     } else if (state_id !== "guard") {
         //　防御以外ならターンを最大値に更新する
         current_status.turn = Math.max(current_status.turn, turn);
+    }
+
+    // 支配の効き目チェック 5以上なら支配成功
+    if (target.battleStatus.find(s => s.type === "domination")?.turn >= 5) {
+        addMessage(`${target.name}を支配した！`);
+        gameState.battle.enemies = gameState.battle.enemies.filter(unit => unit.id !== target.id);
+        gameState.battle.dominations.push(target);
     }
 }
 

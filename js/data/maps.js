@@ -117,6 +117,9 @@ export const MAPS = {
             adventurer: 0.01,// 冒険者遭遇イベント。戦ったり助けたり勧誘したり？
             rest: 0.07,// 休息マス
         },
+        // clearBonus: {
+        //     addSkill: ["beginingForest"]
+        // },
         fixFloors: { 10: ["boss", "boss", "boss", "boss", "boss"] },// 1始まり。階層ごとの固定配置タイル。用途は、最終階層をすべてボスに上書きしたり任意の位置に固定イベントを設置したりなど。
         itemTableId: "lostForestShallow01",// 獲得アイテムテーブルID
         eventTableId: "lostForestShallow01",// イベントテーブルID

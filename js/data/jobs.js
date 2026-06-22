@@ -246,4 +246,146 @@ export const JOBS = {
             }
         ]
     },
+    monster: {
+        id: "monster",
+        name: "魔物",
+        grade: 1,
+        maxRank: 30,
+        rateExp: 1.0,
+        unlockConditions: [
+            {
+                type: "level",
+                value: 1
+            },
+            {
+                type: "race",
+                value: "monster"
+            }
+        ],
+        growthRates: {// 成長率補正 150
+            maxHp: 30,
+            maxMp: 30,
+            atk: 15,
+            def: 15,
+            spd: 15,
+            int: 15,
+            dex: 15,
+            size: 15,
+        },
+        equipTypes: [],// 装備適正(仮)
+        rankBonuses: [// ランクボーナス
+            {
+                rank: 1,
+                learnSkills: ["bite"]
+            },
+            {
+                rank: 3,
+                status: {
+                    maxHp: 3,
+                    maxMp: 3,
+                    atk: 1,
+                    def: 1,
+                    spd: 1,
+                    int: 1,
+                    dex: 1,
+                    size: 1,
+                }
+            },
+            {
+                rank: 5,
+                status: {
+                    maxHp: 3,
+                    maxMp: 3,
+                    atk: 1,
+                    def: 1,
+                    spd: 1,
+                    int: 1,
+                    dex: 1,
+                    size: 1,
+                }
+            },
+            {
+                rank: 7,
+                status: {
+                    maxHp: 3,
+                    maxMp: 3,
+                    atk: 1,
+                    def: 1,
+                    spd: 1,
+                    int: 1,
+                    dex: 1,
+                    size: 1,
+                }
+            },
+            {
+                rank: 10,
+                learnSkills: ["charge"],
+                status: {
+                    maxHp: 10,
+                    maxMp: 10,
+                }
+            },
+            {
+                rank: 13,
+                status: {
+                    maxHp: 3,
+                    maxMp: 3,
+                    atk: 1,
+                    def: 1,
+                    spd: 1,
+                    int: 1,
+                    dex: 1,
+                    size: 1,
+                }
+            },
+            {
+                rank: 17,
+                status: {
+                    maxHp: 3,
+                    maxMp: 3,
+                    atk: 1,
+                    def: 1,
+                    spd: 1,
+                    int: 1,
+                    dex: 1,
+                    size: 1,
+                }
+            },
+            {
+                rank: 20,
+                learnSkills: ["double-bite"],
+                status: {
+                    maxHp: 15,
+                    maxMp: 15,
+                }
+            },
+            {
+                rank: 25,
+                status: {
+                    maxHp: 3,
+                    maxMp: 3,
+                    atk: 1,
+                    def: 1,
+                    spd: 1,
+                    int: 1,
+                    dex: 1,
+                    size: 1,
+                }
+            },
+            {
+                rank: 30,
+                learnSkills: ["thrash"],
+                status: {
+                    maxHp: 30,
+                    maxMp: 30,
+                    atk: 10,
+                    def: 10,
+                    spd: 10,
+                    int: 10,
+                    dex: 10,
+                    size: 10,
+                }
+            },
+        ]
+    },
 };

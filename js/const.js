@@ -119,6 +119,15 @@ export const BATTLE_STATUSES = [
         subMessageGen: (name) => {return `${name} は復活した。`},
     },
     {
+        id: "domination",
+        icon: "✡️",
+        sub_timing: "",
+        sub_finish_text: "",
+        exec_timing: "",
+        addMessageGen: (name) => {return `${name} の意識は揺れた。`},
+        subMessageGen: (name) => {return `${name} は支配から逃れた。`},
+    },
+    {
         id: "guard",
         icon: "🛡️",
         sub_timing: "act_before",

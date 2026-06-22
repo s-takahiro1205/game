@@ -16,12 +16,12 @@
  * スキルのソート順
  * TODO: 
 const orderMap = Object.fromEntries(
-  skillOrder.map((id, index) => [id, index])
+    skillOrder.map((id, index) => [id, index])
 );
 
 skills.sort((a, b) =>
-  (orderMap[a.id] ?? 99999) -
-  (orderMap[b.id] ?? 99999)
+    (orderMap[a.id] ?? 99999) -
+    (orderMap[b.id] ?? 99999)
 );
  */
 export const SKILL_ORDER = [
@@ -30,6 +30,11 @@ export const SKILL_ORDER = [
     "slash", "power-slash", "full-slash",
     "wait-and-see",
 ];
+
+// 味方にするときに引き継がないスキル
+export const IGNORE_PARTY_SKILL = [
+    "wait-and-see"
+]
 
 /**
  * @type {Skill[]}
@@ -112,7 +117,7 @@ export const SKILLS = [
             {
                 type: "damage",
                 element: "lightning",
-                power: 0.20,
+                power: 0.05,
                 fix: 0,
                 add: 15,
                 armor_pierce: 0.00,
@@ -133,7 +138,7 @@ export const SKILLS = [
         id: "heal",
         name: "ヒール",
         cost: {
-            mp: 3
+            mp: 4
         },
         target_type: "damaged_ally_one",
         usableIn: {
@@ -202,6 +207,29 @@ export const SKILLS = [
 
     // 戦技 戦技はHP消費
     {
+        id: "domination-curse-mark",
+        name: "支配の呪印",
+        cost: {},
+        target_type: "alive_enemy_one",
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: true,
+        },
+        category: "special",
+        type: "support",// ボタンの色分け専用
+        effects: [
+            {
+                type: "addState",
+                stateId: "domination",
+                min: 0,
+                max: 0,
+                fix: 100,
+                turn: 1,
+            },
+        ]
+    },
+    {
         id: "slash",
         name: "スラッシュ",
         cost: {
@@ -269,7 +297,7 @@ export const SKILLS = [
             {
                 type: "damage",
                 element: "physical",
-                power: 1.20,
+                power: 0.30,
                 fix: 0,
                 add: 0,
                 armor_pierce: 0.00,
@@ -466,6 +494,37 @@ export const SKILLS = [
         ]
     },
     {
+        id: "double-bite",
+        name: "二連かみつき",
+        cost: {},
+        target_type: "alive_enemy_one",
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: true,
+        },
+        category: "combat",
+        type: "attack",// ボタンの色分け専用
+        effects: [
+            {
+                type: "damage",
+                element: "physical",
+                power: 0.75,
+                fix: 0,
+                add: 2,
+                armor_pierce: 0.00,
+            },
+            {
+                type: "damage",
+                element: "physical",
+                power: 0.75,
+                fix: 0,
+                add: 2,
+                armor_pierce: 0.00,
+            },
+        ]
+    },
+    {
         id: "poison-bite",
         name: "毒かみつき",
         cost: {},
@@ -513,6 +572,29 @@ export const SKILLS = [
                 type: "damage",
                 element: "physical",
                 power: 1.50,
+                fix: 0,
+                add: 5,
+                armor_pierce: 0.00,
+            },
+        ]
+    },
+    {
+        id: "thrash",
+        name: "あばれる",
+        cost: {},
+        target_type: "alive_enemy_all",
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: true,
+        },
+        category: "combat",
+        type: "attack",// ボタンの色分け専用
+        effects: [
+            {
+                type: "damage",
+                element: "physical",
+                power: 0.50,
                 fix: 0,
                 add: 5,
                 armor_pierce: 0.00,

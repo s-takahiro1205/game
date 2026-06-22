@@ -385,7 +385,7 @@ function renderMenu() {
         } else if (gameState.bottomMenuPartyTabSubType === 'equip') {
             area.innerHTML = `<div class="equip-panel">${unit.equipmentSlot.map(e=>{
                 const stats = e.equippedItem
-                            ? Object.keys(e.equippedItem.stat_modifier).map(st => LABEL[st] + (e.equippedItem.stat_modifier[st] >= 0 ? "+" + e.equippedItem.stat_modifier[st] : e.equippedItem.stat_modifier[st])).join(" ")
+                            ? Object.keys(e.equippedItem.statModifier).map(st => LABEL[st] + (e.equippedItem.statModifier[st] >= 0 ? "+" + e.equippedItem.statModifier[st] : e.equippedItem.statModifier[st])).join(" ")
                             : "";
                 return `
             <div class="equip-slot" data-slot-id="${e.id}">
@@ -463,9 +463,9 @@ function renderEquipChange(area, unit) {
                 }
                 return 
             }) : [];
-        if (item.stat_modifier) {
-            effectLabels.push(...Object.keys(item.stat_modifier).map(key => {
-                    return `${LABEL[key]}${item.stat_modifier[key] >= 0 ? "+" + item.stat_modifier[key] : item.stat_modifier[key]}`;
+        if (item.statModifier) {
+            effectLabels.push(...Object.keys(item.statModifier).map(key => {
+                    return `${LABEL[key]}${item.statModifier[key] >= 0 ? "+" + item.statModifier[key] : item.statModifier[key]}`;
                 }));
         }
         const iconMap = {
@@ -475,9 +475,9 @@ function renderEquipChange(area, unit) {
         // 装備できないならfalse
         const isDisabled = !canEquip(unit, item);
         return `
-        <div class="equip-item" data-item-uuid="${item.uuid}">
+        <div class="equip-item${isDisabled ? " disabled" : ""}" data-item-uuid="${item.uuid}">
             <div class="equip-item-main">
-                <div class="equip-item-icon" style="width:32px;height:32px;font-size:18px">${item.use_type ? iconMap[item.use_type] : (item.equipCategory ? iconMap[item.equipCategory] : "")}</div>
+                <div class="equip-item-icon" style="width:32px;height:32px;font-size:18px">${item.useType ? iconMap[item.useType] : (item.equipCategory ? iconMap[item.equipCategory] : "")}</div>
                 <div>
                     <div class="equip-item-name" style="font-size:10px">${item.name}</div>
                     <div class="equip-item-sub" style="font-size:8px">${effectLabels||'—'}</div>
@@ -509,9 +509,9 @@ function renderMenuItems() {
                 }
                 return 
             }) : [];
-        if (item.stat_modifier) {
-            effectLabels.push(...Object.keys(item.stat_modifier).map(key => {
-                    return `${LABEL[key]}${item.stat_modifier[key] >= 0 ? "+" + item.stat_modifier[key] : item.stat_modifier[key]}`;
+        if (item.statModifier) {
+            effectLabels.push(...Object.keys(item.statModifier).map(key => {
+                    return `${LABEL[key]}${item.statModifier[key] >= 0 ? "+" + item.statModifier[key] : item.statModifier[key]}`;
                 }));
         }
         const iconMap = {
@@ -520,12 +520,12 @@ function renderMenuItems() {
         };
         // 使用タイミングを満たさないか、対象がいないならfalse
         const isDisabled = !item.usableIn[gameState.screen === SCREENS.baseScreen ? "home" : "explore"]
-            || TARGET_TYPE_EXTRACTOR[item.use_target_type](player.party).length === 0;
+            || TARGET_TYPE_EXTRACTOR[item.useTargetType](player.party).length === 0;
         return `
         <!-- 上段：既存コンテンツをrowでまとめる -->
         <div class="storage-item" data-item-uuid="${item.uuid}">
             <div class="storage-item-main" style="background:var(--panel2)">
-                <div class="storage-item-icon" style="width:32px;height:32px;font-size:18px">${item.use_type ? iconMap[item.use_type] : (item.equipCategory ? iconMap[item.equipCategory] : "")}</div>
+                <div class="storage-item-icon" style="width:32px;height:32px;font-size:18px">${item.useType ? iconMap[item.useType] : (item.equipCategory ? iconMap[item.equipCategory] : "")}</div>
                 <div>
                     <div class="storage-item-name" style="font-size:10px">${item.name}</div>
                     <div class="storage-item-sub" style="font-size:8px">${effectLabels||'—'}</div>
@@ -857,7 +857,7 @@ function renderBattle() {
                 targetPanel.classList.remove("hidden");
             } else if (gameState.battle.pendingCommand.act === "item" && gameState.battle.pendingCommand.actDetail) {
                 const item = player.itemSlot.find(item => item.uuid === gameState.battle.pendingCommand.actDetail);
-                const candidates = TARGET_TYPE_EXTRACTOR[item.use_target_type](gameState.battle.party, gameState.battle.enemies);
+                const candidates = TARGET_TYPE_EXTRACTOR[item.useTargetType](gameState.battle.party, gameState.battle.enemies);
                 renderTargetPanel(candidates);
                 targetPanel.classList.remove("hidden");
             }
@@ -1187,7 +1187,7 @@ function renderItemPanel() {
         }
 
         const button = document.createElement('button');
-        button.classList.add('cmd', item.use_type);
+        button.classList.add('cmd', item.useType);
         button.dataset.actDetail = item.uuid;
         button.innerHTML = item.name + "<br>" + (item.uses ? item.uses + "回" : "無制限");
         itemPanel.appendChild(button);

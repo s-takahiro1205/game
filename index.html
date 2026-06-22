@@ -908,17 +908,22 @@ html, body {
 .equip-item {
     background: var(--panel2); border: 1px solid var(--border2);
     border-radius: 8px; padding: 9px 10px;
-    /* display: flex; align-items: center; gap: 8px; */
-    cursor: pointer; position: relative;
-    /* transition: border-color .12s, background .12s; */
-
     display: inline-block;
     padding: 12px 24px;
+    position: relative;
+    cursor: pointer;
     /* アニメーション */
     transition:
         background-color 0.15s,
         transform 0.1s,
         box-shadow 0.1s;
+}
+.equip-item.disabled {
+    filter: grayscale(100%);
+    opacity: 0.75;
+    color: #bbb;
+    cursor: not-allowed;
+    transition: null;
 }
 .equip-item-main {
     display: flex; align-items: center; gap: 8px;
@@ -932,16 +937,16 @@ html, body {
 }
 .equip-item-name { font-size: 11px; font-weight: bold; color: var(--text); }
 .equip-item-sub  { font-size: 9px; color: var(--text-dim); margin-top: 2px; }
-.equip-item:hover {
+.equip-item:not(.disabled):hover {
     color: #e6b800;
     text-decoration: none;
 }
-.equip-item:active {
+.equip-item:not(.disabled):active {
     transform: translateY(2px);
     background: #444;
     box-shadow: 0 2px 4px rgba(0,0,0,.2);
 }
-.equip-item:active .equip-item-icon {
+.equip-item:not(.disabled):active .equip-item-icon {
     background: #444;
 }
 </style>

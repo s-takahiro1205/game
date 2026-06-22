@@ -37,9 +37,9 @@ import { LABEL, SCREENS, SUB_SCREENS, BOTTOM_SHEETS, BOTTOM_MENU_TABS, BATTLE_ST
  * @property {Effect[] | null} effects - 使用効果配列（消費アイテム用）
  * @property {Object} usableIn - どの場面で使用可能か home|explore|battle
  * @property {number} uses - 使用回数制限（無制限ならnull）
- * @property {string} use_type - 使用種別
- * @property {string} use_target_type - 使用対象種別
- * @property {object | null} stat_modifier - 増減ステータス（例: { atk: +5, def: +2 }）
+ * @property {string} useType - 使用種別
+ * @property {string} useTargetType - 使用対象種別
+ * @property {object | null} statModifier - 増減ステータス（例: { atk: +5, def: +2 }）
  * @property {"weapon" | "def" | "shield" | "accessory" | null} equipCategory - 装備種別
  */
 
@@ -416,7 +416,7 @@ const menuTabPartyMemberContent = document.getElementById("menu-tab-party-member
 menuTabPartyMemberContent.addEventListener("click", async (e) => {
     await sleep(50);
     const equipSlot = e.target.closest('.equip-slot');
-    const equipItem = e.target.closest('.equip-item');
+    const equipItem = e.target.closest('.equip-item:not(.disabled)');
     const equipItemUnequip = e.target.closest('.equip-item-unequip');
     const equipItemBack = e.target.closest('.equip-item-back');
     if (equipSlot) {
@@ -461,8 +461,8 @@ menuTabItemGrid.addEventListener("click", async (e) => {
     // 使用ボタン押下時
     if (choice.classList.contains("storage-btn-use")) {
         // 単体対象ならモーダルで対象選択
-        if (SELECT_TARGET_TYPE.includes(item.use_target_type)) {
-            const list = TARGET_TYPE_EXTRACTOR[item.use_target_type](player.party);
+        if (SELECT_TARGET_TYPE.includes(item.useTargetType)) {
+            const list = TARGET_TYPE_EXTRACTOR[item.useTargetType](player.party);
             const actions = list.map(unit => {
                 const data = {
                     "event-name": "modalUseItem",
@@ -1780,7 +1780,7 @@ function closeMenuModal() {
 async function useItem(itemUuid, unitIds) {
     const item = player.itemSlot.find(item => item.uuid === itemUuid);
     // 対象を取り直して対象となっているユニットにのみ使用する
-    const list = TARGET_TYPE_EXTRACTOR[item.use_target_type](player.party);
+    const list = TARGET_TYPE_EXTRACTOR[item.useTargetType](player.party);
     const targets =  list.filter(unit =>
         unitIds.some(id => id === unit.id)
     );
@@ -1890,8 +1890,8 @@ export function equip(itemUuid, slotId, unit) {
     }
 
     equipSlot.equippedItem = item;
-    if (item.stat_modifier) {
-        Object.entries(item.stat_modifier).forEach(([stat, val]) => {
+    if (item.statModifier) {
+        Object.entries(item.statModifier).forEach(([stat, val]) => {
             unit[stat] += val;
         });
     }
@@ -1908,9 +1908,9 @@ export function unequip(slotId, unit) {
     const equipSlot = unit.equipmentSlot.find(s => s.id === slotId);
     const item = equipSlot.equippedItem;
 
-    // stat_modifierを戻す
-    if (item.stat_modifier) {
-        Object.entries(item.stat_modifier).forEach(([stat, val]) => {
+    // statModifierを戻す
+    if (item.statModifier) {
+        Object.entries(item.statModifier).forEach(([stat, val]) => {
             unit[stat] -= val;
         });
         if (unit.hp > unit.maxHp) {
@@ -2566,7 +2566,7 @@ async function onActDetailItemSelect(e) {
     }
 
     const item =  player.itemSlot.find(item => item.uuid === actDetail);
-    const units = TARGET_TYPE_EXTRACTOR[item.use_target_type](gameState.battle.party, gameState.battle.enemies, gameState.battle.actor);
+    const units = TARGET_TYPE_EXTRACTOR[item.useTargetType](gameState.battle.party, gameState.battle.enemies, gameState.battle.actor);
     if (units.length === 0) {
         gameState.battle.alert = "対象が存在しないため使用できません";
         return;
@@ -2575,7 +2575,7 @@ async function onActDetailItemSelect(e) {
 
     // 選択が必要な種別でないなら対象を格納して実行
     // 選択が必要であっても対象が1体なら自動選択
-    if (!SELECT_TARGET_TYPE.includes(item.use_target_type)
+    if (!SELECT_TARGET_TYPE.includes(item.useTargetType)
         || units.length === 1) {
         gameState.battle.pendingCommand.targets = units.map(unit => unit.id);
         await battleExecCommand();
@@ -3103,7 +3103,7 @@ export function canEquip(unit, item) {
     // 条件チェック
     let isNot = false;
     const conds = item.equipCondition;
-    Object.keys(conds).some(type => {
+    for (const type in conds) {
         switch (type) {
             case "job": {
                 // ジョブ指定なら1つでも一致しなければアウト
@@ -3120,7 +3120,7 @@ export function canEquip(unit, item) {
         if (isNot) {
             return false;
         }
-    });
+    }
     return true;
 }
 

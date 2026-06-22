@@ -18,8 +18,15 @@ export const ITEM_TABLES = {
         scrollOfFireBullet: 1.00,
     },
     lostForestShallow01: {
-        potionOfDecay: 0.10,
-        elixirOfShadow: 0.10,
+        potionOfDecay: 0.20,
+        elixirOfShadow: 0.01,
+        pigIronKnife: 0.05,
+        twigsWand: 0.05,
+        singlePieceOfFur: 0.05,
+        clothRobe: 0.05,
+        woodenShield: 0.05,
+        woodenBracelet: 0.05,
+        clothGloves: 0.05,
     },
 };
 export const MONSTER_GROUPS = {

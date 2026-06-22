@@ -161,15 +161,15 @@ export const ENEMIES = [
     {
         id: "forest-ghoul",
         name: "フォレストグール",
-        level: 2,
-        exp: 6,
-        hp: 18,
-        maxHp: 18,
+        level: 4,
+        exp: 12,
+        hp: 26,
+        maxHp: 26,
         mp: 5,
         maxMp: 5,
         atk: 10,
         description: "行き場を失い森を徘徊する亡者。見かけたら天に召してあげよう。",
-        def: 5,
+        def: 8,
         spd: 3,
         int: 2,
         dex: 2,
@@ -182,11 +182,19 @@ export const ENEMIES = [
         battleStatus: [],
         dropItems: [
             {
+                id: "woodenShield",
+                chance: 5
+            },
+            {
+                id: "woodenBracelet",
+                chance: 5
+            },
+            {
                 id: "potionOfDecay",
                 chance: 1
             }
         ],
-        money: 5,
+        money: 10,
         race: RACES.monster.id,
         sex: null,
     },
@@ -278,6 +286,10 @@ export const ENEMIES = [
         battleStatus: [],
         dropItems: [
             {
+                id: "singlePieceOfFur",
+                chance: 5
+            },
+            {
                 id: "potionOfDecay",
                 chance: 1
             }
@@ -309,6 +321,14 @@ export const ENEMIES = [
         skillList: ["wait-and-see"],
         battleStatus: [],
         dropItems: [
+            {
+                id: "twigsWand",
+                chance: 5
+            },
+            {
+                id: "woodenShield",
+                chance: 3
+            },
             {
                 id: "potionOfDecay",
                 chance: 1
@@ -342,12 +362,16 @@ export const ENEMIES = [
         battleStatus: [],
         dropItems: [
             {
+                id: "pigIronKnife",
+                chance: 10
+            },
+            {
                 id: "potionOfDecay",
                 chance: 10
             },
             {
                 id: "cursedDagger",
-                chance: 5
+                chance: 2
             },
             {
                 id: "scrollOfSandStorm",
@@ -382,8 +406,12 @@ export const ENEMIES = [
         battleStatus: [],
         dropItems: [
             {
-                id: "elixirOfShadow",
+                id: "clothRobe",
                 chance: 5
+            },
+            {
+                id: "elixirOfShadow",
+                chance: 1
             }
         ],
         money: 14,
@@ -413,6 +441,10 @@ export const ENEMIES = [
         skillList: ["power-slash", "wait-and-see"],
         battleStatus: [],
         dropItems: [
+            {
+                id: "woodenBracelet",
+                chance: 10
+            },
             {
                 id: "chainmailOfTheUndead",
                 chance: 1
@@ -473,6 +505,14 @@ export const ENEMIES = [
         skillList: ["heal", "charge"],
         battleStatus: [],
         dropItems: [
+            {
+                id: "clothGloves",
+                chance: 30
+            },
+            {
+                id: "forestAmulet",
+                chance: 10
+            },
             {
                 id: "ringOfTheAncients",
                 chance: 1

@@ -106,6 +106,7 @@ function render() {
         gameState.dirty = false;
         return;// dirty=falseでもう一度走るためreturn
     }
+    renderToast();
     const isShowModal = showModal();
     if (isShowModal) {
         return;
@@ -242,6 +243,32 @@ function showScreen() {
             document.querySelector(`.menu-nav-tab[data-tab-id="${gameState.bottomMenuTabId}"]`).classList.add("active");
             document.querySelector(`.menu-tab-party-member-sub-tab[data-sub-type="${gameState.bottomMenuPartyTabSubType}"]`).classList.add("active");
         }
+    }
+}
+
+/**
+ * トーストを表示する
+ * @returns boolean
+ */
+function renderToast() {
+    const area = document.getElementById('toast-area');
+    for(const toast of gameState.toast) {
+        // すでにあるものは処理しない
+        if (document.getElementById(toast.uuid)) {
+            continue;
+        }
+        const el = document.createElement('div');
+        el.id = toast.uuid;
+        el.className = 'toast ' + toast.type;
+        el.innerHTML = toast.text;
+        area.appendChild(el);
+    }
+    for (const toastDiv of area.querySelectorAll('.toast')) {
+        if (gameState.toast.some(toast => toast.uuid === toastDiv.id)) {
+            continue;
+        }
+        toastDiv.classList.add("toast-leave")
+        setTimeout(() => toastDiv.remove(), 320);
     }
 }
 

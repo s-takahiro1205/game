@@ -1,5 +1,48 @@
 /* style.css */
 
+:root {
+    --bg:         #1a1a2e;
+    --bg-explore: #1a1a2e;
+    --bg-battle:  #1e1608;
+    --bg-warm:    #f5ead0;
+    --panel:      #2c1f0e;
+    --panel2:     #3a2a14;
+    --panel3:     #4a3820;
+    --border:     #6a4e28;
+    --border2:    #4a3820;
+    --text:       #f0d890;
+    --text-dark:  #2a1a06;
+    --text-sub:   #a08858;
+    --text-dim:   #6a5030;
+    --parch:      #c8a96e;
+    --parch-dk:   #8a6535;
+    --paper:      #f0e0b0;
+    --paper2:     #e8d090;
+    --gold:       #f8c030;
+    --gold-dim:   #c89020;
+    --hp-red:     #f03868;
+    --hp-dark:    #7a1830;
+    --mp-blue:    #38a8f8;
+    --mp-dark:    #183878;
+    --green:      #50d870;
+    --red:        #e85858;
+    --yellow:     #f8d040;
+    --teal:       #40d0b8;
+    --teal-dim:   #2A7A75;
+    --panel:      #1A1D26;
+    --sub:        #8B9BB4;
+    --danger:     #E05C5C;
+    --success:    #5CE07A;
+    --radius:    8px;
+    /* タイル用 */
+    --enemy:       #500000; /* 危険 */
+    --eliteEnemy:  #801111; /* 強敵 */
+    --boss:        #20034a; /* ボス */
+    --event:       #504008; /* イベント */
+    --rest:        #032f10; /* 休息 */
+    --adventurer:  #401140; /* 冒険者 */
+}
+
 html {
     touch-action: manipulation;
     /* TODO: 調整 */
@@ -524,37 +567,54 @@ input[type="number"] {
     background-color: #1a1a2e;
 }
 
-/* Toast Notification */
-#toast {
-    position: fixed;
-    top: 70px;
-    right: 20px;
-    background-color: #2a2a4a;
-    border: 1px solid #ffcc00;
-    border-radius: 8px;
-    padding: 12px 20px;
-    color: #e0e0e0;
-    font-size: 0.95em;
-    z-index: 500;
-    max-width: 280px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-    cursor: pointer;
-    opacity: 0;
-    transform: translateX(20px);
-    transition: opacity 0.25s ease, transform 0.25s ease;
+/* ── 通知トースト ── */
+#toast-area {
+    position: absolute;
+    top: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100000;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
     pointer-events: none;
+    width: 90%;
 }
-
-#toast.toast-show {
-    opacity: 1;
-    transform: translateX(0);
+.toast {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px 14px;
+    font-size: 12px;
+    color: var(--text);
+    animation: toastIn 0.25s ease forwards;
+    backdrop-filter: blur(6px);
+    text-align: center;
     pointer-events: auto;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    margin-left: 30dvw;
+}
+.toast-leave {
+    animation: toastOut 0.3s ease forwards;
 }
 
-#toast .toast-icon {
-    color: #ffcc00;
-    font-weight: bold;
-    margin-right: 6px;
+@keyframes toastOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateX(120%);
+    }
+}
+.toast.gold  { border-color: var(--gold-dim); color: var(--gold); }
+.toast.teal  { border-color: var(--teal-dim); color: var(--teal); }
+.toast.red   { border-color: var(--danger); color: var(--danger); }
+@keyframes toastIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
 

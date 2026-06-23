@@ -163,6 +163,8 @@ export const gameState = new Proxy({
         //     execEventName: "",
         //     icon: "",
         // },
+        toast: [],// トースト本体 最大5件 {uuid, text, duration, type}
+        toastReserve: [],// トーストがあふれた時にこちらに退避
 
         // // モーダル（currentPageと独立して重なる） 後で消す
         openModal: null,// null | "menu" | "item_discard",
@@ -310,7 +312,7 @@ baseBtnChangeJob.addEventListener("click", async () => {
         } else {
             message += `条件を満たしていません`;
         }
-        showToast(message, 5000);
+        addToast(message, 5000);
     });
     saveGame(player);
 });
@@ -319,7 +321,7 @@ const baseBtnMansion = document.getElementById("base-btn-mansion");
 baseBtnMansion.addEventListener("click", () => {
     const partyCount = player.party.length;
     if (partyCount >= 4) {
-        showToast("パーティーがいっぱいです。");
+        addToast("パーティーがいっぱいです。");
         return;
     }
 
@@ -369,7 +371,7 @@ baseBtnMansion.addEventListener("click", () => {
     }
 
     const unit = createUnit(unitData, {}, null, ["domination-curse-mark"]);
-    showToast(`${unit.name} が加入しました！`, 5000);
+    addToast(`${unit.name} が加入しました！`, 5000);
     player.party.push(unit);
 
     gameState.dirty = true;
@@ -561,13 +563,13 @@ exploreClearBack.addEventListener("click", async (e) => {
                 Object.keys(firstBonus).forEach(type => {
                     switch (type) {
                         case "addSkill": {
-                            // イベント。主人公指定で付与 TODO: 重複チェック
+                            // イベント。主人公指定で付与
                             const skillList = player.party.find(unit => unit.myUnit)?.skillList ?? [];
                             firstBonus[type].forEach(skillId => {
                                 if (!skillList.some((skill) => skill.id === skillId)) {
                                     const skill = getSkillById(skillId);
                                     skillList.push(skill);
-                                    showToast(`${skill.name}を覚えた！`);
+                                    addToast(`${skill.name}を覚えた！`);
                                 }
                             });
                             break;
@@ -583,13 +585,13 @@ exploreClearBack.addEventListener("click", async (e) => {
     }
     player.explore = null;
     moveScreen(SCREENS.baseScreen);
-    showToast(`${mapName}を制覇した！`);
+    addToast(`${mapName}を制覇した！`);
 });
 exploreGameOverBack.addEventListener("click", async (e) => {
     await sleep(100);
     player.explore = null;
     moveScreen(SCREENS.baseScreen);
-    showToast(`全滅した…`);
+    addToast(`全滅した…`);
 });
 
 // 探索イベント選択肢ボタン
@@ -759,7 +761,7 @@ function debugAddExp() {
 
     saveGame(player);
     console.log(result);
-    showToast(JSON.stringify(result), 10000);
+    addToast(JSON.stringify(result), 10000);
 }
 
 /**
@@ -778,7 +780,7 @@ function debugAddRankExp() {
 
     saveGame(player);
     console.log(result);
-    showToast(JSON.stringify(result), 10000);
+    addToast(JSON.stringify(result), 10000);
 }
 
 const debugStartCombatButton = document.getElementById("debug-start-combat");
@@ -1026,14 +1028,21 @@ async function resolveEventNode(nodeId) {
             await battleInit(player.explore.event.data.enemyIds.map(id => getEnemyById(id)));
             break;
         } case "adventurer": {
-        //     // TODO: 実装
+        //     // TODO: 実装 一旦battleを置いとく
         //     player.explore.event = {};
         //     player.explore.phase = "waitingTileSelect";
         //     moveScreen(SCREENS.exploreScreen);
         //     battleInit(player.explore.event.data.enemyIds.map(id => getEnemyById(id)));
-
-            next = "end";
+            const monsterGroupId = node.fixGroup ?? weightedRandom(ENCOUNTER_TABLES[mapDef.encounterTableId]);
+            player.explore.event.data.enemyIds = MONSTER_GROUPS[monsterGroupId];
+            player.explore.event.data.winNode = node.win;
+            player.explore.event.data.loseNode = node.lose;
+            player.explore.phase = "battle"
+            await battleInit(player.explore.event.data.enemyIds.map(id => getEnemyById(id)));
             break;
+
+            // next = "end";
+            // break;
         } case "choice": {
             // TODO: 条件判定して有効でないものにはdisabled付与
             player.explore.event.choices = node.choices.map(choice => {
@@ -1516,10 +1525,10 @@ async function acquireItem(item) {
     if (player.itemSlot.length < 50) {
         item.uuid = self.crypto.randomUUID();
         player.itemSlot.push(item);
-        // showToast(`${item.name} を手に入れた！`);
+        // addToast(`${item.name} を手に入れた！`);
         return true;
     } else {
-        // showToast(`持ち物がいっぱいだ！`);
+        // addToast(`持ち物がいっぱいだ！`);
     }
 }
 
@@ -1788,27 +1797,48 @@ async function debugStartCombat(enemyId) {
 
 /**
  * クリックで消せるトースト通知を表示する
- * TODO: いずれrenderに持ってって
- * @param {string} message
+ * @param {string} text
  * @param {number} duration - 自動消去までのms (デフォルト3000)
  */
-function showToast(message, duration = 3000) {
-    const toast = document.getElementById("toast");
-    if (!toast) return;
-
-    if (toast._hideTimer) clearTimeout(toast._hideTimer);
-
-    toast.innerHTML = `<span class="toast-icon">✦</span>${message}`;
-    toast.classList.add("toast-show");
-
-    const hide = () => {
-        toast.classList.remove("toast-show");
-        toast.removeEventListener("click", hide);
+function addToast(text, duration = 3000, type="teal") {
+    const toast = {
+        uuid: self.crypto.randomUUID(),
+        text: text,
+        duration: duration,
+        type: type,
     };
-
-    toast.addEventListener("click", hide);
-    toast._hideTimer = setTimeout(hide, duration);
+    if (gameState.toast.length <= 5) {
+        gameState.toast.push(toast);
+        setTimeout(() => removeToast(toast.uuid), duration);
+    } else {
+        gameState.toastReserve.push(toast);
+    }
+    gameState.dirty = true;
 }
+
+/**
+ * トーストを削除する
+ * 予約が残っているなら移す
+ * @param {*} uuid 
+ */
+function removeToast(uuid) {
+    gameState.toast = gameState.toast.filter(toast => toast.uuid !== uuid);
+    if (gameState.toastReserve.length > 0) {
+        const toast = gameState.toastReserve.shift();
+        addToast(toast.text, toast.duration, toast.type);
+    }
+    gameState.dirty = true;
+}
+
+// トーストタップの削除処理
+const toastArea = document.getElementById('toast-area');
+toastArea.addEventListener("click", async (e) => {
+    const toast = e.target.closest('.toast');
+    if (!toast) {
+        return;
+    };
+    removeToast(toast.id);
+});
 
 /**
  * モーダルウィンドウを表示する
@@ -1862,7 +1892,7 @@ async function useItem(itemUuid, unitIds) {
         unitIds.some(id => id === unit.id)
     );
     if (targets.length === 0) {
-        showToast('対象がいませんでした')
+        addToast('対象がいませんでした')
         return;
     }
     for (const effect of item.effects) {
@@ -1873,7 +1903,7 @@ async function useItem(itemUuid, unitIds) {
                 }
                 const damage = effect.fix ? effect.fix : getRandom(effect.min, effect.max);
                 applyDamage(target, damage, false)
-                showToast(`${target.name} に ${damage} のダメージ！`);
+                addToast(`${target.name} に ${damage} のダメージ！`);
             }
         } else if (effect.type === "heal") {
             for (const target of targets) {
@@ -1882,7 +1912,7 @@ async function useItem(itemUuid, unitIds) {
                 }
                 const heal = effect.fix ? effect.fix : getRandom(effect.min, effect.max);
                 target.hp = Math.min(target.maxHp, target.hp + heal);
-                showToast(`${target.name} は ${heal} 回復した！`);
+                addToast(`${target.name} は ${heal} 回復した！`);
             }
         // } else if (effect.type === "addState") {
         //     for (const target of targets) {
@@ -1934,10 +1964,10 @@ async function useItem(itemUuid, unitIds) {
     if (item.uses !== null && item.uses <= 0) {
         player.itemSlot = player.itemSlot.filter(i => i.uuid !== item.uuid);
         const msg = `${item.name} を使い切った！`;
-        showToast(msg);
+        addToast(msg);
     } else {
         const msg = `${item.name} を使用した！`;
-        showToast(msg);
+        addToast(msg);
     }
 
     saveGame(player);
@@ -1947,7 +1977,7 @@ async function discardItem(itemUuid) {
     const item = player.itemSlot.find(item => item.uuid === itemUuid);
     player.itemSlot = player.itemSlot.filter(i => i.uuid !== item.uuid);
     const msg = `${item.name} を破棄しました`;
-    showToast(msg);
+    addToast(msg);
 }
 
 /**
@@ -1973,7 +2003,7 @@ export function equip(itemUuid, slotId, unit) {
         });
     }
     player.itemSlot = player.itemSlot.filter(i => i.uuid !== item.uuid);
-    showToast(`${unit.name}は${item.name}を装備した。`);
+    addToast(`${unit.name}は${item.name}を装備した。`);
     gameState.dirty = true;
     saveGame(player);
 }
@@ -2002,7 +2032,7 @@ export function unequip(slotId, unit) {
     equipSlot.equippedItem = null;
 
     const unequipMsg = `${item.name}を外した`;
-    showToast(unequipMsg);
+    addToast(unequipMsg);
     gameState.dirty = true;
     saveGame(player);
 }
@@ -2750,14 +2780,14 @@ async function battleEnd() {
         }
         for (const domination of result.dominations) {
             if (player.party.length >= 4) {
-                showToast(`パーティーがいっぱいのため仲間に加えられません。`);
+                addToast(`パーティーがいっぱいのため仲間に加えられません。`);
                 return;
             }
             // モンスターなら定義から再取得してユニット化
             if (domination.defId) {
                 const unit = addUnitForEnemyId(domination.defId, domination.sex);
                 player.party.push(unit);
-                showToast(`${unit.name}が仲間に加わった！`);
+                addToast(`${unit.name}が仲間に加わった！`);
             } else {
                 // TODO: 冒険者なら
             }
@@ -3250,7 +3280,7 @@ loadGameButton.addEventListener("click", async () => {
         // 探索中なら探索画面へ
         if (player.explore?.phase === "waitingTileSelect") {
             moveScreen(SCREENS.exploreScreen);
-            showToast("探索を再開します。");
+            addToast("探索を再開します。");
             return;
         } else if (player.explore?.phase === "waitingChoiceSelect") {
             moveScreen(SCREENS.exploreScreen, SUB_SCREENS.exploreEventScreen);
@@ -3266,7 +3296,7 @@ loadGameButton.addEventListener("click", async () => {
             return;
         }
         moveScreen(SCREENS.baseScreen);
-        showToast("おかえりなさい！");
+        addToast("おかえりなさい！");
     } else {
         addMessage("セーブデータが見つかりませんでした。", false);
         loadGameButton.classList.add("hidden"); // ボタンを非表示にする
@@ -3285,7 +3315,7 @@ sizeAllocationInput.addEventListener("input", updateAllocationDisplay);
 startAdventureButton.addEventListener("click", () => {
     initializePlayer();
     moveScreen(SCREENS.baseScreen);
-    showToast(`はじめまして！ ${player.party[0].name}`);
+    addToast(`はじめまして！ ${player.party[0].name}`);
 });
 
 debugTriggerEventButton.addEventListener("click", () => {

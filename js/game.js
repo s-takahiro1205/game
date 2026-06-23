@@ -140,7 +140,7 @@ export let player = new Proxy({
 
 // ゲーム管理用Proxyオブジェクト
 export const gameState = new Proxy({
-        isDebugMode: true,//デバッグ時に直打ち
+        isDebugMode: false,//デバッグ時に直打ち
         // 強制描画用フラグ
         dirty: false,
         // ページ制御
@@ -370,7 +370,7 @@ baseBtnMansion.addEventListener("click", () => {
         unitData.size = 3;
     }
 
-    const unit = createUnit(unitData, {}, null, ["domination-curse-mark"]);
+    const unit = createUnit(unitData);
     addToast(`${unit.name} が加入しました！`, 5000);
     player.party.push(unit);
 
@@ -407,7 +407,18 @@ menuTabPartyMemberContent.addEventListener("click", async (e) => {
     const equipItem = e.target.closest('.equip-item:not(.disabled)');
     const equipItemUnequip = e.target.closest('.equip-item-unequip');
     const equipItemBack = e.target.closest('.equip-item-back');
-    if (equipSlot) {
+    const statusRenameBtn = e.target.closest('.status-rename-btn');
+    const unit = player.party[gameState.bottomMenuPartyTabIndex];
+    if (statusRenameBtn) {
+        showTextInputModal(
+            "名前変更",
+            "変更したいに名前を入力してください。",
+            unit.id,
+            unit.name,
+            "modalChangeUnitName"
+        )
+        return;
+    } else if (equipSlot) {
         // 装備スロット選択
         const slotId = equipSlot.dataset.slotId;
         if (!slotId) {
@@ -422,13 +433,13 @@ menuTabPartyMemberContent.addEventListener("click", async (e) => {
         if (!itemUuid) {
             return;
         }
-        equip(itemUuid, gameState.equipChangeSlotId, player.party[gameState.bottomMenuPartyTabIndex]);
+        equip(itemUuid, gameState.equipChangeSlotId, unit);
         gameState.equipChangeSlotId = null;
         gameState.bottomMenuPartyTabSubType = "equip";
         return;
     } else if (equipItemUnequip) {
         // 装備解除
-        unequip(gameState.equipChangeSlotId, player.party[gameState.bottomMenuPartyTabIndex]);
+        unequip(gameState.equipChangeSlotId, unit);
         gameState.equipChangeSlotId = null;
         gameState.bottomMenuPartyTabSubType = "equip";
         return;
@@ -459,7 +470,7 @@ menuTabItemGrid.addEventListener("click", async (e) => {
                 };
                 return {text: unit.name, data: data, type: "safe"}}
             )
-            showModal(
+            showChoiceModal(
                 "誰に使用しますか？",
                 `${item.name}<br>${item.description}`,
                 [
@@ -468,7 +479,7 @@ menuTabItemGrid.addEventListener("click", async (e) => {
                 ],
             );
         } else {
-            showModal(
+            showChoiceModal(
                 `${item.name}を使用します`,
                 `${item.description}`,
                 [
@@ -479,7 +490,7 @@ menuTabItemGrid.addEventListener("click", async (e) => {
         }
     } else if (choice.classList.contains("storage-btn-discard")) {
     // 破棄ボタン押下時
-        showModal(
+        showChoiceModal(
             `${item.name}を本当に破棄しますか？`,
             `${item.description}`,
             [
@@ -507,11 +518,30 @@ modalActions.addEventListener("click", async (e) => {
     modalEvents[eventName](choice.dataset);
 });
 
+const modalTextInput = document.getElementById("modal-text-input");
+const modalInputContents = document.getElementById("modal-input-contents");
+modalInputContents.addEventListener("click", async (e) => {
+    const confirm = e.target.closest('#modal-input-confirm');
+    // 文字入力でconfirmが選択されていない
+    if (!confirm || !gameState.modal.execEventName) {
+        return
+    };
+    // 入力値保存
+    gameState.modal.default = modalTextInput.value;
+    // 文字入力でinputが空ならエラー
+    if (modalTextInput.value === "") {
+        addToast("入力してください")
+        return;
+    }
+    modalEvents[gameState.modal.execEventName](modalTextInput.value);
+});
+
 // モーダル選択肢選択後のイベントマップ
 const modalEvents = {
     cancel: modalCancel,
     modalUseItem: modalUseItem,
     modalDiscardItem: modalDiscardItem,
+    modalChangeUnitName: modalChangeUnitName,
 };
 
 // モーダル：閉じる
@@ -534,6 +564,20 @@ function modalDiscardItem(dataset) {
     discardItem(dataset.itemUuid);
     gameState.modal = null;
     gameState.dirty = true;
+}
+
+// モーダル：名前変更
+function modalChangeUnitName(name) {
+    const unit = player.party.find(u => u.id === gameState.modal.unitId);
+    if (!unit) {
+        throw new Error(`Unknown unit id: ${gameState.modal.unitId}`)
+    }
+    const old = unit.name;
+    changeUnitName(unit, name);
+    addToast(`${old}は${name}に改名した！`);
+    gameState.modal = null;
+    gameState.dirty = true;
+    saveGame(player)
 }
 
 /* 探索 */
@@ -1465,7 +1509,7 @@ function createUnit(unitData, jobs = {}, equipmentSlot = null, skillIds = []) {
  * エネミー定義からユニットを生成して返す
  * @param {*} enemyId 
  */
-function addUnitForEnemyId(enemyId, sex = null) {
+function getUnitForEnemyId(enemyId, sex = null) {
     const enemy = getEnemyById(enemyId);
     const unitData = {
         name: enemy.name,
@@ -1807,7 +1851,7 @@ function addToast(text, duration = 3000, type="teal") {
         duration: duration,
         type: type,
     };
-    if (gameState.toast.length <= 5) {
+    if (gameState.toast.length < 5) {
         gameState.toast.push(toast);
         setTimeout(() => removeToast(toast.uuid), duration);
     } else {
@@ -1841,18 +1885,41 @@ toastArea.addEventListener("click", async (e) => {
 });
 
 /**
- * モーダルウィンドウを表示する
+ * 選択肢用モーダルウィンドウを表示する
  * @param {string} title
  * @param {string} body
  * @param {Array<Object>} actions
  * @param {string} execEventName
  * @param {string} icon
  */
-function showModal(title, body, actions, execEventName, icon = "") {
+function showChoiceModal(title, body, actions, execEventName, icon = "") {
     gameState.modal = {
+        type: "choice",
         title: title,
         body: body,
         actions: actions,
+        execEventName: execEventName,
+        // icon: icon,
+    };
+}
+
+/**
+ * テキスト入力モーダルウィンドウを表示する
+ * TODO: 現状ユニット名入力専用。inputsを受け取って複数入力可能に？
+ * @param {string} title
+ * @param {string} body
+ * @param {string} unitId
+ * @param {string} unitName
+ * @param {string} execEventName
+ * @param {string} icon
+ */
+function showTextInputModal(title, body, unitId, unitName, execEventName, icon = "") {
+    gameState.modal = {
+        type: "textInput",
+        title: title,
+        body: body,
+        unitId: unitId, // これは固定なので直接データから取る
+        default: unitName, // これは固定なので直接データから取る
         execEventName: execEventName,
         // icon: icon,
     };
@@ -1879,6 +1946,15 @@ function closeMenuModal() {
     gameState.openModal = null;
 }
 
+/**
+ * ユニット名を変更する
+ * @param {Object} unit 
+ * @param {string} name 
+ */
+async function changeUnitName(unit, name) {
+    unit.name = name;
+    gameState.dirty = true;
+}
 
 /**
  * 使用ボタンのイベント
@@ -2785,8 +2861,15 @@ async function battleEnd() {
             }
             // モンスターなら定義から再取得してユニット化
             if (domination.defId) {
-                const unit = addUnitForEnemyId(domination.defId, domination.sex);
+                const unit = getUnitForEnemyId(domination.defId, domination.sex);
                 player.party.push(unit);
+                showTextInputModal(
+                    "名前変更",
+                    "仲間にしたモンスターに名前を付けてください",
+                    unit.id,
+                    unit.name,
+                    "modalChangeUnitName"
+                )
                 addToast(`${unit.name}が仲間に加わった！`);
             } else {
                 // TODO: 冒険者なら

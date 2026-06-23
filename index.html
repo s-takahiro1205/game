@@ -775,6 +775,25 @@ html, body {
 .status-header { display: flex; align-items: center; gap: 12px; background: var(--panel2); border: 1px solid var(--border2); border-radius: 8px; padding: 12px; }
 .status-avatar { width: 52px; height: 52px; border-radius: 50%; background: var(--panel3); border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 28px; flex: 0 0 auto; }
 .status-name  { font-size: 16px; font-weight: bold; color: var(--text); letter-spacing: 1px; }
+.status-rename-btn {
+    padding: 4px 6px;
+    border-radius: 8px;
+    margin-right: 4px;
+    border: 1px solid #2E3347;
+    font-size: 16px;
+    cursor: pointer;
+    color: #222638;
+    background: #DFDFDF;
+    font-weight: bold;
+    transition: opacity 0.15s, transform 0.1s;
+}
+.status-rename-btn:hover {
+    background: rgba(255,255,255,0.1);
+}
+.status-rename-btn:active {
+    transform: scale(0.9);
+}
+
 .status-class { font-size: 10px; color: var(--text-sub); margin-top: 2px; }
 .status-lv    { font-size: 11px; color: var(--gold); margin-top: 3px; font-weight: bold; }
 .status-cond  { font-size: 10px; margin-top: 3px; }
@@ -1468,6 +1487,10 @@ html, body {
             <div id="modal-title"></div>
             <div id="modal-body"></div>
             <div id="modal-actions"></div>
+            <div id="modal-input-contents" style="text-align: center">
+                <input id="modal-text-input" type="text">
+                <button id="modal-input-confirm" class="modal-btn safe" style="padding: 1em 4em;margin-top: 1em;">決定</button>
+            </div>
         </div>
     </div>
 

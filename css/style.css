@@ -685,6 +685,17 @@ input[type="number"] {
 .modal-btn.danger { background: #E05C5C; border-color: #E05C5C; color: #fff; }
 .modal-btn.safe { background: #2A7A75; border-color: #4ECDC4; color: #fff; }
 
+#modal-input-confirm {
+    padding: 1em 4em;
+    margin-top: 1em;
+}
+#modal-input-confirm:hover {
+    background: rgba(255,255,255,0.1);
+}
+#modal-input-confirm:active {
+    transform: scale(0.9);
+}
+
 /* Item effect text in menu cards */
 .item-effect-text {
     color: #ffcc00;

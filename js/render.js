@@ -43,6 +43,8 @@ const modalIcon = document.getElementById("modal-icon");
 const modalTitle = document.getElementById("modal-title");
 const modalBody = document.getElementById("modal-body");
 const modalActions = document.getElementById("modal-actions");
+const modalInputContents = document.getElementById("modal-input-contents");
+const modalTextInput = document.getElementById("modal-text-input");
 
 // 拠点
 const baseScreen = document.getElementById(SCREENS.baseScreen);
@@ -282,17 +284,27 @@ function showModal() {
         return false;
     }
 
+    modalInputContents.classList.add("hidden");
+    modalTextInput.classList.add("hidden");
+    modalActions.classList.add("hidden");
     modalTitle.innerHTML = gameState.modal.title;
     modalBody.innerHTML = gameState.modal.body;
     // modalIcon.innerHTML = gameState.modal.icon ?? "ⓘ";
 
-    const actions = gameState.modal.actions.map(button => {
-        const data = Object.keys(button.data).map(key => {
-            return ` data-${key}="${button.data[key]}"`;
+    if (gameState.modal.type === "choice") {
+        modalActions.classList.remove("hidden");
+        const actions = gameState.modal.actions.map(button => {
+            const data = Object.keys(button.data).map(key => {
+                return ` data-${key}="${button.data[key]}"`;
+            });
+            return `<button class="modal-btn ${button.type ?? ""}" ${data}>${button.text}</button>`;
         });
-        return `<button class="modal-btn ${button.type ?? ""}" ${data}>${button.text}</button>`;
-    });
-    modalActions.innerHTML = actions.join("");
+        modalActions.innerHTML = actions.join("");
+    } else if (gameState.modal.type === "textInput") {
+        modalInputContents.classList.remove("hidden");
+        modalTextInput.classList.remove("hidden");
+        modalTextInput.value = gameState.modal.default;
+    }
     modalOverlay.classList.add("active");
     return true;
 }
@@ -384,7 +396,7 @@ function renderMenu() {
             <div class="status-header">
                 <!-- <div class="status-avatar">${unit.icon}</div> -->
                 <div>
-                <div class="status-name">${unit.name}</div>
+                <div class="status-name"><button class="status-rename-btn">🖌︎</button>${unit.name}</div>
                 <div class="status-class">${job.name} - ランク${jobHistory.rank} - [${rankExp}]</div>
                 <div class="status-lv">Lv ${unit.level} - [${exp}]</div>
                 <!-- <div class="status-cond">${unit.cond}</div> -->

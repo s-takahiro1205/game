@@ -975,7 +975,7 @@ html, body {
         <div class="stat-row">
             <label>HP</label>
             <button class="character-creation-stat-minus">－</button>
-            <input type="number" id="hp-allocation" min="1" readonly>
+            <input type="number" id="hp-allocation" min="10" readonly>
             <button class="character-creation-stat-plus">＋</button>
             <span id="display-hp"></span>
         </div>
@@ -991,15 +991,23 @@ html, body {
         <div class="stat-row">
             <label>攻撃</label>
             <button class="character-creation-stat-minus">－</button>
-            <input type="number" id="atk-allocation" min="1" readonly>
+            <input type="number" id="atk-allocation" min="5" readonly>
             <button class="character-creation-stat-plus">＋</button>
             <span id="display-atk"></span>
         </div>
 
         <div class="stat-row">
+            <label>防御</label>
+            <button class="character-creation-stat-minus">－</button>
+            <input type="number" id="def-allocation" min="5" readonly>
+            <button class="character-creation-stat-plus">＋</button>
+            <span id="display-def"></span>
+        </div>
+
+        <div class="stat-row">
             <label>速度</label>
             <button class="character-creation-stat-minus">－</button>
-            <input type="number" id="spd-allocation" min="1" readonly>
+            <input type="number" id="spd-allocation" min="3" readonly>
             <button class="character-creation-stat-plus">＋</button>
             <span id="display-spd"></span>
         </div>
@@ -1007,7 +1015,7 @@ html, body {
         <div class="stat-row">
             <label>知能</label>
             <button class="character-creation-stat-minus">－</button>
-            <input type="number" id="int-allocation" min="1" readonly>
+            <input type="number" id="int-allocation" min="3" readonly>
             <button class="character-creation-stat-plus">＋</button>
             <span id="display-int"></span>
         </div>
@@ -1015,7 +1023,7 @@ html, body {
         <div class="stat-row">
             <label>器用</label>
             <button class="character-creation-stat-minus">－</button>
-            <input type="number" id="dex-allocation" min="1" readonly>
+            <input type="number" id="dex-allocation" min="3" readonly>
             <button class="character-creation-stat-plus">＋</button>
             <span id="display-dex"></span>
         </div>
@@ -1023,7 +1031,7 @@ html, body {
         <div class="stat-row">
             <label>体格</label>
             <button class="character-creation-stat-minus">－</button>
-            <input type="number" id="size-allocation" min="1" readonly>
+            <input type="number" id="size-allocation" min="3" readonly>
             <button class="character-creation-stat-plus">＋</button>
             <span id="display-size"></span>
         </div>

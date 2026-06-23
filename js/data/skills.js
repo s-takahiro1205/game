@@ -558,7 +558,9 @@ export const SKILLS = [
     {
         id: "charge",
         name: "突進",
-        cost: {},
+        cost: {
+            hp: 8
+        },
         target_type: "alive_enemy_one",
         usableIn: {
             home: false,
@@ -581,7 +583,9 @@ export const SKILLS = [
     {
         id: "thrash",
         name: "あばれる",
-        cost: {},
+        cost: {
+            hp: 20
+        },
         target_type: "alive_enemy_all",
         usableIn: {
             home: false,

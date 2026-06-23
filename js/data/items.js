@@ -149,7 +149,7 @@ export const ITEMS = [
         price: 150,
         effects: [
             {
-                type: "stat_change",
+                type: "statChange",
                 stat: "int",
                 min: 0,
                 max: 0,

@@ -500,6 +500,8 @@ function renderMenuItems() {
             ? item.effects.map(ef => {
                 if(ef.type === "damage" || ef.type === "heal") {
                     return `威力 ${ef.fix ? ef.fix : (ef.min + "～" + ef.max)}`;
+                } else if(ef.type === "statChange") {
+                    return `能力${ef.fix >= 0 ? "上昇" : "減少"}:${LABEL[ef.stat]} ${ef.prefix >= 0 ? "+" : ""}${ef.fix}`;
                 } else if(ef.type === "addState") {
                     return `付与:${LABEL[ef.stateId]} 約${ef.turn}ターン ${ef.fix}%`;
                 } else if(ef.type === "recoverState") {

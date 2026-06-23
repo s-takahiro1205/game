@@ -53,7 +53,7 @@ export const EVENTS = {
                 choices: [
                     {
                         text: "食べる",
-                        desc: "対象：1人 効果：HP+50%",
+                        desc: "対象：1人 効果：HP+30",
                         next: "eat"
                     },
                     {

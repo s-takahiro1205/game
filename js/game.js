@@ -140,7 +140,7 @@ export let player = new Proxy({
 
 // ゲーム管理用Proxyオブジェクト
 export const gameState = new Proxy({
-        isDebugMode: false,//デバッグ時に直打ち
+        isDebugMode: true,//デバッグ時に直打ち
         // 強制描画用フラグ
         dirty: false,
         // ページ制御
@@ -212,10 +212,12 @@ const playerNameInput = document.getElementById("player-name");
 const hpAllocationInput = document.getElementById("hp-allocation");
 const mpAllocationInput = document.getElementById("mp-allocation");
 const attackAllocationInput = document.getElementById("atk-allocation");
+const defAllocationInput = document.getElementById("def-allocation");
 const remainingPointsSpan = document.getElementById("remaining-points");
 const displayHpSpan = document.getElementById("display-hp");
 const displayMpSpan = document.getElementById("display-mp");
 const displayAttackSpan = document.getElementById("display-atk");
+const displayDefSpan = document.getElementById("display-def");
 const speedAllocationInput = document.getElementById("spd-allocation");
 const intelAllocationInput = document.getElementById("int-allocation");
 const dexAllocationInput = document.getElementById("dex-allocation");
@@ -869,13 +871,14 @@ function showCharacterCreationScreen() {
 
     // 初期値を設定
     playerNameInput.value = "";
-    hpAllocationInput.value = 10;
-    mpAllocationInput.value = 5;
+    hpAllocationInput.value = 15;
+    mpAllocationInput.value = 10;
     attackAllocationInput.value = 10;
+    defAllocationInput.value = 5;
     speedAllocationInput.value = 5;
-    intelAllocationInput.value = 3;
-    dexAllocationInput.value = 3;
-    sizeAllocationInput.value = 3;
+    intelAllocationInput.value = 5;
+    dexAllocationInput.value = 5;
+    sizeAllocationInput.value = 5;
     updateAllocationDisplay();
 }
 
@@ -1315,29 +1318,32 @@ function generateMapData(mapDef) {
 // ============================================================================
 /**
  * 能力値配分の表示を更新する
+ * TODO: renderに移植しなよ
  */
 function updateAllocationDisplay() {
     const hpPts = parseInt(hpAllocationInput.value);
     const mpPts = parseInt(mpAllocationInput.value);
     const atkPts = parseInt(attackAllocationInput.value);
+    const defPts = parseInt(defAllocationInput.value);
     const speedVal = parseInt(speedAllocationInput.value);
     const intelVal = parseInt(intelAllocationInput.value);
     const dexVal = parseInt(dexAllocationInput.value);
     const sizeVal = parseInt(sizeAllocationInput.value);
 
-    const remaining = 49 - hpPts - mpPts - atkPts - speedVal - intelVal - dexVal - sizeVal;
+    const remaining = 65 - hpPts - mpPts - atkPts - defPts - speedVal - intelVal - dexVal - sizeVal;
 
     remainingPointsSpan.textContent = remaining;
     displayHpSpan.textContent = `HP: ${hpPts * 2}`;
     displayMpSpan.textContent = `MP: ${mpPts * 2}`;
     displayAttackSpan.textContent = `攻撃: ${atkPts}`;
+    displayDefSpan.textContent = `防御: ${defPts}`;
     displaySpeedSpan.textContent = `速度: ${speedVal}`;
     displayIntelSpan.textContent = `知能: ${intelVal}`;
     displayDexSpan.textContent = `器用: ${dexVal}`;
     displaySizeSpan.textContent = `体格: ${sizeVal}`;
 
     // ポイントがマイナスになったり能力が最低値を下回ったらボタンを無効化
-    if (remaining < 0 || hpPts < 1 || mpPts < 0 || atkPts < 1 || speedVal < 1 || intelVal < 1 || dexVal < 1 || sizeVal < 1) {
+    if (remaining < 0 || hpPts < 1 || mpPts < 0 || atkPts < 1  || defPts < 1 || speedVal < 1 || intelVal < 1 || dexVal < 1 || sizeVal < 1) {
         startAdventureButton.disabled = true;
     } else {
         startAdventureButton.disabled = false;
@@ -1373,7 +1379,7 @@ function initializePlayer() {
         maxHp: parseInt(hpAllocationInput.value) * 2,
         maxMp: parseInt(mpAllocationInput.value) * 2,
         atk: parseInt(attackAllocationInput.value),
-        def: 3,
+        def: parseInt(defAllocationInput.value),
         spd: parseInt(speedAllocationInput.value),
         int: parseInt(intelAllocationInput.value),
         dex: parseInt(dexAllocationInput.value),
@@ -1652,7 +1658,7 @@ function checkJobCondition(unit, condition) {
 }
 
 // パーティーメンバーの全回復処理
-function systemHealAll(isHpMpHeal = true) {
+function systemHealAll(isHpMpHeal = true, isDieHeal = true) {
     for (const unit of player.party) {
         if (isHpMpHeal) {
             unit.hp = unit.maxHp;
@@ -2724,7 +2730,7 @@ async function onTargetSelect(e) {
  */
 async function battleEnd() {
     const result = gameState.battle.result;
-    systemHealAll(false);// 状態異常だけ初期化
+    systemHealAll(false, false);// 状態異常だけ初期化
     if (result.isVictory) {
         player.money += result.gold;
         player.currentEventCompleted = true; // 戦闘イベント完了
@@ -3270,6 +3276,7 @@ loadGameButton.addEventListener("click", async () => {
 hpAllocationInput.addEventListener("input", updateAllocationDisplay);
 mpAllocationInput.addEventListener("input", updateAllocationDisplay);
 attackAllocationInput.addEventListener("input", updateAllocationDisplay);
+defAllocationInput.addEventListener("input", updateAllocationDisplay);
 speedAllocationInput.addEventListener("input", updateAllocationDisplay);
 intelAllocationInput.addEventListener("input", updateAllocationDisplay);
 dexAllocationInput.addEventListener("input", updateAllocationDisplay);

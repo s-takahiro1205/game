@@ -573,8 +573,10 @@ function modalChangeUnitName(name) {
         throw new Error(`Unknown unit id: ${gameState.modal.unitId}`)
     }
     const old = unit.name;
-    changeUnitName(unit, name);
-    addToast(`${old}は${name}に改名した！`);
+    if (old !== name) {
+        changeUnitName(unit, name);
+        addToast(`${old}は${name}に改名した！`);
+    }
     gameState.modal = null;
     gameState.dirty = true;
     saveGame(player)
@@ -2030,6 +2032,28 @@ async function useItem(itemUuid, unitIds) {
                 const mod = effect.fix ? effect.fix : getRandom(effect.min, effect.max);
                 target[effect.stat] += mod;
                 addMessage(`${target.name} の ${effect.stat} が ${mod} ` + (mod > 0 ? "上がった！" : "下がった！"));
+            }
+        } else if (effect.type === "addExp") {
+            for (const target of targets) {
+                const mod = effect.fix ? effect.fix : getRandom(effect.min, effect.max);
+                const ret = addExp(target, mod);
+                let msg = `${target.name}は${mod}の経験値を得た！`;
+                if (ret) {
+                    // TODO: レベルアップ結果解体
+                    msg += `<br>${JSON.stringify(ret)}`
+                }
+                addToast(msg, 5000);
+            }
+        } else if (effect.type === "addRankExp") {
+            for (const target of targets) {
+                const mod = effect.fix ? effect.fix : getRandom(effect.min, effect.max);
+                const ret = addRankExp(target, mod);
+                let msg = `${target.name}は${mod}のランク経験値を得た！`;
+                if (ret) {
+                    // TODO: ランクアップ結果解体
+                    msg += `<br>${JSON.stringify(ret)}`
+                }
+                addToast(msg, 5000);
             }
         }
     }

@@ -56,7 +56,7 @@ export const ENEMIES = [
             {
                 id: "potionOfDecay",
                 chance: 33
-            }
+            },
         ],
         money: 4,
         race: RACES.monster.id,
@@ -330,7 +330,7 @@ export const ENEMIES = [
                 chance: 3
             },
             {
-                id: "potionOfDecay",
+                id: "orbOfGrowthSmall",
                 chance: 1
             }
         ],
@@ -410,9 +410,9 @@ export const ENEMIES = [
                 chance: 5
             },
             {
-                id: "elixirOfShadow",
+                id: "ringOfTheAncients",
                 chance: 1
-            }
+            },
         ],
         money: 14,
         race: RACES.monster.id,
@@ -514,9 +514,13 @@ export const ENEMIES = [
                 chance: 10
             },
             {
-                id: "ringOfTheAncients",
-                chance: 1
-            }
+                id: "orbOfGrowthSmall",
+                chance: 3
+            },
+            {
+                id: "orbOfExperienceSmall",
+                chance: 3
+            },
         ],
         money: 70,
         race: RACES.elf.id,

@@ -284,12 +284,15 @@ function showModal() {
         return false;
     }
 
-    modalInputContents.classList.add("hidden");
-    modalTextInput.classList.add("hidden");
+    // 選択肢
     modalActions.classList.add("hidden");
     modalTitle.innerHTML = gameState.modal.title;
     modalBody.innerHTML = gameState.modal.body;
     // modalIcon.innerHTML = gameState.modal.icon ?? "ⓘ";
+    // 文字入力 初回表示だったか
+    const isTextInputHidden = modalInputContents.classList.contains("hidden");
+    modalInputContents.classList.add("hidden");
+    modalTextInput.classList.add("hidden");
 
     if (gameState.modal.type === "choice") {
         modalActions.classList.remove("hidden");
@@ -303,7 +306,9 @@ function showModal() {
     } else if (gameState.modal.type === "textInput") {
         modalInputContents.classList.remove("hidden");
         modalTextInput.classList.remove("hidden");
-        modalTextInput.value = gameState.modal.default;
+        if (isTextInputHidden) {
+            modalTextInput.value = gameState.modal.default;
+        }
     }
     modalOverlay.classList.add("active");
     return true;

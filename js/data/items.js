@@ -171,6 +171,60 @@ export const ITEMS = [
         uuid: "",
     },
     {
+        id: "orbOfGrowthSmall",
+        name: "成長のオーブ-小",
+        description: "成長を促す魔力が詰まった小さな結晶。一説によると世界に還元される魂から零れ落ちるものだという。",
+        category: "consumable",
+        price: -1,//非売品
+        effects: [
+            {
+                type: "addExp",
+                min: 0,
+                max: 0,
+                fix: 100,
+            },
+        ],
+        usableIn: {
+            home: true,
+            explore: true,
+            battle: false,
+        },
+        uses: 1,
+        useType: "mod_status",
+        useTargetType: "alive_ally_one",
+        statModifier: null,
+        equipCategory: null,
+        equipCondition: null,
+        uuid: "",
+    },
+    {
+        id: "orbOfExperienceSmall",
+        name: "経験のオーブ-小",
+        description: "様々な経験を追体験させる魔力が詰まった小さな結晶。一説によると肉体が土に還ったあとに残されるものだという。",
+        category: "consumable",
+        price: -1,//非売品
+        effects: [
+            {
+                type: "addRankExp",
+                min: 0,
+                max: 0,
+                fix: 10,
+            },
+        ],
+        usableIn: {
+            home: true,
+            explore: true,
+            battle: false,
+        },
+        uses: 1,
+        useType: "mod_status",
+        useTargetType: "alive_ally_one",
+        statModifier: null,
+        equipCategory: null,
+        equipCondition: null,
+        uuid: "",
+    },
+    {
         id: "scrollOfSandStorm",
         name: "砂嵐の巻物",
         description: "古の呪文が記された巻物。使用すると、激しい砂嵐が身を切り裂く。",

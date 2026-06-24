@@ -283,7 +283,7 @@ export const SKILLS = [
         id: "full-slash",
         name: "フルスラッシュ",
         cost: {
-            hp: 8
+            hp: 15
         },
         target_type: "alive_enemy_all",
         usableIn: {
@@ -297,7 +297,7 @@ export const SKILLS = [
             {
                 type: "damage",
                 element: "physical",
-                power: 0.30,
+                power: 0.50,
                 fix: 0,
                 add: 0,
                 armor_pierce: 0.00,

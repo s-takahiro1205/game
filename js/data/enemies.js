@@ -50,7 +50,7 @@ export const ENEMIES = [
         currentJob: "monster",
         jobs: {},
         equipmentSlot: [],
-        skillList: ["bite"],
+        skillList: {attack: 90, guard: 0, bite: 10},
         battleStatus: [],
         dropItems: [
             {
@@ -82,7 +82,7 @@ export const ENEMIES = [
         currentJob: "monster",
         jobs: {},
         equipmentSlot: [],
-        skillList: ["bite"],
+        skillList: {attack: 70, guard: 0, bite: 30},
         battleStatus: [],
         dropItems: [
             {
@@ -114,7 +114,7 @@ export const ENEMIES = [
         currentJob: "monster",
         jobs: {},
         equipmentSlot: [],
-        skillList: [],
+        skillList: {attack: 100},
         battleStatus: [],
         dropItems: [
             {
@@ -146,7 +146,7 @@ export const ENEMIES = [
         currentJob: "monster",
         jobs: {},
         equipmentSlot: [],
-        skillList: [],
+        skillList: {attack: 100, guard: 0},
         battleStatus: [],
         dropItems: [
             {
@@ -178,7 +178,7 @@ export const ENEMIES = [
         currentJob: "monster",
         jobs: {},
         equipmentSlot: [],
-        skillList: [],
+        skillList: {attack: 80, guard: 0, "wait-and-see": 20},
         battleStatus: [],
         dropItems: [
             {
@@ -218,7 +218,7 @@ export const ENEMIES = [
         currentJob: "monster",
         jobs: {},
         equipmentSlot: [],
-        skillList: ["poison-bite"],
+        skillList: {attack: 80, guard: 0, "poison-bite": 20},
         battleStatus: [],
         dropItems: [
             {
@@ -250,7 +250,7 @@ export const ENEMIES = [
         currentJob: "monster",
         jobs: {},
         equipmentSlot: [],
-        skillList: [],
+        skillList: {attack: 70, guard: 30},
         battleStatus: [],
         dropItems: [
             {
@@ -282,7 +282,7 @@ export const ENEMIES = [
         currentJob: "monster",
         jobs: {},
         equipmentSlot: [],
-        skillList: ["charge"],
+        skillList: {attack: 50, guard: 0, "charge": 50},
         battleStatus: [],
         dropItems: [
             {
@@ -318,7 +318,7 @@ export const ENEMIES = [
         currentJob: "monster",
         jobs: {},
         equipmentSlot: [],
-        skillList: ["wait-and-see"],
+        skillList: {attack: 70, guard: 0, "charge": 10, "wait-and-see": 20},
         battleStatus: [],
         dropItems: [
             {
@@ -358,7 +358,7 @@ export const ENEMIES = [
         currentJob: "scout",
         jobs: {},
         equipmentSlot: [],
-        skillList: ["slash", "poison-slash"],
+        skillList: {attack: 55, guard: 20, "slash": 13, "poison-slash": 12},
         battleStatus: [],
         dropItems: [
             {
@@ -402,7 +402,7 @@ export const ENEMIES = [
         currentJob: "monster",
         jobs: {},
         equipmentSlot: [],
-        skillList: ["fire"],
+        skillList: {attack: 75, guard: 0, "fire": 25},
         battleStatus: [],
         dropItems: [
             {
@@ -438,7 +438,7 @@ export const ENEMIES = [
         currentJob: "warrior",
         jobs: {},
         equipmentSlot: [],
-        skillList: ["power-slash", "wait-and-see"],
+        skillList: {attack: 60, guard: 10, "slash": 20, "wait-and-see": 10},
         battleStatus: [],
         dropItems: [
             {
@@ -475,7 +475,7 @@ export const ENEMIES = [
         currentJob: "warrior",
         jobs: {},
         equipmentSlot: [],
-        skillList: ["wait-and-see"],
+        skillList: {attack: 60, guard: 20, "wait-and-see": 20},
         battleStatus: [],
         dropItems: [],
         money: 100,
@@ -502,7 +502,7 @@ export const ENEMIES = [
         currentJob: "warrior",
         jobs: {},
         equipmentSlot: [],
-        skillList: ["heal", "charge"],
+        skillList: {attack: 50, guard: 0, "heal": 33, "charge": 17},
         battleStatus: [],
         dropItems: [
             {
@@ -546,7 +546,7 @@ export const ENEMIES = [
         currentJob: "warrior",
         jobs: {},
         equipmentSlot: [],
-        skillList: ["full-thunder", "power-slash"],
+        skillList: {attack: 30, guard: 0, "full-thunder": 33, "power-slash": 37},
         battleStatus: [],
         dropItems: [
             {
@@ -579,7 +579,7 @@ export const ENEMIES = [
         currentJob: "warrior",
         jobs: {},
         equipmentSlot: [],
-        skillList: ["power-slash", "full-slash"],
+        skillList: {attack: 30, guard: 0, "full-thunder": 33, "full-slash": 37},
         battleStatus: [],
         dropItems: [
             {

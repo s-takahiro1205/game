@@ -33,7 +33,10 @@ export const SKILL_ORDER = [
 
 // 味方にするときに引き継がないスキル
 export const IGNORE_PARTY_SKILL = [
-    "wait-and-see"
+    "attack",
+    "guard",
+    "zoning-out",
+    "wait-and-see",
 ]
 
 /**
@@ -455,6 +458,21 @@ export const SKILLS = [
     // },
 
     // 敵専用
+    {// 行動が選択できなかったエネミー用
+        id: "zoning-out",
+        name: "ボーっとする",
+        customMessage: "${actor-name} はボーっとしている",
+        cost: {},
+        target_type: "own",
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: true,
+        },
+        category: "special",
+        type: "support",
+        effects: []
+    },
     {
         id: "wait-and-see",
         name: "様子を見る",

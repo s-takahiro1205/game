@@ -1532,7 +1532,7 @@ function getUnitForEnemyId(enemyId, sex = null) {
         jobId: enemy.currentJob,
     }
 
-    const unit = createUnit(unitData, {}, null, !enemy.skillList ? [] : enemy.skillList.filter(skillId => IGNORE_PARTY_SKILL.some(id => id !== skillId)));
+    const unit = createUnit(unitData, {}, null, !enemy.skillList ? [] : Object.keys(enemy.skillList).filter(skillId => IGNORE_PARTY_SKILL.some(id => id !== skillId)));
     return unit;
 }
 
@@ -2403,16 +2403,12 @@ let counterDecideEnemyActionAndTarget = 0;
 function decideEnemyActionAndTarget(actor) {
     counterDecideEnemyActionAndTarget += 1;
     if (counterDecideEnemyActionAndTarget > 100) {
-        throw new Error(`loop counterDecideEnemyActionAndTarget 100 ${actor.name}`);
+        // 行動が決められなかったときはボーっとする
+        // throw new Error(`loop counterDecideEnemyActionAndTarget 100 ${actor.name}`);
+        return new Proxy({act: "skill", actDetail: "zoning-out", targets: [actor.id]}, {set: setAndRender});
     }
-    // TODO ランダムに敵の行動を決定
-    const enemyActions = [
-        "attack", "attack", "attack", "guard",
-        // TODO: とりあえず
-        ...(gameState.battle.actor.skillList)
-    ];
-    const enemyAction = enemyActions[Math.floor(Math.random() * enemyActions.length)];
-    const aliveParty = gameState.battle.party.filter(unit => !isDead(unit))
+    const enemyAction = weightedRandom(gameState.battle.actor.skillList);
+    const aliveParty = gameState.battle.party.filter(unit => !isDead(unit));
     if (enemyAction === "attack") {
         return new Proxy({act: "attack", actDetail: null, targets: [
             aliveParty[Math.floor(Math.random() * aliveParty.length)].id

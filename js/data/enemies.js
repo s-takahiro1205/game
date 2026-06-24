@@ -61,6 +61,7 @@ export const ENEMIES = [
         money: 4,
         race: RACES.monster.id,
         sex: null,
+        dominationResist: 1.00,//支配しやすさ
     },
     {
         id: "starving-dog",
@@ -93,6 +94,7 @@ export const ENEMIES = [
         money: 3,
         race: RACES.monster.id,
         sex: null,
+        dominationResist: 1.00,
     },
     {
         id: "rotting-crow",
@@ -125,6 +127,7 @@ export const ENEMIES = [
         money: 2,
         race: RACES.monster.id,
         sex: null,
+        dominationResist: 1.00,
     },
     {
         id: "twisted-rat",
@@ -157,6 +160,7 @@ export const ENEMIES = [
         money: 3,
         race: RACES.monster.id,
         sex: null,
+        dominationResist: 1.00,
     },
     {
         id: "forest-ghoul",
@@ -197,6 +201,7 @@ export const ENEMIES = [
         money: 4,
         race: RACES.monster.id,
         sex: null,
+        dominationResist: 1.00,
     },
     {
         id: "thorn-spider",
@@ -229,6 +234,7 @@ export const ENEMIES = [
         money: 4,
         race: RACES.monster.id,
         sex: null,
+        dominationResist: 1.00,
     },
     {
         id: "moving-mushroom",
@@ -261,6 +267,7 @@ export const ENEMIES = [
         money: 8,
         race: RACES.monster.id,
         sex: null,
+        dominationResist: 1.00,
     },
     {
         id: "wild-boar",
@@ -297,6 +304,7 @@ export const ENEMIES = [
         money: 15,
         race: RACES.monster.id,
         sex: null,
+        dominationResist: 1.00,
     },
     {
         id: "moss-golem",
@@ -337,6 +345,7 @@ export const ENEMIES = [
         money: 33,
         race: RACES.monster.id,
         sex: null,
+        dominationResist: 0.80,
     },
     {
         id: "rogue-bandit",
@@ -381,6 +390,7 @@ export const ENEMIES = [
         money: 21,
         race: RACES.human.id,
         sex: null,
+        dominationResist: 0.10,
     },
     {
         id: "wandering-ghost",
@@ -417,6 +427,7 @@ export const ENEMIES = [
         money: 14,
         race: RACES.monster.id,
         sex: null,
+        dominationResist: 0.80,
     },
     {
         id: "guardian-of-the-ruins",
@@ -453,7 +464,78 @@ export const ENEMIES = [
         money: 50,
         race: RACES.fallen.id,
         sex: null,
+        dominationResist: 0.10,
     },
+
+    // ボーナス敵
+    {
+        id: "little-spirit-of-learning",
+        name: "経験の妖精",
+        level: 5,
+        exp: 200,
+        hp: 6,
+        maxHp: 6,
+        mp: 1,
+        maxMp: 1,
+        atk: 1,
+        description: "成長のオーブを食べてしまった幼い妖精。成長の日を迎えるまで、外敵から逃げ回る羽目になってしまった。",
+        def: 200,
+        spd: 100,
+        int: 1,
+        dex: 1,
+        size: 1,
+        multiAction: 1,
+        currentJob: "monster",
+        jobs: {},
+        equipmentSlot: [],
+        skillList: {attack: 0, guard: 80, "wait-and-see": 20},
+        battleStatus: [],
+        dropItems: [
+            {
+                id: "orbOfGrowthSmall",
+                chance: 100
+            }
+        ],
+        money: 5,
+        race: RACES.monster.id,
+        sex: null,
+        dominationResist: 0.01,
+    },
+    {
+        id: "little-spirit-of-skill",
+        name: "技能の妖精",
+        level: 5,
+        exp: 5,
+        rankExp: 20,
+        hp: 6,
+        maxHp: 6,
+        mp: 1,
+        maxMp: 1,
+        atk: 1,
+        description: "経験のオーブを食べてしまった幼い妖精。成長の日を迎えるまで、外敵から逃げ回る羽目になってしまった。",
+        def: 200,
+        spd: 100,
+        int: 1,
+        dex: 1,
+        size: 1,
+        multiAction: 1,
+        currentJob: "monster",
+        jobs: {},
+        equipmentSlot: [],
+        skillList: {attack: 0, guard: 80, "wait-and-see": 20},
+        battleStatus: [],
+        dropItems: [
+            {
+                id: "orbOfExperienceSmall",
+                chance: 100
+            }
+        ],
+        money: 5,
+        race: RACES.monster.id,
+        sex: null,
+        dominationResist: 0.01,
+    },
+
     // ボス
     {
         id: "guardian-of-the-ruin",
@@ -481,6 +563,7 @@ export const ENEMIES = [
         money: 100,
         race: RACES.human.id,
         sex: null,
+        dominationResist: 0.01,
     },
     {
         id: "guardian-of-the-forest",
@@ -525,6 +608,7 @@ export const ENEMIES = [
         money: 70,
         race: RACES.elf.id,
         sex: null,
+        dominationResist: 0.01,
     },
     {
         id: "messenger-of-Shadows",
@@ -557,6 +641,7 @@ export const ENEMIES = [
         money: 120,
         race: RACES.fallen.id,
         sex: null,
+        dominationResist: 0.01,
     },
     {
         id: "guardian-of-the-dawn",
@@ -590,5 +675,6 @@ export const ENEMIES = [
         money: 500,
         race: RACES.human.id,
         sex: null,
+        dominationResist: 0.01,
     },
 ];

@@ -1,6 +1,6 @@
 // 画面描画
 
-import { player, gameState, getUsableList, getRequiredExp, getRequiredRankExp, canEquip } from './game.js';
+import { player, gameState, getUsableList, getRequiredExp, getRequiredRankExp, canEquip, calcAllStatus } from './game.js';
 import { loadGame } from './save.js';
 import { JOBS } from './data/jobs.js';
 import { MAPS } from './data/maps.js';
@@ -117,7 +117,7 @@ function render() {
     showScreen();
 
     // デバッグパネルの表示/非表示
-    debugPanel.classList.toggle("hidden", (!gameState.isDebugMode || gameState.screen !== SCREENS.exploreScreen));
+    debugPanel.classList.toggle("hidden", (!gameState.isDebugMode || gameState.screen === SCREENS.battleScreen));
 
     // ============================================================================
     // 各画面固有の描画
@@ -342,8 +342,9 @@ function buildPartyGrid() {
     const grid = document.querySelector(`#${gameState.subScreen} .hud-party-grid`);
     if (!grid) return;
     grid.innerHTML = player.party.map(unit => {
-        const hp = Math.round(unit.hp/unit.maxHp*100);
-        const mp = Math.round(unit.mp/unit.maxMp*100);
+        const buffedStatus = calcAllStatus(unit);
+        const hp = Math.round(unit.hp/buffedStatus.maxHp*100);
+        const mp = Math.round(unit.mp/buffedStatus.maxMp*100);
         return `<div class="hud-party-member">
         <!-- <div class="hud-party-icon">${unit.icon ?? ""}</div> -->
         <div class="hud-party-bars">
@@ -369,12 +370,13 @@ function renderMenuTabs() {
     menuTabPartyMemberTabArea.innerHTML = "";
     for (const index in player.party) {
         const unit = player.party[index];
-        const hp = Math.round(unit.hp/unit.maxHp*100);
+        const buffedStatus = calcAllStatus(unit);
+        const hp = Math.round(unit.hp/buffedStatus.maxHp*100);
         const iconMap = ["Ⅰ", "Ⅱ", "Ⅲ", "Ⅳ"];
         menuTabPartyMemberTabArea.innerHTML += `<div class="menu-tab-party-member-tab${gameState.bottomMenuPartyTabIndex === parseInt(index) ? " active" : ""}" data-party-index="${index}">
             <span class="menu-tab-party-member-tab-icon">${iconMap[index]}</span>
             <span class="menu-tab-party-member-tab-name">${unit.name}</span>
-            <span class="menu-tab-party-member-tab-hp">${hp >= 50 ? "🟢" : hp >= 20 ? "🟡" : "🔴"} ${unit.hp + "/" + unit.maxHp}<span>
+            <span class="menu-tab-party-member-tab-hp">${hp >= 50 ? "🟢" : hp >= 20 ? "🟡" : "🔴"} ${unit.hp + "/" + buffedStatus.maxHp}<span>
         </div>`
     };
 }
@@ -387,9 +389,10 @@ function renderMenu() {
     if (gameState.bottomMenuTabId === BOTTOM_MENU_TABS.menuTabHome) {
     } else if (gameState.bottomMenuTabId === BOTTOM_MENU_TABS.menuTabParty) {
         const unit = player.party[gameState.bottomMenuPartyTabIndex];
+        const buffedStatus = calcAllStatus(unit);
         const area = document.getElementById('menu-tab-party-member-content');
-        const hpP = Math.round(unit.hp/unit.maxHp*100);
-        const mpP = Math.round(unit.mp/unit.maxMp*100);
+        const hpP = Math.round(unit.hp/buffedStatus.maxHp*100);
+        const mpP = Math.round(unit.mp/buffedStatus.maxMp*100);
         if (gameState.bottomMenuPartyTabSubType === 'status') {
             const job = JOBS[unit.currentJob];
             const jobHistory = unit.jobs[unit.currentJob];
@@ -408,18 +411,19 @@ function renderMenu() {
                 </div>
             </div>
             <div class="status-bars-box">
-                <div class="status-bar-row"><span class="status-bar-label">HP</span><div class="status-bar-track"><div class="status-bar-fill fill-hp" style="width:${hpP}%"></div></div><span class="status-bar-val">${unit.hp} / ${unit.maxHp}</span></div>
-                <div class="status-bar-row"><span class="status-bar-label">MP</span><div class="status-bar-track"><div class="status-bar-fill fill-mp" style="width:${mpP}%"></div></div><span class="status-bar-val">${unit.mp} / ${unit.maxMp}</span></div>
+                <div class="status-bar-row"><span class="status-bar-label">HP</span><div class="status-bar-track"><div class="status-bar-fill fill-hp" style="width:${hpP}%"></div></div><span class="status-bar-val">${unit.hp} / ${buffedStatus.maxHp}</span></div>
+                <div class="status-bar-row"><span class="status-bar-label">MP</span><div class="status-bar-track"><div class="status-bar-fill fill-mp" style="width:${mpP}%"></div></div><span class="status-bar-val">${unit.mp} / ${buffedStatus.maxMp}</span></div>
             </div>`;
             const statuses = {
-                atk: unit.atk,
-                def: unit.def,
-                spd: unit.spd,
-                int: unit.int,
-                dex: unit.dex,
-                size: unit.size,
-                multiAction: unit.multiAction,
+                atk: buffedStatus.atk,
+                def: buffedStatus.def,
+                spd: buffedStatus.spd,
+                int: buffedStatus.int,
+                dex: buffedStatus.dex,
+                size: buffedStatus.size,
+                multiAction: buffedStatus.multiAction,
             };
+            // TODO: 装備のstateModifierを収集して同じキーで格納し+値表示 buffedStatus一部解除
             area.innerHTML += `<div class="status-params">
                 ${Object.entries(statuses).map(([k,v])=>`<div class="status-param"><span class="status-param-label">${LABEL[k]}</span><span class="status-param-val">${v}</span></div>`).join('')}</div>
             </div>`;
@@ -1045,11 +1049,12 @@ function updatePartyStatus() {
             `.actor-card[data-id="${unit.id}"]`
         );
         if (!card) return;
+        const buffedStatus = calcAllStatus(unit);
         const hpPercentage = Math.max(
-            (unit.hp / unit.maxHp) * 100,
+            (unit.hp / buffedStatus.maxHp) * 100,
             0
         );
-        card.querySelector('.hp-label').textContent = `HP ${unit.hp}/${unit.maxHp}`;
+        card.querySelector('.hp-label').textContent = `HP ${unit.hp}/${buffedStatus.maxHp}`;
         // 状態異常アイコンの描画
         if (unit.battleStatus) {
             for (const status of unit.battleStatus) {
@@ -1065,10 +1070,10 @@ function updatePartyStatus() {
         hpFill.classList.toggle('low-hp', hpPercentage <= 25);
 
         const mpPercentage = Math.max(
-            (unit.mp / unit.maxMp) * 100,
+            (unit.mp / buffedStatus.maxMp) * 100,
             0
         );
-        card.querySelector('.mp-label').textContent = `MP ${unit.mp}/${unit.maxMp}`;
+        card.querySelector('.mp-label').textContent = `MP ${unit.mp}/${buffedStatus.maxMp}`;
         const mpFill = card.querySelector('.mp-bar-fill');
         mpFill.style.width = `${mpPercentage}%`;
     });
@@ -1083,11 +1088,12 @@ function updateEnemyStatus() {
             `.enemy-card[data-id="${unit.id}"]`
         );
         if (!card) return;
+        const buffedStatus = calcAllStatus(unit);
         const hpPercentage = Math.max(
-            (unit.hp / unit.maxHp) * 100,
+            (unit.hp / buffedStatus.maxHp) * 100,
             0
         );
-        card.querySelector('.hp-label').textContent =`HP ${unit.hp}/${unit.maxHp}`;
+        card.querySelector('.hp-label').textContent =`HP ${unit.hp}/${buffedStatus.maxHp}`;
         // 状態異常アイコンの描画
         if (unit.battleStatus) {
             for (const status of unit.battleStatus) {
@@ -1119,8 +1125,9 @@ function createPartyPanel() {
     partyPanel.innerHTML = "";
 
     gameState.battle.party.slice(0, 4).forEach(actor => {
-        const hpPercent = (actor.hp / actor.maxHp) * 100;
-        const mpPercent = (actor.mp / actor.maxMp) * 100;
+        const buffedStatus = calcAllStatus(actor);
+        const hpPercent = (actor.hp / buffedStatus.maxHp) * 100;
+        const mpPercent = (actor.mp / buffedStatus.maxMp) * 100;
 
         const card = document.createElement("div");
         card.className = "actor-card";
@@ -1141,7 +1148,7 @@ function createPartyPanel() {
 
                     <div class="status-row hp-row">
                         <label class="hp-label">
-                            HP ${actor.hp}/${actor.maxHp}
+                            HP ${actor.hp}/${buffedStatus.maxHp}
                         </label>
                         <div class="bar">
                             <div class="hp-bar-fill"
@@ -1152,7 +1159,7 @@ function createPartyPanel() {
 
                     <div class="status-row mp-row">
                         <label class="mp-label">
-                            MP ${actor.mp}/${actor.maxMp}
+                            MP ${actor.mp}/${buffedStatus.maxMp}
                         </label>
                         <div class="bar">
                             <div class="mp-bar-fill"

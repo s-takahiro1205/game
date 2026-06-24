@@ -1,3 +1,6 @@
+
+import { calcAllStatus } from './game.js';
+
 /**
  * スクリーン一覧
  */
@@ -147,8 +150,9 @@ export const BATTLE_STATUSES = [
         subMessageGen: (name) => {return `${name} の体から毒が消え去った。`},
         subMessageGen: (name) => {return `${name} の体から毒が消え去った。`},
         applyEffect: (gameState, target) => {
+            const buffedStatus = calcAllStatus(target);
             // 最大HPの5%切り上げのダメージ
-            const damage = Math.ceil(target.maxHp * 0.05);
+            const damage = Math.ceil(buffedStatus.maxHp * 0.05);
             target.hp = Math.max(0, target.hp - damage);
             return `${target.name} は毒により ${damage} のダメージを受けた。`;
         },
@@ -237,14 +241,14 @@ export const TARGET_TYPE_EXTRACTOR = {
         return enemies.filter(unit => !isDead(unit));
     },
     damaged_enemy_all: (allies = [], enemies, actor = null) => {
-        return enemies.filter(unit => !isDead(unit) && unit.hp < unit.maxHp);
+        return enemies.filter(unit => !isDead(unit) && unit.hp < calcAllStatus(unit).maxHp);
     },
     damaged_enemy_random: (allies = [], enemies, actor = null) => {
-        const aliveUnits = enemies.filter(unit => !isDead(unit) && unit.hp < unit.maxHp);
+        const aliveUnits = enemies.filter(unit => !isDead(unit) && unit.hp < calcAllStatus(unit).maxHp);
         return [aliveUnits[Math.floor(Math.random() * aliveUnits.length)]];
     },
     damaged_enemy_one: (allies = [], enemies, actor = null) => {
-        return enemies.filter(unit => !isDead(unit) && unit.hp < unit.maxHp);
+        return enemies.filter(unit => !isDead(unit) && unit.hp < calcAllStatus(unit).maxHp);
     },
     dead_enemy_all: (allies = [], enemies, actor = null) => {
         return enemies.filter(unit => isDead(unit));
@@ -279,14 +283,14 @@ export const TARGET_TYPE_EXTRACTOR = {
         return allies.filter(unit => !isDead(unit));
     },
     damaged_ally_all: (allies, enemies = [], actor = null) => {
-        return allies.filter(unit => !isDead(unit) && unit.hp < unit.maxHp);
+        return allies.filter(unit => !isDead(unit) && unit.hp < calcAllStatus(unit).maxHp);
     },
     damaged_ally_random: (allies, enemies = [], actor = null) => {
-        const aliveUnits = allies.filter(unit => !isDead(unit) && unit.hp < unit.maxHp);
+        const aliveUnits = allies.filter(unit => !isDead(unit) && unit.hp < calcAllStatus(unit).maxHp);
         return [aliveUnits[Math.floor(Math.random() * aliveUnits.length)]];
     },
     damaged_ally_one: (allies, enemies = [], actor = null) => {
-        return allies.filter(unit => !isDead(unit) && unit.hp < unit.maxHp);
+        return allies.filter(unit => !isDead(unit) && unit.hp < calcAllStatus(unit).maxHp);
     },
     dead_ally_all: (allies, enemies = [], actor = null) => {
         return allies.filter(unit => isDead(unit));
@@ -321,14 +325,14 @@ export const TARGET_TYPE_EXTRACTOR = {
         return [...allies, ...enemies].filter(unit => !isDead(unit));
     },
     damaged_all: (allies, enemies = [], actor = null) => {
-        return [...allies, ...enemies].filter(unit => !isDead(unit) && unit.hp < unit.maxHp);
+        return [...allies, ...enemies].filter(unit => !isDead(unit) && unit.hp < calcAllStatus(unit).maxHp);
     },
     damaged_random: (allies, enemies = [], actor = null) => {
-        const aliveUnits = [...allies, ...enemies].filter(unit => !isDead(unit) && unit.hp < unit.maxHp);
+        const aliveUnits = [...allies, ...enemies].filter(unit => !isDead(unit) && unit.hp < calcAllStatus(unit).maxHp);
         return [aliveUnits[Math.floor(Math.random() * aliveUnits.length)]];
     },
     damaged_one: (allies, enemies = [], actor = null) => {
-        return [...allies, ...enemies].filter(unit => !isDead(unit) && unit.hp < unit.maxHp);
+        return [...allies, ...enemies].filter(unit => !isDead(unit) && unit.hp < calcAllStatus(unit).maxHp);
     },
     dead_all: (allies, enemies = [], actor = null) => {
         return [...allies, ...enemies].filter(unit => isDead(unit));

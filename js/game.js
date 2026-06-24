@@ -1033,9 +1033,10 @@ async function resolveEventNode(nodeId) {
     if (node.data?.targetType === "single" && !player.explore.event.beforeData.unitId) {
         player.explore.event.choices = [];
         for (const unit of player.party) {
+            const buffedStatus = calcAllStatus(unit);
             player.explore.event.choices.push({
                 text: `${unit.name}`,
-                desc: `Lv${unit.level} HP ${unit.hp}/${unit.maxHp} MP ${unit.mp}/${unit.maxMp}`,
+                desc: `Lv${unit.level} HP ${buffedStatus.hp}/${buffedStatus.maxHp} MP ${buffedStatus.mp}/${buffedStatus.maxMp}`,
                 next: nodeId,
                 unitId: unit.id,
                 // TODO: 配列化とか判定メソッド化とかして
@@ -1112,15 +1113,16 @@ async function resolveEventNode(nodeId) {
                 : player.party.map(unit => unit.id);
             for (const unitId of unitIds) {
                 const unit = getPartyUnitById(unitId);
+                const buffedStatus = calcAllStatus(unit);
                 let heal = 0;
                 heal += node.data.fix ? node.data.fix : getRandom(node.data.min, node.data.max);
                 if (node.data.ref) {
-                    heal += Math.floor(unit[node.data.ref] * (node.data.rate / 100));
+                    heal += Math.floor((buffedStatus[node.data.ref] ?? unit[node.data.ref]) * (node.data.rate / 100));
                 }
-                if (unit.maxHp !== unit.hp && heal > 0) {
+                if (buffedStatus.maxHp !== unit.hp && heal > 0) {
                     player.explore.event.data.message.push(`${unit.name}のHPが${heal}回復した。`);
                 }
-                unit.hp = Math.min(unit.maxHp, unit.hp + heal);
+                unit.hp = Math.min(buffedStatus.maxHp, unit.hp + heal);
             }
             next = node.next;
             break;
@@ -1131,15 +1133,16 @@ async function resolveEventNode(nodeId) {
                 : player.party.map(unit => unit.id);
             for (const unitId of unitIds) {
                 const unit = getPartyUnitById(unitId);
+                const buffedStatus = calcAllStatus(unit);
                 let heal = 0;
                 heal += node.data.fix ? node.data.fix : getRandom(node.data.min, node.data.max);
                 if (node.data.ref) {
-                    heal += Math.floor(unit[node.data.ref] * (node.data.rate / 100));
+                    heal += Math.floor((buffedStatus[node.data.ref] ?? unit[node.data.ref]) * (node.data.rate / 100));
                 }
-                if (unit.maxMp !== unit.mp && heal > 0) {
+                if (buffedStatus.maxMp !== unit.mp && heal > 0) {
                     player.explore.event.data.message.push(`${unit.name}のMPが${heal}回復した。`);
                 }
-                unit.mp = Math.min(unit.maxMp, unit.mp + heal);
+                unit.mp = Math.min(buffedStatus.maxMp, unit.mp + heal);
             }
             next = node.next;
             break;
@@ -1150,10 +1153,11 @@ async function resolveEventNode(nodeId) {
                 : player.party.map(unit => unit.id);
             for (const unitId of unitIds) {
                 const unit = getPartyUnitById(unitId);
+                const buffedStatus = calcAllStatus(unit);
                 let damage = 0;
                 damage += node.data.fix ? node.data.fix : getRandom(node.data.min, node.data.max);
                 if (node.data.ref) {
-                    damage += Math.floor(unit[node.data.ref] * (node.data.rate / 100));
+                    damage += Math.floor((buffedStatus[node.data.ref] ?? unit[node.data.ref]) * (node.data.rate / 100));
                 }
                 player.explore.event.data.message.push(`${unit.name}は${damage}のダメージを受けた。`);
                 unit.hp = Math.max(0, unit.hp - damage);
@@ -1167,10 +1171,11 @@ async function resolveEventNode(nodeId) {
                 : player.party.map(unit => unit.id);
             for (const unitId of unitIds) {
                 const unit = getPartyUnitById(unitId);
+                const buffedStatus = calcAllStatus(unit);
                 let damage = 0;
                 damage += node.data.fix ? node.data.fix : getRandom(node.data.min, node.data.max);
                 if (node.data.ref) {
-                    damage += Math.floor(unit[node.data.ref] * (node.data.rate / 100));
+                    damage += Math.floor((buffedStatus[node.data.ref] ?? unit[node.data.ref]) * (node.data.rate / 100));
                 }
                 player.explore.event.data.message.push(`${unit.name}のMPは${heal}減った。`);
                 unit.mp = Math.max(0, unit.mp - damage);
@@ -1184,13 +1189,14 @@ async function resolveEventNode(nodeId) {
                 : player.party.map(unit => unit.id);
             for (const unitId of unitIds) {
                 const unit = getPartyUnitById(unitId);
+                const buffedStatus = calcAllStatus(unit);
                 let point = 0;
                 point += node.data.fix ? node.data.fix : getRandom(node.data.min, node.data.max);
                 if (node.data.ref) {
-                    point += Math.floor(unit[node.data.ref] * (node.data.rate / 100));
+                    point += Math.floor((buffedStatus[node.data.ref] ?? unit[node.data.ref]) * (node.data.rate / 100));
                 }
                 player.explore.event.data.message.push(`${unit.name}の${LABEL[node.data.key]}が${point}${point < 0 ? "下がった。" : "上がった。"}`);
-                unit[node.data.key] = Math.max(0, unit[node.data.key] + point);
+                unit[node.data.key] = Math.max(0, buffedStatus[node.data.key] + point);
             }
             next = node.next;
             break;
@@ -1201,10 +1207,11 @@ async function resolveEventNode(nodeId) {
                 : player.party.map(unit => unit.id);
             for (const unitId of unitIds) {
                 const unit = getPartyUnitById(unitId);
+                const buffedStatus = calcAllStatus(unit);
                 let point = 0;
                 point += node.data.fix ? node.data.fix : getRandom(node.data.min, node.data.max);
                 if (node.data.ref) {
-                    point += Math.floor(unit[node.data.ref] * (node.data.rate / 100));
+                    point += Math.floor((buffedStatus[node.data.ref] ?? unit[node.data.ref]) * (node.data.rate / 100));
                 }
                 const mod_levels = addExp(unit, point);
                 if (mod_levels) {
@@ -1221,10 +1228,11 @@ async function resolveEventNode(nodeId) {
                 : player.party.map(unit => unit.id);
             for (const unitId of unitIds) {
                 const unit = getPartyUnitById(unitId);
+                const buffedStatus = calcAllStatus(unit);
                 let point = 0;
                 point += node.data.fix ? node.data.fix : getRandom(node.data.min, node.data.max);
                 if (node.data.ref) {
-                    point += Math.floor(unit[node.data.ref] * (node.data.rate / 100));
+                    point += Math.floor((buffedStatus[node.data.ref] ?? unit[node.data.ref]) * (node.data.rate / 100));
                 }
                 const modRanks = addRankExp(unit, point);
                 if (modRanks) {
@@ -1538,20 +1546,29 @@ function getUnitForEnemyId(enemyId, sex = null) {
 
 /**
  * キャラのステータスを計算して返す。getter代替
- * @param {Object} chara 
+ * 直接呼ばない
+ * @param {Object} unit 
  * @param {string} property 
  * @returns 
  */
-function getStatus(chara, property) {
-    const base = chara[property];
-    if (!chara.statusEffects || chara.statusEffects.length === 0) {
-        return base
-    };
+function calcStatus(unit, property) {
+    const base = unit[property];
 
     let multiplier = 1.0;
     let flat = 0;
 
-    for (const effect of chara.statusEffects) {
+    // 装備の反映
+    for (const slot of unit.equipmentSlot) {
+        const item = slot.equippedItem;
+        if (item && item.statModifier) {
+            Object.entries(item.statModifier).forEach(([stat, val]) => {
+                flat += val;
+            });
+        }
+    }
+
+    // 状態変化を計算
+    for (const effect of unit.statusEffects) {
         const mod = DEBUFF_STATUS_MODIFIERS[effect.type]?.[property];
         if (!mod) continue;
         if (mod.rate)  multiplier += mod.rate; // 例: -0.2で20%減
@@ -1559,6 +1576,104 @@ function getStatus(chara, property) {
     }
 
     return Math.max(0, Math.floor(base * multiplier) + flat);
+}
+
+/**
+ * キャラの全ステータスを計算して返す。
+ * @param {Object} unit
+ * @returns 
+ */
+export function olDcalcAllStatus(unit) {
+    const st = {
+        hp: unit.hp,
+        maxHp: calcStatus(unit, "maxHp"),
+        mp: unit.mp,
+        maxMp: calcStatus(unit, "maxMp"),
+        atk: calcStatus(unit, "atk"),
+        def: calcStatus(unit, "def"),
+        spd: calcStatus(unit, "spd"),
+        int: calcStatus(unit, "int"),
+        dex: calcStatus(unit, "dex"),
+        size: calcStatus(unit, "size"),
+        multiAction: calcStatus(unit, "multiAction"),
+    };
+    if (unit.hp > st.maxHp) {
+        unit.hp = st.maxHp;
+        st.hp = st.maxHp;
+    }
+    if (unit.mp > st.maxMp) {
+        unit.mp = st.maxMp;
+        st.mp = st.maxMp;
+    }
+    return st;
+}
+
+/**
+ * キャラの全ステータスを計算して返す。
+ * @param {Object} unit
+ * @returns 
+ */
+export function calcAllStatus(unit) {
+    const st = {
+        hp: unit.hp,
+        maxHp: unit.maxHp,
+        mp: unit.mp,
+        maxMp: unit.maxMp,
+        atk: unit.atk,
+        def: unit.def,
+        spd: unit.spd,
+        int: unit.int,
+        dex: unit.dex,
+        size: unit.size,
+        multiAction: unit.multiAction,
+    };
+
+    // 装備の反映
+    for (const slot of unit.equipmentSlot) {
+        const item = slot.equippedItem;
+        if (item && item.statModifier) {
+            Object.entries(item.statModifier).forEach(([stat, val]) => {
+                st[stat] += val;
+            });
+        }
+    }
+
+    // 基準値からどれだけ下がるか
+    const modifier = {
+        hp: 1,
+        maxHp: 1,
+        mp: 1,
+        maxMp: 1,
+        atk: 1,
+        def: 1,
+        spd: 1,
+        int: 1,
+        dex: 1,
+        size: 1,
+        multiAction: 1,
+    }
+    if (unit.statusEffects && unit.statusEffects.length >= 0) {
+        // 状態変化を計算
+        for (const effect of unit.statusEffects) {
+            Object.entries(DEBUFF_STATUS_MODIFIERS[effect.type]).forEach(([stat, val]) => {
+                modifier[stat] += val;
+            });
+        }
+    };
+    Object.keys(st).map(stat => {
+        st[stat] = Math.max(0, Math.floor(st[stat] * modifier[stat]))
+    });
+
+
+    if (unit.hp > st.maxHp) {
+        unit.hp = st.maxHp;
+        st.hp = st.maxHp;
+    }
+    if (unit.mp > st.maxMp) {
+        unit.mp = st.maxMp;
+        st.mp = st.maxMp;
+    }
+    return st;
 }
 
 /**
@@ -1706,6 +1821,7 @@ function changeJob(unit, job_id, force = false) {
  * @param {Object} condition 
  */
 function checkJobCondition(unit, condition) {
+    const buffedStatus = calcAllStatus(unit);
     // TODO: その他の条件に対応
     if (condition.type === "level") {
         return unit.level >= condition.value 
@@ -1715,9 +1831,10 @@ function checkJobCondition(unit, condition) {
 // パーティーメンバーの全回復処理
 function systemHealAll(isHpMpHeal = true, isDieHeal = true) {
     for (const unit of player.party) {
+        const buffedStatus = calcAllStatus(unit);
         if (isHpMpHeal) {
-            unit.hp = unit.maxHp;
-            unit.mp = unit.maxMp;
+            unit.hp = buffedStatus.maxHp;
+            unit.mp = buffedStatus.maxMp;
         }
         unit.battleStatus = unit.battleStatus.filter(status => false);
     }
@@ -1988,8 +2105,9 @@ async function useItem(itemUuid, unitIds) {
                 if (isDead(target)) {
                     continue;
                 }
+                const buffedStatus = calcAllStatus(target);
                 const heal = effect.fix ? effect.fix : getRandom(effect.min, effect.max);
-                target.hp = Math.min(target.maxHp, target.hp + heal);
+                target.hp = Math.min(buffedStatus.maxHp, target.hp + heal);
                 addToast(`${target.name} は ${heal} 回復した！`);
             }
         // } else if (effect.type === "addState") {
@@ -2095,13 +2213,7 @@ export function equip(itemUuid, slotId, unit) {
     if (equipSlot.equippedItem) {
         unequip(slotId, unit);
     }
-
     equipSlot.equippedItem = item;
-    if (item.statModifier) {
-        Object.entries(item.statModifier).forEach(([stat, val]) => {
-            unit[stat] += val;
-        });
-    }
     player.itemSlot = player.itemSlot.filter(i => i.uuid !== item.uuid);
     addToast(`${unit.name}は${item.name}を装備した。`);
     gameState.dirty = true;
@@ -2115,21 +2227,10 @@ export function unequip(slotId, unit) {
     const equipSlot = unit.equipmentSlot.find(s => s.id === slotId);
     const item = equipSlot.equippedItem;
 
-    // statModifierを戻す
-    if (item.statModifier) {
-        Object.entries(item.statModifier).forEach(([stat, val]) => {
-            unit[stat] -= val;
-        });
-        if (unit.hp > unit.maxHp) {
-            unit.hp = unit.maxHp;
-        }
-        if (unit.mp > unit.maxMp) {
-            unit.mp = unit.maxMp;
-        }
-    }
-
     player.itemSlot.push(item);
     equipSlot.equippedItem = null;
+    // 上限超過なら最大値に減少
+    const st = calcAllStatus(unit);
 
     const unequipMsg = `${item.name}を外した`;
     addToast(unequipMsg);
@@ -2208,6 +2309,7 @@ function applyDamage(target, damage, is_phisycal = false) {
 
 /**
  * ダメージ計算
+ * (A×P)×(A/(A+D))
  * @param {Object} attacker 
  * @param {Object} target 
  * @param {number} power // 小数 ダメージ係数
@@ -2218,18 +2320,20 @@ function applyDamage(target, damage, is_phisycal = false) {
  */
 function calculateDamage(attacker, target, power = 1.00, isMagic = false, fix = 0, add = 0, armorPierce = 0) {
     let damage = 0;
+    const attackerBS = calcAllStatus(attacker);
+    const targetBS = calcAllStatus(target);
     if (fix > 0) {
         damage = fix;
     } else {
-        let base = 400;// 防御の逆影響度合い。高ければ薄れ、低ければ高まる
-        let atk =  attacker.atk;
-        let def =  target.def * (1 - armorPierce);
+        let base = attackerBS.atk;// 防御の逆影響度合い。高ければ薄れ、低ければ高まる
+        let atk =  attackerBS.atk;
+        let def =  targetBS.def * (1 - armorPierce);
         const rand = Number((0.95 + Math.random() * 0.1).toFixed(2));// 0.95 ~ 1.05の幅
         if (isMagic) {
             // 魔法なら知力どうしで計算
-            base = 500;
-            atk = attacker.int;
-            def =  target.int * (1 - armorPierce);
+            base = attackerBS.int * 1.25;
+            atk = attackerBS.int;
+            def =  targetBS.int * (1 - armorPierce);
         }
         damage += ((atk * power) * (base / (base + def))
                 + add) * rand;
@@ -2261,6 +2365,7 @@ function calculateDamage(attacker, target, power = 1.00, isMagic = false, fix = 
  */
 function calculateHeal(attacker, target, power = 1.00, isMagic = false, fix = 0, add = 0,) {
     let heal = 0;
+    const attackerBS = calcAllStatus(attacker);
     if (fix > 0) {
         heal = fix;
     } else {
@@ -2268,7 +2373,7 @@ function calculateHeal(attacker, target, power = 1.00, isMagic = false, fix = 0,
         const rand = Number((0.95 + Math.random() * 0.1).toFixed(2));// 0.95 ~ 1.05の幅
         if (isMagic) {
             // 魔法なら知力どうしで計算
-            atk = attacker.int;
+            atk = attackerBS.int;
         }
         heal += ((atk * power) + add) * rand;
     }
@@ -2338,10 +2443,10 @@ async function battleTurnStart() {
     // ランダム順にしてからソートする。速度同値がランダムになるように
     const turnOrder = TARGET_TYPE_EXTRACTOR["alive_all"](gameState.battle.party, gameState.battle.enemies)
         .sort(() => Math.random() - 0.5)
-        .sort((a, b) => getStatus(b, "spd") - getStatus(a, "spd"));
+        .sort((a, b) => calcAllStatus(b).spd - calcAllStatus(a).spd);
     // 行動回数を反映
     gameState.battle.turnOrder = turnOrder.flatMap(unit =>
-        Array(unit.multiAction ?? 1).fill(unit)
+        Array(calcAllStatus(unit).multiAction ?? 1).fill(unit)
     );
 
     await sleep(1000);
@@ -2508,12 +2613,13 @@ async function battleExecCommand() {
                     if (isDead(target)) {
                         continue;
                     }
+                    const buffedStatus = calcAllStatus(target);
                     const heal = calculateHeal(
                         actor, target,
                         effect.power, skill.category === "magic",
                         effect.fix, effect.add
                     );
-                    target.hp = Math.min(target.maxHp, target.hp + heal);
+                    target.hp = Math.min(buffedStatus.maxHp, target.hp + heal);
                     addMessage(`${target.name} は ${heal} 回復した！`);
                 }
             } else if (effect.type === "addState") {
@@ -2527,7 +2633,7 @@ async function battleExecCommand() {
                         let turn = effect.turn;
                         // 魔法なら持続増減
                         if (is_magic) {
-                            turn *= magicRate(actor.int);
+                            turn *= magicRate(calcAllStatus(actor).int);
                             turn = Math.floor(turn);
                         }
                         addBattleStatus(effect.stateId, target, turn);
@@ -2582,8 +2688,9 @@ async function battleExecCommand() {
                     if (isDead(target)) {
                         continue;
                     }
+                    const buffedStatus = calcAllStatus(target);
                     const heal = effect.fix ? effect.fix : getRandom(effect.min, effect.max);
-                    target.hp = Math.min(target.maxHp, target.hp + heal);
+                    target.hp = Math.min(buffedStatus.maxHp, target.hp + heal);
                     addMessage(`${target.name} は ${heal} 回復した！`);
                 }
             } else if (effect.type === "addState") {
@@ -2636,12 +2743,12 @@ async function battleExecCommand() {
     }
 
     // 戦闘不能キャラを全取得してタイムラインから除く
-    const down_chara_list = [...gameState.battle.party, ...gameState.battle.enemies]
+    const downUnitList = [...gameState.battle.party, ...gameState.battle.enemies]
         .filter((unit) => isDead(unit));
     gameState.battle.turnOrder = gameState.battle.turnOrder.filter(order =>
-        !down_chara_list.some(unit => unit.id === order.id)
+        !downUnitList.some(unit => unit.id === order.id)
     );
-    down_chara_list.forEach(unit => advanceTimeline(unit.id));
+    downUnitList.forEach(unit => advanceTimeline(unit.id));
 
     gameState.battle.pendingCommand = new Proxy({}, {set: setAndRender});
 
@@ -2683,7 +2790,7 @@ function battleResult(isVictory) {
         // 勝利時にリザルトを組み立ててセット
         const totalMoney = gameState.battle.enemies.reduce((acc, enemy) => acc + enemy.money, 0);
         const totalExp = gameState.battle.enemies.reduce((acc, enemy) => acc + enemy.exp, 0);
-        const totalRankExp = gameState.battle.enemies.reduce((acc, enemy) => acc + Math.floor(enemy.exp / 100) + 1, 0);
+        const totalRankExp = gameState.battle.enemies.reduce((acc, enemy) => acc + (enemy.rankExp ? enemy.rankExp : (Math.floor(enemy.exp / 100) + 1)), 0);
 
         // 経験値加算処理
         const level_ups = [];
@@ -2924,14 +3031,14 @@ function levelUp(unit) {
     // TODO: 装備や職業加算
     const job = JOBS[unit.currentJob];
     const growthRates = {
-        maxHp: 75 + (job.growthRates.maxHp ?? 0),
-        maxMp: 50 + (job.growthRates.maxMp ?? 0),
-        atk: 35 + (job.growthRates.atk ?? 0),
-        def: 35 + (job.growthRates.def ?? 0),
-        spd: 35 + (job.growthRates.spd ?? 0),
-        int: 35 + (job.growthRates.int ?? 0),
-        dex: 35 + (job.growthRates.dex ?? 0),
-        size: 35 + (job.growthRates.size ?? 0),
+        maxHp: 40 + (job.growthRates.maxHp ?? 0),
+        maxMp: 20 + (job.growthRates.maxMp ?? 0),
+        atk: 20 + (job.growthRates.atk ?? 0),
+        def: 20 + (job.growthRates.def ?? 0),
+        spd: 20 + (job.growthRates.spd ?? 0),
+        int: 20 + (job.growthRates.int ?? 0),
+        dex: 20 + (job.growthRates.dex ?? 0),
+        size: 20 + (job.growthRates.size ?? 0),
     };
 
 
@@ -3227,7 +3334,8 @@ function takeDead(target, is_allow_zero = false) {
  * @param {boolean} is_allow_zero // 何か特殊な事情があれば 
  */
 function revive(target, heal, is_allow_zero = false) {
-    target.hp = Math.min(target.maxHp, target.hp + heal);
+    const buffedStatus = calcAllStatus(target);
+    target.hp = Math.min(buffedStatus.maxHp, target.hp + heal);
     if (is_allow_zero || target.hp >= 0) {
         recoverBattleStatus("dead", target);
     }

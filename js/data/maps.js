@@ -41,9 +41,14 @@ export const MONSTER_GROUPS = {
     movingMushroom: ["moving-mushroom"],
     forestGhoulAndmovingMushroom: ["forest-ghoul", "moving-mushroom"],
     wildBoar: ["wild-boar"],
+
     mossGolem: ["moss-golem"],
     mossGolemAndTwoMovingMushroom: ["moss-golem", "moving-mushroom", "moving-mushroom"],
     rogueBanditFour: ["rogue-bandit", "rogue-bandit", "rogue-bandit", "rogue-bandit"],
+
+    littleSpiritOfLearning: ["little-spirit-of-learning"],
+    littleSpiritOfSkill: ["little-spirit-of-skill"],
+
     guardianOfTheRuins: ["guardian-of-the-ruins"],
     guardianOfTheForestAndwanderingGhostTwo: ["guardian-of-the-forest", "wandering-ghost", "wandering-ghost"],
 }
@@ -65,12 +70,16 @@ export const ENCOUNTER_TABLES = {
         thornSpiderTwo: 0.10,
         movingMushroom: 0.10,
         forestGhoulAndmovingMushroom: 0.10,
-        wildBoar: 0.10,
+        wildBoar: 0.08,
+        littleSpiritOfLearning: 0.01,
+        littleSpiritOfSkill: 0.01,
     },
     lostForestShallowElite01: {
-        mossGolemAndTwoMovingMushroom: 0.50,
-        rogueBanditFour: 0.25,
-        guardianOfTheRuins: 0.25,
+        mossGolemAndTwoMovingMushroom: 0.34,
+        rogueBanditFour: 0.30,
+        guardianOfTheRuins: 0.30,
+        littleSpiritOfLearning: 0.03,
+        littleSpiritOfSkill: 0.03,
     },
     lostForestShallowBoss01: {
         guardianOfTheForestAndwanderingGhostTwo: 1.00

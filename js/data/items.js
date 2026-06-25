@@ -181,7 +181,7 @@ export const ITEMS = [
                 type: "addExp",
                 min: 0,
                 max: 0,
-                fix: 100,
+                fix: 500,
             },
         ],
         usableIn: {
@@ -208,7 +208,7 @@ export const ITEMS = [
                 type: "addRankExp",
                 min: 0,
                 max: 0,
-                fix: 10,
+                fix: 100,
             },
         ],
         usableIn: {

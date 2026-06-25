@@ -506,7 +506,7 @@ const modalOverlay = document.getElementById("modal-overlay");
 const modalActions = document.getElementById("modal-actions");
 modalActions.addEventListener("click", async (e) => {
     const choice = e.target.closest('.modal-btn');
-    const eventName = choice.dataset.eventName;
+    const eventName = choice?.dataset.eventName;
     if (!choice || !eventName) {
         return
     };
@@ -1540,7 +1540,7 @@ function getUnitForEnemyId(enemyId, sex = null) {
         jobId: enemy.currentJob,
     }
 
-    const unit = createUnit(unitData, {}, null, !enemy.skillList ? [] : Object.keys(enemy.skillList).filter(skillId => IGNORE_PARTY_SKILL.some(id => id !== skillId)));
+    const unit = createUnit(unitData, {}, null, Object.keys(enemy.skillList).filter(skillId => !IGNORE_PARTY_SKILL.some(id => id === skillId)));
     return unit;
 }
 

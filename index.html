@@ -345,6 +345,157 @@ html, body {
 
 
 /* ══════════════════════════════════
+    サブ画面共通
+══════════════════════════════════ */
+.sub-screen { background: var(--bg); z-index: 10; }
+
+.sub-header {
+    flex: 0 0 auto;
+    background: var(--panel);
+    border-bottom: 2px solid var(--border);
+    padding: 8px 12px;
+    display: flex; align-items: center; gap: 10px;
+}
+.sub-back-btn {
+    width: 32px; height: 32px;
+    background: var(--panel2); border: 1px solid var(--border);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; cursor: pointer; color: var(--text);
+    transition: background .12s; flex: 0 0 auto;
+}
+.sub-back-btn:active { background: var(--panel3); }
+.sub-header-title { font-size: 14px; font-weight: bold; color: var(--text); letter-spacing: 2px; flex: 1; }
+.sub-header-icon  { font-size: 20px; flex: 0 0 auto; }
+
+.sub-body {
+    flex: 1 1 auto; overflow-y: auto;
+    padding: 14px;
+    display: flex; flex-direction: column; gap: 12px;
+}
+.sub-body::-webkit-scrollbar { width: 3px; }
+.sub-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+.sub-footer {
+    padding: 1.5em;
+    display: flex;
+    gap: 10px;
+}
+
+/* セクションタイトル */
+.section-title {
+    font-size: 9px; color: var(--parch-dk);
+    letter-spacing: 2.5px; text-transform: uppercase;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border2);
+    display: flex; align-items: center; gap: 6px;
+}
+.section-title::before { content: '◆'; font-size: 7px; }
+
+/* 汎用カード */
+.info-card {
+    background: var(--panel2); border: 1px solid var(--border2);
+    border-radius: 8px; padding: 12px 14px;
+}
+.info-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(106,78,40,0.3);
+    font-size: 12px;
+}
+.info-row:last-child { border-bottom: none; }
+.info-row-label { color: var(--text-sub); }
+.info-row-val   { color: var(--text); font-weight: bold; }
+.info-row-val.gold   { color: var(--gold); }
+.info-row-val.green  { color: var(--green); }
+.info-row-val.red    { color: var(--red); }
+
+/* アクションボタン */
+.action-btn-full {
+    width: 100%; padding: 12px;
+    border-radius: 8px; border: none;
+    font-size: 13px; font-weight: bold; letter-spacing: 1.5px;
+    cursor: pointer;
+    transition: filter .12s, transform .1s;
+}
+.action-btn-full:active { filter: brightness(.88); transform: scale(.98); }
+.btn-gold    { background: linear-gradient(135deg,#c8860a,#f0a820); color: #1a0c00; box-shadow: 0 2px 8px rgba(200,134,10,.3); }
+.btn-sub     { background: var(--panel2); border: 1px solid var(--border) !important; color: var(--text-sub); }
+.btn-danger  { background: #3a1010; border: 1px solid #7a2020 !important; color: var(--red); }
+.btn-teal    { background: linear-gradient(135deg,#0a5048,#10a080); color: #e0fff8; box-shadow: 0 2px 8px rgba(16,160,128,.25); }
+
+
+/* ══════════════════════════════════
+    転職
+══════════════════════════════════ */
+.job-member-select {
+    display: flex; gap: 6px;
+}
+.job-member-btn {
+    flex: 1; padding: 8px 4px;
+    background: var(--panel2); border: 1px solid var(--border2);
+    border-radius: 8px;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    cursor: pointer; transition: border-color .12s;
+    font-size: 20px;
+}
+.job-member-btn.active { border-color: var(--gold); }
+.job-member-btn-name { font-size: 12px; color: var(--text); }
+.job-member-btn-cls  { font-size: 10px; color: var(--text-dim); }
+
+.job-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+}
+.job-card {
+    background: var(--panel2); border: 1px solid var(--border2);
+    border-radius: 8px; padding: 10px 12px;
+    cursor: pointer; transition: border-color .12s, background .12s;
+    position: relative; overflow: hidden;
+}
+.job-card:active { background: var(--panel3); }
+.job-card.current { border-color: var(--gold-dim); }
+.job-card.current::after {
+    content: '現在'; position: absolute; top: 6px; right: 6px;
+    background: var(--gold-dim); color: #1a0c00;
+    font-size: 8px; font-weight: bold; padding: 1px 5px; border-radius: 3px;
+}
+.job-card.selected { border-color: var(--sub); }
+.job-card.selected::after {
+    content: '選択中'; position: absolute; top: 6px; right: 6px;
+    background: var(--sub); color: #1a0c00;
+    font-size: 8px; font-weight: bold; padding: 1px 5px; border-radius: 3px;
+}
+.job-card.locked { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+.job-card-icon { font-size: 24px; margin-bottom: 5px; }
+.job-card-name { font-size: 12px; font-weight: bold; color: var(--text); margin-bottom: 2px; }
+.job-card-sub  { font-size: 9px; color: var(--text-dim); line-height: 1.4; }
+.job-card-tags { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 6px; }
+.job-tag {
+    font-size: 7px; padding: 1px 5px; border-radius: 10px;
+    background: var(--panel3); border: 1px solid var(--border2); color: var(--text-sub);
+}
+.job-cost {
+    font-size: 9px; color: var(--gold); margin-top: 5px; font-weight: bold;
+}
+.job-req {
+    font-size: 10px; color: var(--red); margin-top: 2px;
+}
+.job-growth-label {
+    font-size: 10px; color: var(--text);
+}
+.g-arrow {
+    font-size: 12px; letter-spacing: -0.3em;
+}
+.g-up {
+    color: var(--mp-blue);
+}
+.g-down {
+    color: var(--danger);
+}
+.g-mid {
+    display: none;
+}
+
+/* ══════════════════════════════════
     マップ選択画面
 ══════════════════════════════════ */
 .base-screen { background: var(--bg); }
@@ -1161,6 +1312,46 @@ html, body {
         </div>
     </div>
 
+    <!-- Change Job Screen -->
+    <div id="change-job-screen" class="base-screen sub-screen close">
+        <!-- HUD（共通） -->
+        <div class="hud base-hud">
+            <div class="hud-main">
+                <div class="hud-stats">
+                    <div class="hud-stat money"></div>
+                    <div class="hud-stat day"></div>
+                </div>
+                <div style="flex:1"></div>
+                <div class="hud-btns">
+                    <div class="hud-icon-btn menu-switch-btn">☰</div>
+                </div>
+            </div>
+            <div class="hud-party-panel open">
+                <div class="hud-party-grid"></div>
+            </div>
+        </div>
+        <div class="sub-body">
+            <div class="section-title">メンバーを選択</div>
+            <div class="job-member-select" id="job-member-select"></div>
+            <div class="section-title">ジョブ一覧</div>
+            <div class="info-card" style="padding:8px 12px;margin-bottom:-4px">
+            <div style="font-size:10px; color:var(--text-sub); line-height:1.6">
+                転職しても習得したスキルや特性は引き継がれます。<br>
+                🔒 マークのジョブは転職条件を満たしていないジョブです。
+            </div>
+            </div>
+            <div class="job-grid" id="job-grid"></div>
+        </div>
+        <div class="sub-footer">
+            <div class="base-btn base-btn-only-label" style="width: 50%" id="change-job-screen-back">
+                <span class="base-btn-label">戻る</span>
+            </div>
+            <div class="base-btn base-btn-only-label" style="width: 50%; background: linear-gradient(160deg, var(--teal) 0%, var(--teal-dim) 100%)" id="change-job-confirm">
+                <span class="base-btn-label">転職する</span>
+            </div>
+        </div>
+    </div>
+
     <!-- Base Select Explore Map Screen -->
     <div id="base-select-explore-map-screen" class="base-screen sub-screen close">
         <!-- HUD（共通） -->
@@ -1403,7 +1594,7 @@ html, body {
             <!-- ホーム -->
             <div id="menu-tab-home" class="menu-tab-content">
                 <div style="padding:12px;display:flex;flex-direction:column;gap:6px">
-                    あ
+                    Coming Soon
                     <!-- <div class="bm-list-item" onclick="closeBaseMenu();goSub('inn')">
                         <div class="bm-list-icon">🏥</div>
                         <div class="bm-list-text"><div class="bm-list-label">待機所へ</div><div class="bm-list-sub">HP/MP回復・状態異常治癒</div></div>
@@ -1462,7 +1653,7 @@ html, body {
 
             <!-- 設定 -->
             <div id="menu-tab-setting" class="menu-tab-content">
-                え
+                Coming Soon
                 <!-- <div style="padding:14px;display:flex;flex-direction:column;gap:10px">
                     <div class="section-title">設定</div>
                     <div class="info-card">

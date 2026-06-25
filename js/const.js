@@ -21,6 +21,7 @@ export const SCREENS = {
 };
 
 export const SUB_SCREENS = {
+    changeJobScreen: "change-job-screen",// 転職
     baseSelectExploreMapScreen: "base-select-explore-map-screen",// 探索マップ選択
     exploreEventScreen: "explore-event-screen",// 探索マップ選択
     exploreClearScreen: "explore-clear-screen",// 探索クリア

@@ -170,6 +170,12 @@ export const gameState = new Proxy({
         openModal: null,// null | "menu" | "item_discard",
         menuTab: "status",// "status" | "items" | "equipments",
 
+        // 転職画面
+        changeJob: {
+            unitId: null,
+            jobId: null,
+        },
+
         // 探索画面
         explore: new Proxy({
             phase: null,// 探索状態 "idle" | "rolling" | "event_resolve" | "choice"
@@ -291,32 +297,67 @@ menuTabPartyMemberSubTabArea.addEventListener("click", async (e) => {
     gameState.bottomMenuPartyTabSubType = choice.dataset.subType;
 });
 
-// base
+// 転職
 const baseBtnChangeJob = document.getElementById("base-btn-change-job");
 baseBtnChangeJob.addEventListener("click", async () => {
+    gameState.changeJob.unitId = player.party[0].id;
+    gameState.changeJob.jobId = player.party[0].currentJob;
     await sleep(100);
-    player.party.forEach(unit => {
-        const result = changeJob(unit, unit.currentJob === "warrior" ? "mage" : (unit.currentJob === "mage" ? "priest" : "warrior"));
-        const job = JOBS[result.after];
-        let message = "";
-        if (result.success) {
-            message += `デバッグ: ${unit.name} は ${job.name} に転職した！`;
-            if (result.statChanges) {
-                message += "ステータスアップ：" + Object.entries(result.statChanges)
-                    .map(([k, v]) => `${k} +${v}`)
-                    .join(' | ');
-            }
-            if (result.learnSkills) {
-                message += "スキル習得：" + result.learnSkills.join(' | ');
-            }
-        } else {
-            message += `条件を満たしていません`;
-        }
-        addToast(message, 5000);
-    });
-    saveGame(player);
+    moveScreen(SCREENS.baseScreen, SUB_SCREENS.changeJobScreen)
+});
+const changeJobScreenBack = document.getElementById("change-job-screen-back");
+changeJobScreenBack.addEventListener("click", async () => {
+    await sleep(100);
+    backSubScreen();
 });
 
+const jobMemberSelect = document.getElementById("job-member-select");
+jobMemberSelect.addEventListener("click", async (e) => {
+    const choice = e.target.closest('.job-member-btn');
+    if (!choice || !choice.dataset.id) {
+        return;
+    }
+    gameState.changeJob.unitId = choice.dataset.id;
+    gameState.dirty = true;
+});
+const jobGrid = document.getElementById("job-grid");
+jobGrid.addEventListener("click", async (e) => {
+    const choice = e.target.closest('.job-card');
+    if (!choice || !choice.dataset.jobId || choice.classList.contains('locked')) {
+        return;
+    }
+    gameState.changeJob.jobId = choice.dataset.jobId;
+    gameState.dirty = true;
+});
+const changeJobConfirm = document.getElementById("change-job-confirm");
+changeJobConfirm.addEventListener("click", async (e) => {
+    const unit = player.party.find(_unit => _unit.id === gameState.changeJob.unitId);
+    if (!gameState.changeJob.jobId || !JOBS[gameState.changeJob.jobId]
+        || !unit || unit.currentJob === gameState.changeJob.jobId) {
+        addToast("ジョブを選択してください", 1500);
+        return
+    }
+    await sleep(100);
+    const result =  changeJob(unit, gameState.changeJob.jobId);
+    const job = JOBS[gameState.changeJob.jobId];
+    if (result.success) {
+        let msg = `${unit.name} は ${job.name} に転職した！`;
+        if (result.statChanges) {
+            msg += "<br>ステータスアップ：" + Object.entries(result.statChanges)
+                .map(([k, v]) => `${LABEL[k]} +${v}`)
+                .join(' | ');
+        }
+        if (result.learnSkills) {
+            msg += "<br>スキル習得：" + result.learnSkills.map(skillId => getSkillById(skillId).name).join(' | ');
+        }
+        addToast(msg, 5000);
+        saveGame(player)
+    } else {
+        addToast(`条件を満たしていません`);
+    }
+});
+
+// 待機所
 const baseBtnMansion = document.getElementById("base-btn-mansion");
 baseBtnMansion.addEventListener("click", () => {
     const partyCount = player.party.length;
@@ -380,6 +421,8 @@ baseBtnMansion.addEventListener("click", () => {
     saveGame(player);
 
 });
+
+// マップ選択
 const baseBtnSelectExploreMap = document.getElementById("base-btn-select-explore-map");
 baseBtnSelectExploreMap.addEventListener("click", async () => {
     await sleep(100);
@@ -1280,13 +1323,13 @@ async function resolveEventNode(nodeId) {
 
 /**
  * 選択肢のconditionsをチェックしdisabledかを返す
- * @param {*} condition
+ * @param {*} conditions
  * @return {boolean}
  */
-function checkChoiceCondition(condition) {
+function checkChoiceCondition(conditions) {
     let isDisabled = false;
-    for (const key in condition) {
-        const obj = condition[key];
+    for (const key in conditions) {
+        const obj = conditions[key];
         const op = Object.keys(obj)[0];
         const value = obj[op];
         switch (key) {
@@ -1782,19 +1825,21 @@ function changeJob(unit, job_id, force = false) {
     unit.currentJob = job_id;
     let mod_ranks = {};
     const beforeJob = unit.currentJob;
+    const job = JOBS[job_id];
 
     // 未経験職なら転職条件チェック
     if (!unit.jobs[job_id]) {
         // 強制なら条件チェック無視
-        if (!force) {
-            for (const condition of jobData.unlockConditions) {
-                if (!checkJobCondition(unit, condition)) {
-                    return {
-                        success: false,
-                        reason: "requirements",
-                    };
-                }
-            }
+        if (!force
+            && (!checkJobCondition(unit, job.visibleConditions)
+                || !checkJobCondition(unit, job.unlockConditions)
+                || !checkJobCondition(unit, job.allowConditions)
+            )
+        ) {
+            return {
+                success: false,
+                reason: "requirements",
+            };
         }
 
         // ランク0で追加してランクアップ判定を行い、ランク1のボーナスを反映
@@ -1816,16 +1861,44 @@ function changeJob(unit, job_id, force = false) {
 }
 
 /**
- * 初回転職条件をチェック
+ * 転職条件をチェック
  * @param {Object} unit 
- * @param {Object} condition 
+ * @param {Object} job
+ * @return [boolean,]
  */
-function checkJobCondition(unit, condition) {
-    const buffedStatus = calcAllStatus(unit);
-    // TODO: その他の条件に対応
-    if (condition.type === "level") {
-        return unit.level >= condition.value 
+export function checkJobCondition(unit, conditions = {}) {
+    if (conditions === {}) {
+        return true;
     }
+    const buffedStatus = calcAllStatus(unit);
+    
+    let ignore = false;
+    for (const type in conditions) {
+        let ignore = false;
+        if (type === "race") {
+            // 要求いずれかと除外すべてどちらも満たす
+            ignore = !(conditions[type].require && conditions[type].require.some(raceId => raceId === unit.race))
+                    && !(conditions[type].ignore && conditions[type].ignore.every(raceId => raceId === unit.race)) 
+        } else if (type === "level") {
+            ignore = unit.level < conditions[type] 
+        } else if (type === "jobHistory") {
+            // 指定職業履歴がすべて存在
+            ignore = unit.jobs === {}
+                    || !Object.keys(conditions[type]).every(
+                        jobId => unit.jobs[jobId] && unit.jobs[jobId].rank >= conditions[type][jobId]
+                    )
+        } else if (type === "mapClear") {
+            // 指定マップのクリア履歴がすべて存在
+            ignore = !player.achievement?.mapClear
+                    || !conditions[type].every(
+                        mapId => Object.keys(player.achievement.mapClear).some(_mapId => _mapId === mapId)
+                    )
+        }
+        if (ignore) {
+            return false;
+        }
+    }
+    return true;
 }
 
 // パーティーメンバーの全回復処理
@@ -3155,8 +3228,8 @@ function addRankExp(unit, exp) {
         name: unit.name,
         before: before_rank,
         after: job_history.rank,
-        statChanges: total_status_up,
-        learnSkills: total_skills,
+        statChanges: Object.keys(total_status_up).length === 0 ? null : total_status_up,
+        learnSkills: Object.keys(total_skills).length === 0 ? null : total_skills,
         jobId: unit.currentJob,
     };
 }

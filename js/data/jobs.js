@@ -7,12 +7,13 @@ export const JOBS = {
         grade: 1,// 職業の階位
         maxRank: 10,// 最大ランク
         rateExp: 1.0,// 必要経験値倍率
-        unlockConditions: [// 転職条件
-            {
-                type: "level",
-                value: 1
-            }
-        ],
+        visibleConditions: {// 存在認知
+        },
+        unlockConditions: { // 条件表示
+        },
+        allowConditions: { // 転職条件
+            level: 1,
+        },
         growthRates: {// 成長率補正 150
             maxHp: 60,
             maxMp: 0,
@@ -25,8 +26,8 @@ export const JOBS = {
         },
         equipTypes: [// 装備適正(仮)
             "sword",
-            "shield",
-            "heavyArmor"
+            "spear",
+            "axe",
         ],
         rankBonuses: [// ランクボーナス
             {
@@ -62,18 +63,80 @@ export const JOBS = {
             }
         ]
     },
+    highWarrior: {
+        id: "highWarrior",
+        name: "闘士",
+        grade: 2,// 職業の階位
+        maxRank: 15,// 最大ランク
+        rateExp: 1.5,// 必要経験値倍率
+        visibleConditions: {// 存在認知
+            // mapClear: ["lostForestShallow"],
+        },
+        unlockConditions: { // 条件表示
+            level: 10,
+        },
+        allowConditions: { // 転職条件
+            jobHistory: {warrior: 10}
+        },
+        growthRates: {// 成長率補正 250
+            maxHp: 110,
+            maxMp: 0,
+            atk: 65,
+            def: 45,
+            spd: 20,
+            int: -30,
+            dex: 20,
+            size: 20,
+        },
+        equipTypes: [// 装備適正(仮)
+            "sword",
+            "spear",
+            "axe",
+            "heavy",
+        ],
+        rankBonuses: [// ランクボーナス
+            {
+                rank: 2,
+                status: {
+                    maxHp: 5,
+                    atk: 3,
+                }
+            },
+            {
+                rank: 5,
+                learnSkills: ["power-slash"],
+            },
+            {
+                rank: 7,
+                status: {
+                    maxHp: 8,
+                    atk: 3,
+                }
+            },
+            {
+                rank: 10,
+                learnSkills: ["full-slash"],
+                status: {
+                    maxHp: 12,
+                    atk: 4,
+                    size: 2,
+                }
+            }
+        ]
+    },
     mage: {
         id: "mage",
         name: "魔法使い",
         grade: 1,
         maxRank: 10,
         rateExp: 1.0,
-        unlockConditions: [
-            {
-                type: "level",
-                value: 1
-            }
-        ],
+        visibleConditions: {// 存在認知
+        },
+        unlockConditions: { // 条件表示
+        },
+        allowConditions: { // 転職条件
+            level: 1,
+        },
         growthRates: {// 成長率補正 165 魔法職は1割増し
             maxHp: 30,
             maxMp: 75,
@@ -128,12 +191,13 @@ export const JOBS = {
         grade: 1,
         maxRank: 10,
         rateExp: 1.0,
-        unlockConditions: [
-            {
-                type: "level",
-                value: 1
-            }
-        ],
+        visibleConditions: {// 存在認知
+        },
+        unlockConditions: { // 条件表示
+        },
+        allowConditions: { // 転職条件
+            level: 1,
+        },
         growthRates: {// 成長率補正 165 魔法職は1割増し
             maxHp: 35,
             maxMp: 80,
@@ -188,12 +252,13 @@ export const JOBS = {
         grade: 1,
         maxRank: 10,
         rateExp: 1.0,
-        unlockConditions: [
-            {
-                type: "level",
-                value: 1
-            }
-        ],
+        visibleConditions: {// 存在認知
+        },
+        unlockConditions: { // 条件表示
+        },
+        allowConditions: { // 転職条件
+            level: 1,
+        },
         growthRates: {// 成長率補正 150
             maxHp: 35,
             maxMp: 10,
@@ -252,16 +317,14 @@ export const JOBS = {
         grade: 1,
         maxRank: 30,
         rateExp: 0.5,
-        unlockConditions: [
-            {
-                type: "level",
-                value: 1
-            },
-            {
-                type: "race",
-                value: "monster"
-            }
-        ],
+        visibleConditions: {// 存在認知
+            race: {require: ["monster"]}
+        },
+        unlockConditions: { // 条件表示
+        },
+        allowConditions: { // 転職条件
+            level: 1,
+        },
         growthRates: {// 成長率補正 150
             maxHp: 30,
             maxMp: 30,

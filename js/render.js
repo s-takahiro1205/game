@@ -1,6 +1,6 @@
 // 画面描画
 
-import { player, gameState, getUsableList, getRequiredExp, getRequiredRankExp, canEquip, calcAllStatus } from './game.js';
+import { player, gameState, getUsableList, getRequiredExp, getRequiredRankExp, canEquip, calcAllStatus, checkJobCondition } from './game.js';
 import { loadGame } from './save.js';
 import { JOBS } from './data/jobs.js';
 import { MAPS } from './data/maps.js';
@@ -48,7 +48,14 @@ const modalTextInput = document.getElementById("modal-text-input");
 
 // 拠点
 const baseScreen = document.getElementById(SCREENS.baseScreen);
+const changeJobScreen = document.getElementById(SUB_SCREENS.changeJobScreen);
 const baseSelectExploreMapScreen = document.getElementById(SUB_SCREENS.baseSelectExploreMapScreen);
+
+// 転職
+const jobMemberSelect = document.getElementById("job-member-select");
+
+
+// マップ選択
 const baseSelectExploreMapGrid = document.getElementById("base-select-explore-map-grid");
 
 // 探索
@@ -132,8 +139,12 @@ function render() {
         }
     }
 
-    // 拠点：探索マップ選択
-    if (gameState.screen === SCREENS.baseScreen && gameState.subScreen === SUB_SCREENS.baseSelectExploreMapScreen) {
+    // 拠点：サブ
+    if (gameState.screen === SCREENS.baseScreen && gameState.subScreen === SUB_SCREENS.changeJobScreen) {
+        // 拠点：探索マップ選択
+        renderBaseChangeJob();
+    } else if (gameState.screen === SCREENS.baseScreen && gameState.subScreen === SUB_SCREENS.baseSelectExploreMapScreen) {
+        // 拠点：探索マップ選択
         renderBaseSelectExploreMap();
     }
 
@@ -177,6 +188,7 @@ function showScreen() {
         [SCREENS.battleScreen]: battleScreen,
     };
     const subScreens = {
+        [SUB_SCREENS.changeJobScreen]: changeJobScreen,
         [SUB_SCREENS.baseSelectExploreMapScreen]: baseSelectExploreMapScreen,
         [SUB_SCREENS.exploreEventScreen]: exploreEventScreen,
         [SUB_SCREENS.exploreClearScreen]: exploreClearScreen,
@@ -588,6 +600,94 @@ function renderMenuItems() {
             </div>
         ${item.uses>=1?`<div class="storage-item-qty">${item.uses}回</div>`:''}
         </div>`}).join('');
+}
+
+/* ======================
+    転職
+====================== */
+function renderBaseChangeJob() {
+    // ユニットカード描画
+    jobMemberSelect.innerHTML = player.party.map(unit => `
+            <div class="job-member-btn${unit.id === gameState.changeJob.unitId ? ' active' : ''}" data-id="${unit.id}">
+                <span>${unit.icon ?? ""}</span>
+                <span class="job-member-btn-name">${unit.name.slice(0, 5)}</span>
+                <span class="job-member-btn-cls">Lv${unit.level}</span>
+            </div>`).join('');
+    
+    // ジョブカード描画
+    const grid = document.getElementById('job-grid');
+    grid.innerHTML = Object.keys(JOBS).map((jobId) => {
+        const unit = player.party.find(_unit => _unit.id === gameState.changeJob.unitId);
+        const isCurrent = unit.currentJob === jobId;
+        const isSelected = gameState.changeJob.jobId === jobId;
+        const job = JOBS[jobId];
+        // 表示条件を満たさないなら非表示
+        if (job.visibleConditions !== {} && !checkJobCondition(unit, job.visibleConditions)) {
+            return "";
+        }
+
+        // 成長率テーブル生成
+        // g=0→↓↓  g=1→↓  g=2→─  g=3→↑  g=4→↑↑
+        function arrows(g) {
+            const up = `<span class="g-arrow g-up">↑</span>`;
+            const mid = `<span class="g-arrow g-mid">-</span>`;
+            const down = `<span class="g-arrow g-down">↓</span>`;
+            if (g >= 100) return up + up + up;
+            if (g >= 50) return up + up + mid;
+            if (g >= 1) return up + mid + mid;
+            if (g === 0) return mid + mid + mid;
+            if (g > -30) return down + mid + mid;
+            if (g > -50) return down + down + mid;
+            return down + down + down;
+        }
+        // const GKEYS = ['HP','MP','攻撃','防御','速度','知能','器用','体格'];
+        // // 4列2行に分割（左カラム: HP/攻撃/速度/器用、右カラム: MP/防御/知能/体格）
+        // const LEFT  = ['HP','攻撃','速度','器用'];
+        // const RIGHT = ['MP','防御','知能','体格'];
+        const GKEYS = ['maxHp','maxMp','atk','def','spd','int','dex','size'];
+        // 4列2行に分割（左カラム: HP/攻撃/速度/器用、右カラム: MP/防御/知能/体格）
+        const LEFT  = ['maxHp','atk','spd','dex'];
+        const RIGHT = ['maxMp','def','int','size'];
+        const tableRows = LEFT.map((lk, ri) => {
+            const rk = RIGHT[ri];
+            return `<tr>
+                <td class="job-growth-label">${LABEL[lk]}</td>
+                <td><div class="job-growth-arrows">${arrows(job.growthRates[lk])}</div></td>
+                <td style="width:8px"></td>
+                <td class="job-growth-label">${LABEL[rk]}</td>
+                <td><div class="job-growth-arrows">${arrows(job.growthRates[rk])}</div></td>
+            </tr>`;
+        }).join('');
+
+        const isUnlock = checkJobCondition(unit, job.unlockConditions);
+        let conditions = !isUnlock ? getConditionText(job.unlockConditions) : "";
+        const isAllow = isUnlock && checkJobCondition(unit, job.allowConditions);
+        conditions += !isAllow ? getConditionText(job.allowConditions) : "";
+        return `<div class="job-card${isCurrent ? ' current' : (isSelected ? " selected" : '')}${isAllow ? '' : ' locked'}"${isAllow ? 'data-job-id="' + job.id + '"' : ""}>
+            <div class="job-card-icon">${isAllow ? (job.icon ?? "") : ''}</div>
+            <div class="job-card-name">${isAllow ? job.name : '🔒 '+ job.name}</div>
+            <table class="job-growth-table">${tableRows}</table>
+            <!-- ${!isCurrent && isAllow ? `<div class="job-cost">🪙 ${job.cost}</div>` : ''} -->
+            ${!isUnlock || !isAllow ? `<div class="job-req">転職条件${conditions}</div>` : ''}
+        </div>`;
+    }).join('');
+}
+
+function getConditionText(conditions) {
+    let result = "";
+    for (const type in conditions) {
+        result += "<br>";
+        if (type === "race") {
+            result += "種族：" + conditions[type].map(raceId => RACES[raceId].name).join("か")
+        } else if (type === "level") {
+            result += "レベル：" + conditions[type] + "以上" 
+        } else if (type === "jobHistory") {
+            result += "職歴：" + Object.keys(conditions[type]).map(jobId => JOBS[jobId].name + " ランク" + conditions[type][jobId] + "以上").join(' & ')
+        } else if (type === "mapClear") {
+            result += "マップクリア：" + conditions[type].map(mapId => MAPS[mapId].name).join(' & ')
+        }
+    }
+    return result;
 }
 
 /* ======================

@@ -317,6 +317,9 @@ jobMemberSelect.addEventListener("click", async (e) => {
     if (!choice || !choice.dataset.id) {
         return;
     }
+    if (gameState.changeJob.unitId !== choice.dataset.id) {
+        gameState.changeJob.jobId = player.party.find(unit => unit.id === choice.dataset.id);
+    }
     gameState.changeJob.unitId = choice.dataset.id;
     gameState.dirty = true;
 });
@@ -1834,12 +1837,31 @@ function changeJob(unit, job_id, force = false) {
             && (!checkJobCondition(unit, job.visibleConditions)
                 || !checkJobCondition(unit, job.unlockConditions)
                 || !checkJobCondition(unit, job.allowConditions)
+                || !checkJobCondition(unit, job.cost)
             )
         ) {
             return {
                 success: false,
                 reason: "requirements",
             };
+        }
+
+        // コスト 支払い
+        if (job.cost) {
+            for (const type in job.cost) {
+                if (type === "money") {
+                    player.money -= job.cost[type];
+                    addToast(`${job.cost[type]}G支払った`)
+                } else if (type === "item") {
+                    for (const itemId of job.cost[type]) {
+                        const targets = player.itemSlot.filter(item => item.id === itemId);
+                        // 使用回数の少ない順に使用
+                        targets.sort((a, b) => a.count - b.count).slice(0, job.cost[type][itemId]);
+                        player.itemSlot = player.itemSlot.filter(item => !targets.some(_item => _item.uuid === item.uuid));
+                        addToast(targets[0].name + `を${job.cost[type][itemId] !== 1 ? job.cost[type][itemId] + "個" : ""}` + "使用した");
+                    }
+                }
+            }
         }
 
         // ランク0で追加してランクアップ判定を行い、ランク1のボーナスを反映
@@ -1878,9 +1900,14 @@ export function checkJobCondition(unit, conditions = {}) {
         if (type === "race") {
             // 要求いずれかと除外すべてどちらも満たす
             ignore = !(conditions[type].require && conditions[type].require.some(raceId => raceId === unit.race))
-                    && !(conditions[type].ignore && conditions[type].ignore.every(raceId => raceId === unit.race)) 
+                    && !(conditions[type].ignore && !conditions[type].ignore.every(raceId => raceId === unit.race)) 
         } else if (type === "level") {
             ignore = unit.level < conditions[type] 
+        } else if (type === "money") {
+            ignore = player.money < conditions[type] 
+        } else if (type === "item") {
+            ignore = player.itemSlot.length === 0
+                    || Object.keys(conditions[type]).some(itemId => player.itemSlot.filter(item => item.id === itemId).length < conditions[type][itemId]) 
         } else if (type === "jobHistory") {
             // 指定職業履歴がすべて存在
             ignore = unit.jobs === {}
@@ -2316,7 +2343,7 @@ export function unequip(slotId, unit) {
  * @param id
  * @returns {Item}
  */
-function getItemById(id) {
+export function getItemById(id) {
     const item = ITEMS.find(i => i.id === id);
     if (!item) {
         console.warn(`Item not found: ${id}`);

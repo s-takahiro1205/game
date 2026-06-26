@@ -1,6 +1,6 @@
 // 画面描画
 
-import { player, gameState, getUsableList, getRequiredExp, getRequiredRankExp, canEquip, calcAllStatus, checkJobCondition } from './game.js';
+import { player, gameState, getItemById, getUsableList, getRequiredExp, getRequiredRankExp, canEquip, calcAllStatus, checkJobCondition } from './game.js';
 import { loadGame } from './save.js';
 import { JOBS } from './data/jobs.js';
 import { MAPS } from './data/maps.js';
@@ -659,16 +659,25 @@ function renderBaseChangeJob() {
             </tr>`;
         }).join('');
 
-        const isUnlock = checkJobCondition(unit, job.unlockConditions);
+        // 職歴
+        const history = unit.jobs[jobId];
+        const rankText = history ? "<span class='job-card-rank'>(" + (history.rank === job.maxRank ? `★マスター` : `ランク-${history.rank}`) + ")</span>"
+                        : "";
+
+        // 職歴はすべてに勝る
+        const isUnlock = history || checkJobCondition(unit, job.unlockConditions);
         let conditions = !isUnlock ? getConditionText(job.unlockConditions) : "";
-        const isAllow = isUnlock && checkJobCondition(unit, job.allowConditions);
+        const isPaid = history || (isUnlock && checkJobCondition(unit, job.cost));
+        const cost = !isPaid ? getConditionText(job.cost) : "";
+        const isAllow = history || (isUnlock && checkJobCondition(unit, job.allowConditions));
         conditions += !isAllow ? getConditionText(job.allowConditions) : "";
-        return `<div class="job-card${isCurrent ? ' current' : (isSelected ? " selected" : '')}${isAllow ? '' : ' locked'}"${isAllow ? 'data-job-id="' + job.id + '"' : ""}>
+        return `<div class="job-card${isCurrent ? ' current' : (isSelected ? " selected" : '')}${isAllow && isPaid ? '' : ' locked'}"${isAllow ? 'data-job-id="' + job.id + '"' : ""}>
             <div class="job-card-icon">${isAllow ? (job.icon ?? "") : ''}</div>
-            <div class="job-card-name">${isAllow ? job.name : '🔒 '+ job.name}</div>
+            <div class="job-card-name">${isAllow ? job.name : '🔒 '+ job.name}${rankText}</div>
             <table class="job-growth-table">${tableRows}</table>
             <!-- ${!isCurrent && isAllow ? `<div class="job-cost">🪙 ${job.cost}</div>` : ''} -->
             ${!isUnlock || !isAllow ? `<div class="job-req">転職条件${conditions}</div>` : ''}
+            ${!isPaid ? `<div class="job-req">転職コスト${cost}</div>` : ''}
         </div>`;
     }).join('');
 }
@@ -681,6 +690,10 @@ function getConditionText(conditions) {
             result += "種族：" + conditions[type].map(raceId => RACES[raceId].name).join("か")
         } else if (type === "level") {
             result += "レベル：" + conditions[type] + "以上" 
+        } else if (type === "money") {
+            result += conditions[type] + "G" 
+        } else if (type === "item") {
+            result += Object.keys(conditions[type]).map(itemId => getItemById(itemId).name + "-" + conditions[type][itemId] + "個").join(' & ') 
         } else if (type === "jobHistory") {
             result += "職歴：" + Object.keys(conditions[type]).map(jobId => JOBS[jobId].name + " ランク" + conditions[type][jobId] + "以上").join(' & ')
         } else if (type === "mapClear") {

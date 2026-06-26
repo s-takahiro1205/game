@@ -820,7 +820,7 @@ async function debugChangeJob() {
         return;
     }
 
-    const result = changeJob(unit, job_id);
+    const result = changeJob(unit, job_id, true);
     if (result.success) {
         addMessage(`デバッグ: ${unit.name} は ${job.name} に転職した！`, false);
         if (result.statChanges) {
@@ -1591,70 +1591,6 @@ function getUnitForEnemyId(enemyId, sex = null) {
 }
 
 /**
- * キャラのステータスを計算して返す。getter代替
- * 直接呼ばない
- * @param {Object} unit 
- * @param {string} property 
- * @returns 
- */
-function calcStatus(unit, property) {
-    const base = unit[property];
-
-    let multiplier = 1.0;
-    let flat = 0;
-
-    // 装備の反映
-    for (const slot of unit.equipmentSlot) {
-        const item = slot.equippedItem;
-        if (item && item.statModifier) {
-            Object.entries(item.statModifier).forEach(([stat, val]) => {
-                flat += val;
-            });
-        }
-    }
-
-    // 状態変化を計算
-    for (const effect of unit.statusEffects) {
-        const mod = DEBUFF_STATUS_MODIFIERS[effect.type]?.[property];
-        if (!mod) continue;
-        if (mod.rate)  multiplier += mod.rate; // 例: -0.2で20%減
-        if (mod.flat)  flat += mod.flat;
-    }
-
-    return Math.max(0, Math.floor(base * multiplier) + flat);
-}
-
-/**
- * キャラの全ステータスを計算して返す。
- * @param {Object} unit
- * @returns 
- */
-export function olDcalcAllStatus(unit) {
-    const st = {
-        hp: unit.hp,
-        maxHp: calcStatus(unit, "maxHp"),
-        mp: unit.mp,
-        maxMp: calcStatus(unit, "maxMp"),
-        atk: calcStatus(unit, "atk"),
-        def: calcStatus(unit, "def"),
-        spd: calcStatus(unit, "spd"),
-        int: calcStatus(unit, "int"),
-        dex: calcStatus(unit, "dex"),
-        size: calcStatus(unit, "size"),
-        multiAction: calcStatus(unit, "multiAction"),
-    };
-    if (unit.hp > st.maxHp) {
-        unit.hp = st.maxHp;
-        st.hp = st.maxHp;
-    }
-    if (unit.mp > st.maxMp) {
-        unit.mp = st.maxMp;
-        st.mp = st.maxMp;
-    }
-    return st;
-}
-
-/**
  * キャラの全ステータスを計算して返す。
  * @param {Object} unit
  * @returns 
@@ -1671,6 +1607,9 @@ export function calcAllStatus(unit) {
         int: unit.int,
         dex: unit.dex,
         size: unit.size,
+        hit: 100, // 基準値100
+        dodge: Math.floor(unit.spd ** 0.5),
+        critical: Math.floor(unit.dex ** 0.5),
         multiAction: unit.multiAction,
     };
 
@@ -1696,6 +1635,9 @@ export function calcAllStatus(unit) {
         int: 1,
         dex: 1,
         size: 1,
+        hit: 1,
+        dodge: 1,
+        critical: 1,
         multiAction: 1,
     }
     if (unit.statusEffects && unit.statusEffects.length >= 0) {
@@ -1816,7 +1758,7 @@ async function acquireItem(item) {
  * 転職
  * @param {Object} unit 
  * @param {string} job_id 
- * @param {boolean} force 条件を無視して強制的に転職させる
+ * @param {boolean} force 条件とコストを無視して強制的に転職させる
  * @returns 
  */
 function changeJob(unit, job_id, force = false) {
@@ -1846,8 +1788,8 @@ function changeJob(unit, job_id, force = false) {
             };
         }
 
-        // コスト 支払い
-        if (job.cost) {
+        // コスト支払い
+        if (!force && job.cost) {
             for (const type in job.cost) {
                 if (type === "money") {
                     player.money -= job.cost[type];
@@ -2408,6 +2350,34 @@ function applyDamage(target, damage, is_phisycal = false) {
 }
 
 /**
+ * 命中判定 命中ならtrue
+ * @param {Object} attacker 
+ * @param {Object} target 
+ * @param {number} hitAdjust // 補正値
+ */
+function checkHit(attacker, target, hitAdjust = 0) {
+    const attackerBS = calcAllStatus(attacker);
+    const targetBS = calcAllStatus(target);
+    const accuracy = (attackerBS.hit + hitAdjust) - Math.max(0, targetBS.dodge - attackerBS.dodge);
+    // 最低保証 1
+    return Math.max(accuracy, 1) >= Math.floor(Math.random() * 100);
+}
+
+/**
+ * 会心判定 会心ならtrue
+ * @param {Object} attacker 
+ * @param {Object} target 
+ * @param {number} criticalAdjust // 補正値
+ */
+function checkCritical(attacker, target, criticalAdjust = 0) {
+    const attackerBS = calcAllStatus(attacker);
+    const targetBS = calcAllStatus(target);
+    const critical = Math.max(0, criticalAdjust + attackerBS.critical - targetBS.critical / 2);
+    // 最低保証なし
+    return critical >= Math.floor(Math.random() * 100);
+}
+
+/**
  * ダメージ計算
  * (A×P)×(A/(A+D))
  * @param {Object} attacker 
@@ -2656,9 +2626,23 @@ async function battleExecCommand() {
         console.log("攻撃コマンドが実行されました")
         addMessage(`${actor.name} のこうげき！`);
         for (const target of targets) {
-            const damage = calculateDamage(actor, target);
-            applyDamage(target, damage, true);
-            addMessage(`${target.name} に ${damage} のダメージ！`);
+            const isHit = checkHit(actor, target);
+            if (isHit) {
+                const isCritical = checkCritical(actor, target);
+                const damage = calculateDamage(
+                    actor, target,
+                    isCritical ? 1.50 : 1.00,
+                    false, 0, 0,
+                    isCritical ? 0.50 : 0
+                );
+                applyDamage(target, damage, true);
+                if (isCritical) {
+                    addMessage(`クリティカル！！`);
+                }
+                addMessage(`${target.name} に ${damage} のダメージ！`);
+            } else {
+                addMessage(`${target.name} は攻撃をかわした！`);
+            }
         }
     } else if (cmd.act === "guard") {
         console.log("防御コマンドが実行されました")
@@ -2692,7 +2676,8 @@ async function battleExecCommand() {
             }
         }
 
-        // TODO: これ以外の処理
+        // TODO: 直前の攻撃を外していれば状態異常は判定なし、ってしようと思ったがそもそも対象と効果のループが逆だったかもしれねぇ
+        // let beforeHit = true;
         for (const effect of skill.effects) {
             if (effect.type === "damage") {
                 const is_combat = skill.category === "combat";
@@ -2700,13 +2685,24 @@ async function battleExecCommand() {
                     if (isDead(target)) {
                         continue;
                     }
-                    const damage = calculateDamage(
-                        actor, target, effect.power,
-                        skill.category === "magic",
-                        effect.fix, effect.add, effect.armor_pierce
-                    );
-                    applyDamage(target, damage, skill.category !== "magic");
-                    addMessage(`${target.name} に ${damage} のダメージ！`);
+                    // 魔法なら必中
+                    const isHit = skill.category === "magic" ? true : checkHit(actor, target, effect.hit ?? 0);
+                    if (isHit) {
+                        // 魔法に会心はなし
+                        const isCritical = skill.category === "magic" ? false : checkCritical(actor, target, effect.critical ?? 0);
+                        const damage = calculateDamage(
+                            actor, target, effect.power + (isCritical ? 0.50 : 0),
+                            skill.category === "magic",
+                            effect.fix, effect.add, effect.armor_pierce + (isCritical ? 0.50 : 0)
+                        );
+                        applyDamage(target, damage, skill.category !== "magic");
+                        if (isCritical) {
+                            addMessage(`クリティカル！！`);
+                        }
+                        addMessage(`${target.name} に ${damage} のダメージ！`);
+                    } else {
+                        addMessage(`${target.name} は攻撃をかわした！`);
+                    }
                 }
             } else if (effect.type === "heal") {
                 for (const target of targets) {

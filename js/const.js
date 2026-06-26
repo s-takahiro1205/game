@@ -41,6 +41,7 @@ export const BOTTOM_MENU_TABS = {
 
 export const LABEL = {
     maxHp: "最大HP", maxMp: "最大MP", atk: "攻撃力", def: "防御力", spd: "速度", int: "知能", dex: "器用", size: "体格" , multiAction: "行動回数",
+    hit: "命中値", dodge: "回避値", critical: "会心値",
     domination: "支配", poison: "毒", paralyze: "麻痺", sleep: "眠り", stan: "スタン", blind: "盲目", seal: "魔封じ", bind: "捕縛",
     alive_enemy_all: "敵全員", alive_enemy_random: "ランダムな敵1体", alive_enemy_one: "敵1体", damaged_enemy_all: "HPの減っている敵全員", damaged_enemy_random: "HPの減っているランダムな敵1体", damaged_enemy_one: "HPの減っている敵1体", dead_enemy_all: "戦闘不能中の敵全員", dead_enemy_random: "戦闘不能中のランダムな敵1体", dead_enemy_one: "戦闘不能中の敵1体",
     poisoned_enemy_all: "毒状態の敵全員", poisoned_enemy_random: "毒状態のランダムな敵1体", poisoned_enemy_one: "毒状態の敵1体", 

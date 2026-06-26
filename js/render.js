@@ -433,6 +433,9 @@ function renderMenu() {
                 int: buffedStatus.int,
                 dex: buffedStatus.dex,
                 size: buffedStatus.size,
+                hit: buffedStatus.hit,
+                dodge: buffedStatus.dodge,
+                critical: buffedStatus.critical,
                 multiAction: buffedStatus.multiAction,
             };
             // TODO: 装備のstateModifierを収集して同じキーで格納し+値表示 buffedStatus一部解除
@@ -468,7 +471,12 @@ function renderMenu() {
             area.innerHTML = `<div class="skill-panel">${unit.skillList.map(s=>{
             const effectLabels = s.effects.map(ef => {
                 if(ef.type === "damage" || ef.type === "heal") {
-                    return `威力 ${ef.fix ? ef.fix : ((ef.power * 100))}${ef.add ? `+${ef.add}`: ""}${ef.armor_pierce ? "(貫通)" + (ef.armor_pierce * 100) + "%" : ""}`;
+                    return `威力 ${ef.fix ? ef.fix : ((ef.power * 100))}`
+                            + `${ef.add ? `+${ef.add}`: ""}`
+                            + `${ef.hit ? ` ${LABEL["hit"]}${ef.hit > 0 ? "+" : ""}${ef.hit}`: ""}`
+                            + `${ef.critical ? ` ${LABEL["critical"]}${ef.critical > 0 ? "+" : ""}${ef.critical}`: ""}`
+                            + `${ef.armor_pierce ? "(貫通)" + (ef.armor_pierce * 100) + "%" : ""}`
+                            ;
                 } else if(ef.type === "addState") {
                     return `付与:${LABEL[ef.stateId]} 約${ef.turn}ターン ${ef.fix}%`;
                 } else if(ef.type === "recoverState") {

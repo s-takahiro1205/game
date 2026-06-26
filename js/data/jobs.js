@@ -361,7 +361,7 @@ export const JOBS = {
         id: "monster",
         name: "魔物",
         grade: 1,
-        maxRank: 30,
+        maxRank: 20,
         rateExp: 0.5,
         visibleConditions: {// 存在認知
             race: {require: ["monster"]}
@@ -372,34 +372,37 @@ export const JOBS = {
             level: 1,
         },
         cost: {
-            money: 100,
         },
         growthRates: {// 成長率補正 150
-            maxHp: 30,
-            maxMp: 30,
-            atk: 15,
-            def: 15,
-            spd: 15,
-            int: 15,
-            dex: 15,
-            size: 15,
+            maxHp: 50,
+            maxMp: 5,
+            atk: 35,
+            def: 30,
+            spd: 10,
+            int: 0,
+            dex: 10,
+            size: 10,
         },
         equipTypes: [],// 装備適正(仮)
         rankBonuses: [// ランクボーナス
             {
-                rank: 1,
-                learnSkills: ["bite"]
+                rank: 2,
+                learnSkills: ["bite"],
+                status: {
+                    maxHp: 3,
+                    maxMp: 1,
+                    atk: 1,
+                    def: 1,
+                    size: 1,
+                }
             },
             {
                 rank: 3,
                 status: {
                     maxHp: 3,
-                    maxMp: 3,
+                    maxMp: 1,
                     atk: 1,
                     def: 1,
-                    spd: 1,
-                    int: 1,
-                    dex: 1,
                     size: 1,
                 }
             },
@@ -407,12 +410,9 @@ export const JOBS = {
                 rank: 5,
                 status: {
                     maxHp: 3,
-                    maxMp: 3,
+                    maxMp: 1,
                     atk: 1,
                     def: 1,
-                    spd: 1,
-                    int: 1,
-                    dex: 1,
                     size: 1,
                 }
             },
@@ -420,12 +420,9 @@ export const JOBS = {
                 rank: 7,
                 status: {
                     maxHp: 3,
-                    maxMp: 3,
+                    maxMp: 1,
                     atk: 1,
                     def: 1,
-                    spd: 1,
-                    int: 1,
-                    dex: 1,
                     size: 1,
                 }
             },
@@ -433,69 +430,178 @@ export const JOBS = {
                 rank: 10,
                 learnSkills: ["charge"],
                 status: {
-                    maxHp: 10,
+                    maxHp: 5,
                     maxMp: 10,
+                    atk: 5,
                 }
             },
             {
                 rank: 13,
                 status: {
                     maxHp: 3,
-                    maxMp: 3,
+                    maxMp: 1,
                     atk: 1,
                     def: 1,
-                    spd: 1,
-                    int: 1,
-                    dex: 1,
                     size: 1,
+                }
+            },
+            {
+                rank: 15,
+                learnSkills: ["double-bite"],
+                status: {
+                    maxHp: 10,
+                    maxMp: 5,
+                    atk: 5,
+                    def: 5,
+                    size: 5,
                 }
             },
             {
                 rank: 17,
                 status: {
                     maxHp: 3,
-                    maxMp: 3,
+                    maxMp: 1,
                     atk: 1,
                     def: 1,
-                    spd: 1,
-                    int: 1,
-                    dex: 1,
                     size: 1,
                 }
             },
             {
                 rank: 20,
-                learnSkills: ["double-bite"],
-                status: {
-                    maxHp: 15,
-                    maxMp: 15,
-                }
-            },
-            {
-                rank: 25,
-                status: {
-                    maxHp: 5,
-                    maxMp: 5,
-                    atk: 5,
-                    def: 5,
-                    spd: 5,
-                    int: 5,
-                    dex: 5,
-                    size: 5,
-                }
-            },
-            {
-                rank: 30,
                 learnSkills: ["thrash"],
                 status: {
                     maxHp: 30,
-                    maxMp: 30,
+                    maxMp: 10,
                     atk: 10,
                     def: 10,
+                    spd: 5,
+                    int: 5,
+                    dex: 5,
+                    size: 10,
+                }
+            },
+        ]
+    },
+    mysteriousSpirit: {
+        id: "mysteriousSpirit",
+        name: "妖魔",
+        grade: 1,
+        maxRank: 20,
+        rateExp: 0.5,
+        visibleConditions: {// 存在認知
+            race: {require: ["monster"]}
+        },
+        unlockConditions: { // 条件表示
+        },
+        allowConditions: { // 転職条件
+            level: 1,
+        },
+        cost: {
+        },
+        growthRates: {// 成長率補正 150
+            maxHp: 25,
+            maxMp: 40,
+            atk: 0,
+            def: 5,
+            spd: 25,
+            int: 35,
+            dex: 20,
+            size: 0,
+        },
+        equipTypes: [],// 装備適正(仮)
+        rankBonuses: [// ランクボーナス
+            {
+                rank: 2,
+                learnSkills: ["fire"],
+                status: {
+                    maxHp: 1,
+                    maxMp: 3,
+                    spd: 1,
+                    int: 1,
+                    dex: 1,
+                }
+            },
+            {
+                rank: 3,
+                status: {
+                    maxHp: 1,
+                    maxMp: 3,
+                    spd: 1,
+                    int: 1,
+                    dex: 1,
+                }
+            },
+            {
+                rank: 5,
+                status: {
+                    maxHp: 1,
+                    maxMp: 3,
+                    spd: 1,
+                    int: 1,
+                    dex: 1,
+                }
+            },
+            {
+                rank: 7,
+                status: {
+                    maxHp: 1,
+                    maxMp: 3,
+                    spd: 1,
+                    int: 1,
+                    dex: 1,
+                }
+            },
+            {
+                rank: 10,
+                learnSkills: ["thunder"],
+                status: {
+                    maxHp: 5,
+                    maxMp: 10,
+                    int: 5,
+                }
+            },
+            {
+                rank: 13,
+                status: {
+                    maxHp: 1,
+                    maxMp: 3,
+                    spd: 1,
+                    int: 1,
+                    dex: 1,
+                }
+            },
+            {
+                rank: 15,
+                status: {
+                    maxHp: 5,
+                    maxMp: 15,
+                    spd: 5,
+                    int: 5,
+                    dex: 5,
+                }
+            },
+            {
+                rank: 17,
+                status: {
+                    maxHp: 1,
+                    maxMp: 3,
+                    spd: 1,
+                    int: 1,
+                    dex: 1,
+                }
+            },
+            {
+                rank: 20,
+                learnSkills: ["wind"],
+                status: {
+                    maxHp: 10,
+                    maxMp: 20,
+                    atk: 5,
+                    def: 5,
                     spd: 10,
                     int: 10,
                     dex: 10,
-                    size: 10,
+                    size: 5,
                 }
             },
         ]

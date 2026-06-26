@@ -70,6 +70,31 @@ export const SKILLS = [
         ]
     },
     {
+        id: "wind",
+        name: "ウィンド",
+        cost: {
+            mp: 9
+        },
+        target_type: "alive_enemy_all",
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: true,
+        },
+        category: "magic",
+        type: "attack",// ボタンの色分け専用
+        effects: [
+            {
+                type: "damage",
+                element: "wind",
+                power: 0.35,
+                fix: 0,
+                add: 0,
+                armor_pierce: 0.00,
+            },
+        ]
+    },
+    {
         id: "thunder",
         name: "サンダー",
         cost: {
@@ -254,6 +279,8 @@ export const SKILLS = [
                 fix: 0,
                 add: 0,
                 armor_pierce: 0.00,
+                hit: 10, // 命中補正
+                critical: 100, // 会心補正
             },
         ]
     },
@@ -279,6 +306,7 @@ export const SKILLS = [
                 fix: 0,
                 add: 0,
                 armor_pierce: 0.00,
+                hit: 0,
             },
         ]
     },
@@ -304,6 +332,7 @@ export const SKILLS = [
                 fix: 0,
                 add: 0,
                 armor_pierce: 0.00,
+                hit: -20,
             }
         ]
     },
@@ -329,6 +358,7 @@ export const SKILLS = [
                 fix: 0,
                 add: 0,
                 armor_pierce: 0.33,
+                hit: 50,
             },
         ]
     },
@@ -354,6 +384,7 @@ export const SKILLS = [
                 fix: 0,
                 add: 0,
                 armor_pierce: 0.00,
+                hit: 30,
             },
             {
                 type: "addState",
@@ -387,6 +418,7 @@ export const SKILLS = [
                 fix: 0,
                 add: 0,
                 armor_pierce: 0.00,
+                hit: 10,
             },
             {
                 type: "addState",
@@ -420,6 +452,7 @@ export const SKILLS = [
                 fix: 0,
                 add: 0,
                 armor_pierce: 0.00,
+                hit: -10,
             },
             {
                 type: "damage",
@@ -428,6 +461,7 @@ export const SKILLS = [
                 fix: 0,
                 add: 0,
                 armor_pierce: 0.00,
+                hit: -10,
             },
         ]
     },
@@ -508,6 +542,7 @@ export const SKILLS = [
                 fix: 0,
                 add: 2,
                 armor_pierce: 0.00,
+                hit: 0,
             },
         ]
     },
@@ -531,6 +566,7 @@ export const SKILLS = [
                 fix: 0,
                 add: 2,
                 armor_pierce: 0.00,
+                hit: 0,
             },
             {
                 type: "damage",
@@ -539,6 +575,7 @@ export const SKILLS = [
                 fix: 0,
                 add: 2,
                 armor_pierce: 0.00,
+                hit: 0,
             },
         ]
     },
@@ -562,6 +599,7 @@ export const SKILLS = [
                 fix: 0,
                 add: 2,
                 armor_pierce: 0.00,
+                hit: 0,
             },
             {
                 type: "addState",
@@ -595,6 +633,7 @@ export const SKILLS = [
                 fix: 0,
                 add: 5,
                 armor_pierce: 0.00,
+                hit: 20,
             },
         ]
     },
@@ -620,6 +659,7 @@ export const SKILLS = [
                 fix: 0,
                 add: 5,
                 armor_pierce: 0.00,
+                hit: -35,
             },
         ]
     },

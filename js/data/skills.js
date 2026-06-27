@@ -38,6 +38,10 @@ export const SKILL_ORDER = [
 
     "bite", "double-bite",
     "poison-bite",
+
+    "slam",
+    "weighDown",
+
     "charge",
     "thrash",
 
@@ -171,6 +175,31 @@ export const SKILLS = [
                 fix: 25,
                 turn: 4,
             }
+        ]
+    },
+    {
+        id: "water-bullet",
+        name: "ウォーターバレット",
+        cost: {
+            mp: 4
+        },
+        target_type: "alive_enemy_one",
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: true,
+        },
+        category: "magic",
+        type: "attack",// ボタンの色分け専用
+        effects: [
+            {
+                type: "damage",
+                element: "water",
+                power: 0.50,
+                fix: 0,
+                add: 8,
+                armor_pierce: 0.00,
+            },
         ]
     },
 
@@ -676,6 +705,56 @@ export const SKILLS = [
                 armor_pierce: 0.00,
                 hit: -20,
                 critical: 10,
+            },
+        ]
+    },
+    {
+        id: "slam",
+        name: "叩きつける",
+        cost: {},
+        target_type: "alive_enemy_one",
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: true,
+        },
+        category: "combat",
+        type: "attack",// ボタンの色分け専用
+        effects: [
+            {
+                type: "damage",
+                element: "physical",
+                power: 1.35,
+                fix: 0,
+                add: 0,
+                armor_pierce: 0.00,
+                hit: 0,
+                critical: 0,
+            },
+        ]
+    },
+    {
+        id: "weighDown",
+        name: "のしかかる",
+        cost: {},
+        target_type: "alive_enemy_one",
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: true,
+        },
+        category: "combat",
+        type: "attack",// ボタンの色分け専用
+        effects: [
+            {
+                type: "damage",
+                element: "physical",
+                power: 1.25,
+                fix: 0,
+                add: 10,
+                armor_pierce: 0.00,
+                hit: 50,
+                critical: 0,
             },
         ]
     },

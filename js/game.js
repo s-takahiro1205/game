@@ -2209,6 +2209,26 @@ async function applyEffects(effects, targets, actor = null, isMagic = false) {
                 target.hp = Math.min(buffedStatus.maxHp, target.hp + heal);
                 addToast(`${target.name} は ${heal} 回復した！`);
             }
+        } else if (effect.type === "mpHeal") {
+            for (const target of targets) {
+                if (isDead(target)) {
+                    continue;
+                }
+                const actoruffedStatus = actor ? calcAllStatus(actor) : null;
+                const buffedStatus = calcAllStatus(target);
+                let heal = 0;
+                if (actor) {
+                    heal = calculateHeal(
+                        actor, target,
+                        effect.power, isMagic,
+                        effect.fix, effect.add
+                    );
+                } else {
+                    heal = effect.fix ? effect.fix : getRandom(effect.min, effect.max);
+                }
+                target.mp = Math.min(buffedStatus.maxMp, target.mp + heal);
+                addToast(`${target.name} はMPが ${heal} 回復した！`);
+            }
         // } else if (effect.type === "addState") {
         //     for (const target of targets) {
         //         if (isDead(target)) {

@@ -12,6 +12,14 @@ export const EVENT_TABLES = {
         smallHerb: 0.30,
         springWater: 0.30,
     },
+    leeseRiver01: {
+        battle: 0.05,
+        eliteEnemy: 0.01,
+        rest: 0.04,
+        treasureSmall: 0.30,
+        // smallHerb: 0.30,
+        // springWater: 0.30,
+    },
 };
 export const ITEM_TABLES = {
     lostForestSacred01: {
@@ -34,11 +42,33 @@ export const ITEM_TABLES = {
         orbOfGrowthSmall: 0.01,
         orbOfExperienceSmall: 0.01,
     },
+    leeseRiver01: {
+        noramlHerb: 0.20,
+        dropsOfWaterSpirit: 0.10,
+        ketsukuruFruit: 0.05,
+        rootOfAmbrosius: 0.05,
+        bronzeSword: 0.10,
+        bambooSpear: 0.10,
+        twigsWand: 0.10,
+        clothRobe: 0.10,
+        leatherArmor: 0.10,
+        clothHat: 0.10,
+        crownOfDryGrass: 0.10,
+        woodenBracelet: 0.10,
+        clothGloves: 0.10,
+        scrollOfFireBullet: 0.01,
+        scrollOfSandStorm: 0.01,
+        orbOfGrowthSmall: 0.01,
+        orbOfExperienceSmall: 0.01,
+    },
 };
 export const MONSTER_GROUPS = {
+    // lostForestSacred01
     manaRabbit: ["mana-rabbit"],
     manaRabbitTwo: ["mana-rabbit", "mana-rabbit"],
     guardianOfTheRuin: ["guardian-of-the-ruin"],
+
+    // lostForestShallow01
     starvingDog: ["starving-dog"],
     rottingCrowThree: ["rotting-crow", "rotting-crow", "rotting-crow"],
     twistedRatAndStarvingDog: ["twisted-rat", "starving-dog"],
@@ -60,6 +90,24 @@ export const MONSTER_GROUPS = {
     guardianOfTheRuins: ["guardian-of-the-ruins"],
     bigOakAndOakTwo: ["big-oak", "oak", "oak"],
     guardianOfTheForestAndwanderingGhostTwo: ["guardian-of-the-forest", "wandering-ghost", "wandering-ghost"],
+
+    // leeseRiver01
+    riverRatTwo: ["river-rat", "river-rat"],
+    reedFrog: ["reed-frog"],
+    reedFrogAndRiverRat: ["reed-frog", "river-rat"],
+    giantCrab: ["giant-crab"],
+    aquaSpriteAndGiantCrab: ["aqua-sprite", "giant-crab"],
+    reedFrogAndGiantCrabAndRiverRat: ["reed-frog", "giant-crab", "river-rat"],
+    leeseFishTwo: ["leese-fish", "leese-fish"],
+    leeseFishFour: ["leese-fish", "leese-fish", "leese-fish", "leese-fish"],
+
+    leeseSnake: ["leese-snake"],
+    leeseSnakeAndLeeseFishTwo: ["leese-snake", "leese-fish", "leese-fish"],
+    killerFlog: ["killer-flog"],
+    killerFlogAndreedFrog: ["killer-flog", "reed-frog"],
+    giantCrabTwoAndAquaSpriteTwo: ["giant-crab", "giant-crab", "aqua-sprite", "aqua-sprite"],
+
+    deltaCrocoAndAquaSpriteTwo: ["aqua-sprite", "delta-croco", "aqua-sprite"],
 }
 export const ENCOUNTER_TABLES = {
     lostForestSacred01: {
@@ -94,7 +142,32 @@ export const ENCOUNTER_TABLES = {
     },
     lostForestShallowBoss01: {
         bigOakAndOakTwo: 0.80,
-        guardianOfTheForestAndwanderingGhostTwo: 0.20,
+        // guardianOfTheForestAndwanderingGhostTwo: 0.20,
+    },
+
+    leeseRiver01: {
+        riverRatTwo: 0.15,
+        reedFrog: 0.10,
+        reedFrogAndRiverRat: 0.15,
+        giantCrab: 0.10,
+        aquaSpriteAndGiantCrab: 0.15,
+        reedFrogAndGiantCrabAndRiverRat: 0.05,
+        leeseFishTwo: 0.15,
+        leeseFishFour: 0.13,
+        littleSpiritOfLearning: 0.01,
+        littleSpiritOfSkill: 0.01,
+    },
+    leeseRiverElite01: {
+        leeseSnake: 0.15,
+        leeseSnakeAndLeeseFishTwo: 0.30,
+        killerFlog: 0.15,
+        killerFlogAndreedFrog: 0.25,
+        giantCrabTwoAndAquaSpriteTwo: 0.09,
+        littleSpiritOfLearning: 0.03,
+        littleSpiritOfSkill: 0.03,
+    },
+    leeseRiverBoss01: {
+        deltaCrocoAndAquaSpriteTwo: 1.00,
     },
 }
 export const MAPS = {
@@ -135,13 +208,13 @@ export const MAPS = {
             mapClear: {gte: {beginingForest: 1}}
         },
         floorCount: 10,// 階層数
-        tileCount: 5,// 階層ごとのカード数。列数
+        tileCount: 10,// 階層ごとのカード数。列数
         tileGenRules: {// マップ初期化時の各タイル生成処理のイベント割合 タイルの見た目に影響するならここ 合計1になるように設定する
             enemy: 0.75,// 通常エネミー
             eliteEnemy: 0.10,// 強敵
-            event: 0.07,// イベント
+            event: 0.10,// イベント
             adventurer: 0.01,// 冒険者遭遇イベント。戦ったり助けたり勧誘したり？
-            rest: 0.07,// 休息マス
+            rest: 0.04,// 休息マス
         },
         fixFloors: { 10: ["boss", "boss", "boss", "boss", "boss"] },// 1始まり。階層ごとの固定配置タイル。用途は、最終階層をすべてボスに上書きしたり任意の位置に固定イベントを設置したりなど。
         itemTableId: "lostForestShallow01",// 獲得アイテムテーブルID
@@ -149,5 +222,29 @@ export const MAPS = {
         encounterTableId: "lostForestShallow01",// モンスターグループの遭遇率テーブルID
         eliteEncounterTableId: "lostForestShallowElite01",// 精鋭グループの遭遇率テーブルID
         bossEncounterTableId: "lostForestShallowBoss01",// ボスグループの遭遇率テーブルID
+    },
+    leeseRiver: {
+        id: "leeseRiver",// マップID。キーと一致させる
+        name: "リース河",// マップ名
+        // recommended_level: 10,// 却下。推奨レベルは定義モンスターの中央値で出す
+        description: "街のほど近くにある大きな河川。様々なハーブが生えているが水棲のモンスターがうろついていることも。",
+        condition: {
+            mapClear: {gte: {lostForestShallow: 1}}
+        },
+        floorCount: 8,// 階層数
+        tileCount: 10,// 階層ごとのカード数。列数
+        tileGenRules: {// マップ初期化時の各タイル生成処理のイベント割合 タイルの見た目に影響するならここ 合計1になるように設定する
+            enemy: 0.75,// 通常エネミー
+            eliteEnemy: 0.10,// 強敵
+            event: 0.10,// イベント
+            adventurer: 0.01,// 冒険者遭遇イベント。戦ったり助けたり勧誘したり？
+            rest: 0.04,// 休息マス
+        },
+        fixFloors: { 8: ["boss", "boss", "boss", "boss", "boss"] },// 1始まり。階層ごとの固定配置タイル。用途は、最終階層をすべてボスに上書きしたり任意の位置に固定イベントを設置したりなど。
+        itemTableId: "leeseRiver01",// 獲得アイテムテーブルID
+        eventTableId: "leeseRiver01",// イベントテーブルID
+        encounterTableId: "leeseRiver01",// モンスターグループの遭遇率テーブルID
+        eliteEncounterTableId: "leeseRiverElite01",// 精鋭グループの遭遇率テーブルID
+        bossEncounterTableId: "leeseRiverBoss01",// ボスグループの遭遇率テーブルID
     },
 };

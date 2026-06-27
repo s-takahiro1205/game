@@ -1,7 +1,7 @@
 // localStorage セーブ・ロード処理
 
 const SAVE_KEY = "akatsuki_save";
-const SAVE_VERSION = "3.7.4";
+const SAVE_VERSION = "3.7.5";
 const versionDisplay = document.getElementById("version-display");
 versionDisplay.innerHTML = `Ver. ${SAVE_VERSION}`;
 

@@ -37,11 +37,8 @@ export const JOBS = {
         ],
         rankBonuses: [// ランクボーナス
             {
-                rank: 1,
-                learnSkills: ["slash"]
-            },
-            {
                 rank: 2,
+                learnSkills: ["slash"],
                 status: {
                     maxHp: 5,
                     atk: 3,
@@ -151,7 +148,7 @@ export const JOBS = {
             },
             {
                 rank: 20,
-                learnSkills: ["full-slash"],
+                addTraits: ["regene5"],
                 status: {
                     maxHp: 10,
                     atk: 10,
@@ -196,11 +193,8 @@ export const JOBS = {
         ],
         rankBonuses: [
             {
-                rank: 1,
-                learnSkills: ["fire"]
-            },
-            {
                 rank: 2,
+                learnSkills: ["fire"],
                 status: {
                     maxMp: 5,
                     int: 3,
@@ -264,11 +258,8 @@ export const JOBS = {
         ],
         rankBonuses: [
             {
-                rank: 1,
-                learnSkills: ["heal"]
-            },
-            {
                 rank: 2,
+                learnSkills: ["heal"],
                 status: {
                     maxMp: 5,
                     int: 3,
@@ -330,11 +321,8 @@ export const JOBS = {
         ],
         rankBonuses: [// ランクボーナス
             {
-                rank: 1,
-                learnSkills: ["aim-shot"]
-            },
-            {
                 rank: 2,
+                learnSkills: ["aim-shot"],
                 status: {
                     maxHp: 3,
                     spd: 2,

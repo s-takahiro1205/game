@@ -61,6 +61,7 @@ export const RACES = {
     human: {
         id: "human",
         name: "人間",
+        // traits: ["human"],
     },
     vampire: {
         id: "vampire",
@@ -124,6 +125,14 @@ export const EQUIP_TAGS = {
     emblem: {id: "emblem", name: "紋章"},
 };
 
+export const TRAITS = {
+    fairy: {id: "fairy", name: "妖精の身のこなし", statModifier: {def: -100, dodge: 90}},
+    mutant: {id: "mutant", name: "突然変異", statModifier: {maxHp: 15, maxMp: 10, atk: 5, def: 5, spd: 5, int: 5, dex: 5, size: 5}, growthRates: {maxHp: 25, maxMp: 25, atk: 10, def: 10, spd: 10, int: 10, dex: 10, size: 10}},
+
+    regene5: {id: "regene", name: "HP自動回復", battle:{actAfter: [{type: "regene", target: "hp", calcMethod: "rate", base: "maxHp", rate: 5}]}},
+    // human: {id: "human", name: "人間"},
+};
+
 /**
  * 状態異常の一覧
 盲目	👁️‍🗨️❌ / 🙈	
@@ -152,7 +161,7 @@ export const BATTLE_STATUSES = [
     {
         id: "guard",
         icon: "🛡️",
-        sub_timing: "act_before",
+        sub_timing: "actBefore",
         sub_finish_text: "",
         exec_timing: "",
         addMessageGen: (name) => {return `${name} は身を守っている。`},
@@ -162,9 +171,9 @@ export const BATTLE_STATUSES = [
     {
         id: "poison",
         icon: "☠️",
-        sub_timing: "act_after",
+        sub_timing: "actAfter",
         sub_finish_text: "",
-        exec_timing: "act_after",
+        exec_timing: "actAfter",
         addMessageGen: (name) => {return `${name} の体に毒が回った。`},
         subMessageGen: (name) => {return `${name} の体から毒が消え去った。`},
         subMessageGen: (name) => {return `${name} の体から毒が消え去った。`},
@@ -179,9 +188,9 @@ export const BATTLE_STATUSES = [
     {
         id: "paralyze",
         icon: "⚡",
-        sub_timing: "act_after",
+        sub_timing: "actAfter",
         sub_finish_text: "",
-        exec_timing: "act_before",
+        exec_timing: "actBefore",
         addMessageGen: (name) => {return `${name} の体は痺れた。`},
         subMessageGen: (name) => {return `${name} の麻痺は治った。`},
         applyEffect: (gameState, target) => {
@@ -195,9 +204,9 @@ export const BATTLE_STATUSES = [
     {
         id: "sleep",
         icon: "💤",
-        sub_timing: "act_after",
+        sub_timing: "actAfter",
         sub_finish_text: "",
-        exec_timing: "act_before",
+        exec_timing: "actBefore",
         addMessageGen: (name) => {return `${name} は深い眠りに落ちた。`},
         subMessageGen: (name) => {return `${name} は目が覚めた。`},
         applyEffect: (gameState, target) => {
@@ -208,9 +217,9 @@ export const BATTLE_STATUSES = [
     {
         id: "stan",
         icon: "💫",
-        sub_timing: "act_after",
+        sub_timing: "actAfter",
         sub_finish_text: "",
-        exec_timing: "act_before",
+        exec_timing: "actBefore",
         addMessageGen: (name) => {return `${name} は大きく体勢を崩した。`},
         subMessageGen: (name) => {return `${name} は体勢を立て直した。`},
         applyEffect: (gameState, target) => {

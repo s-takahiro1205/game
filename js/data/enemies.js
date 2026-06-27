@@ -1,6 +1,6 @@
 //  エネミーデータ定義
 
-import { RACES, SEXES } from '../const.js';
+import { RACES, SEXES, TRAITS } from '../const.js';
 
 /**
  * @typedef {object} Enemy
@@ -34,7 +34,7 @@ export const ENEMIES = [
         id: "mana-rabbit",
         name: "マナラビット",
         level: 1,
-        exp: 8,
+        exp: 5,
         hp: 8,
         maxHp: 8,
         mp: 15,
@@ -61,6 +61,7 @@ export const ENEMIES = [
         money: 4,
         race: RACES.monster.id,
         sex: null,
+        traits: [],
         dominationResist: 1.00,//支配しやすさ
     },
     {
@@ -94,6 +95,7 @@ export const ENEMIES = [
         money: 3,
         race: RACES.monster.id,
         sex: null,
+        traits: [],
         dominationResist: 1.00,
     },
     {
@@ -127,6 +129,7 @@ export const ENEMIES = [
         money: 2,
         race: RACES.monster.id,
         sex: null,
+        traits: [],
         dominationResist: 1.00,
     },
     {
@@ -160,6 +163,7 @@ export const ENEMIES = [
         money: 3,
         race: RACES.monster.id,
         sex: null,
+        traits: [],
         dominationResist: 1.00,
     },
     {
@@ -201,6 +205,7 @@ export const ENEMIES = [
         money: 4,
         race: RACES.monster.id,
         sex: null,
+        traits: [],
         dominationResist: 1.00,
     },
     {
@@ -234,6 +239,7 @@ export const ENEMIES = [
         money: 4,
         race: RACES.monster.id,
         sex: null,
+        traits: [],
         dominationResist: 1.00,
     },
     {
@@ -267,6 +273,7 @@ export const ENEMIES = [
         money: 8,
         race: RACES.monster.id,
         sex: null,
+        traits: [],
         dominationResist: 1.00,
     },
     {
@@ -304,6 +311,7 @@ export const ENEMIES = [
         money: 15,
         race: RACES.monster.id,
         sex: null,
+        traits: [],
         dominationResist: 1.00,
     },
 
@@ -339,6 +347,7 @@ export const ENEMIES = [
         money: 30,
         race: RACES.monster.id,
         sex: null,
+        traits: [],
         dominationResist: 0.80,
     },
     {
@@ -380,6 +389,7 @@ export const ENEMIES = [
         money: 33,
         race: RACES.monster.id,
         sex: null,
+        traits: [],
         dominationResist: 0.80,
     },
     {
@@ -425,6 +435,7 @@ export const ENEMIES = [
         money: 21,
         race: RACES.human.id,
         sex: null,
+        traits: [],
         dominationResist: 0.10,
     },
     {
@@ -462,6 +473,7 @@ export const ENEMIES = [
         money: 14,
         race: RACES.monster.id,
         sex: null,
+        traits: [],
         dominationResist: 0.80,
     },
     {
@@ -499,7 +511,8 @@ export const ENEMIES = [
         money: 50,
         race: RACES.fallen.id,
         sex: null,
-        dominationResist: 0.10,
+        traits: ["regene5"],
+        dominationResist: 0.01,
     },
 
     // ボーナス敵
@@ -534,6 +547,7 @@ export const ENEMIES = [
         money: 5,
         race: RACES.monster.id,
         sex: null,
+        traits: [TRAITS.fairy.id],
         dominationResist: 0.01,
     },
     {
@@ -568,6 +582,7 @@ export const ENEMIES = [
         money: 5,
         race: RACES.monster.id,
         sex: null,
+        traits: [TRAITS.fairy.id],
         dominationResist: 0.01,
     },
 
@@ -598,6 +613,7 @@ export const ENEMIES = [
         money: 100,
         race: RACES.human.id,
         sex: null,
+        traits: [],
         dominationResist: 0.01,
     },
     {
@@ -643,6 +659,7 @@ export const ENEMIES = [
         money: 70,
         race: RACES.elf.id,
         sex: null,
+        traits: [],
         dominationResist: 0.01,
     },
     {
@@ -676,6 +693,7 @@ export const ENEMIES = [
         money: 120,
         race: RACES.fallen.id,
         sex: null,
+        traits: [],
         dominationResist: 0.01,
     },
     {
@@ -710,6 +728,7 @@ export const ENEMIES = [
         money: 500,
         race: RACES.human.id,
         sex: null,
+        traits: [],
         dominationResist: 0.01,
     },
 ];

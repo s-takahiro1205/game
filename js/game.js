@@ -8,7 +8,7 @@ import { ENEMIES } from './data/enemies.js';
 import { IGNORE_PARTY_SKILL, SKILL_ORDER, SKILLS } from './data/skills.js';
 import { JOBS } from './data/jobs.js';
 import { scheduleRender } from './render.js';
-import { LABEL, SCREENS, SUB_SCREENS, BOTTOM_SHEETS, BOTTOM_MENU_TABS, BATTLE_STATUSES, DEBUFF_STATUS_MODIFIERS, SEXES, RACES, EQUIP_CATEGORIES, EQUIP_TAGS, SELECT_TARGET_TYPE, TARGET_TYPE_EXTRACTOR, isDead } from './const.js';
+import { LABEL, SCREENS, SUB_SCREENS, BOTTOM_SHEETS, BOTTOM_MENU_TABS, TRAITS, BATTLE_STATUSES, DEBUFF_STATUS_MODIFIERS, SEXES, RACES, EQUIP_CATEGORIES, EQUIP_TAGS, SELECT_TARGET_TYPE, TARGET_TYPE_EXTRACTOR, isDead } from './const.js';
 
 // ============================================================================
 // 1. グローバル変数とDOM要素
@@ -108,6 +108,7 @@ const unit_base = {
         //     turn: 3
         // },
     ],
+    traits: [],
 };
 
 export let player = new Proxy({
@@ -949,10 +950,11 @@ function debugAddRankExp() {
         const ret = addRankExp(unit, parseInt(exp));
         if (ret) {
             result.push(ret);
-            const [statText, skillText] = getRankUpText(ret);
+            const [statText, skillText, traitText] = getRankUpText(ret);
             addToast(`${unit.name}は${JOBS[ret.jobId].name}のランクが上がった！<br>${ret.before} → ${ret.after}`
                         + `${statText === "" ? "" : "<br>ステータスアップ：" + statText}`
                         + `${skillText === "" ? "" : "<br>習得：" + skillText}`
+                        + `${traitText === "" ? "" : "<br>特性獲得：" + traitText}`
                         , 10000);
         }
     }
@@ -1369,10 +1371,12 @@ async function resolveEventNode(nodeId) {
                 }
                 const modRanks = addRankExp(unit, point);
                 if (modRanks) {
-                    const [statText, skillText] = getRankUpText(modRanks);
+                    const [statText, skillText, traitText] = getRankUpText(modRanks);
                     player.explore.event.data.message.push(`${unit.name}は${JOBS[modRanks.jobId].name}のランクが上がった！<br>${modRanks.before} → ${modRanks.after}`
                                 + `${statText === "" ? "" : "<br>ステータスアップ：" + statText}`
-                                + `${skillText === "" ? "" : "<br>習得：" + skillText}`);
+                                + `${skillText === "" ? "" : "<br>習得：" + skillText}`
+                                + `${traitText === "" ? "" : "<br>特性獲得：" + traitText}`
+                            );
                 }
             }
             next = node.next;
@@ -1608,7 +1612,7 @@ function initializePlayer() {
  * @param {*} skillIds 
  * @returns 
  */
-function createUnit(unitData, jobs = {}, equipmentSlot = null, skillIds = []) {
+function createUnit(unitData, jobs = {}, equipmentSlot = null, skillIds = [], traits = []) {
     const unit = new Proxy(structuredClone(unit_base), {set: setAndRender});
 
     unit.id = self.crypto.randomUUID();
@@ -1642,6 +1646,7 @@ function createUnit(unitData, jobs = {}, equipmentSlot = null, skillIds = []) {
                     ? skillIds.map(skillId => getSkillById(skillId))
                     : [];
     unit.battleStatus = [];
+    unit.traits = traits;
 
     const result = changeJob(unit, unitData.jobId, true);
     if (!result.success) {
@@ -1675,7 +1680,13 @@ function getUnitForEnemyId(enemyId, sex = null) {
         jobId: enemy.currentJob,
     }
 
-    const unit = createUnit(unitData, {}, null, Object.keys(enemy.skillList).filter(skillId => !IGNORE_PARTY_SKILL.some(id => id === skillId)));
+    const unit = createUnit(
+        unitData,
+        {},
+        null,
+        Object.keys(enemy.skillList).filter(skillId => !IGNORE_PARTY_SKILL.some(id => id === skillId)),
+        enemy.traits
+    );
     return unit;
 }
 
@@ -1700,6 +1711,7 @@ export function calcAllStatus(unit) {
         dodge: Math.floor(unit.spd ** 0.5),
         critical: Math.floor(unit.dex ** 0.5),
         multiAction: unit.multiAction,
+        traits: unit.traits,
     };
 
     // 装備の反映
@@ -1707,6 +1719,25 @@ export function calcAllStatus(unit) {
         const item = slot.equippedItem;
         if (item && item.statModifier) {
             Object.entries(item.statModifier).forEach(([stat, val]) => {
+                st[stat] += val;
+            });
+        }
+        // 特性の追加
+        if (item && item.traits) {
+            st.traits = [...new Set([...st.traits, ...item.traits])];
+        }
+    }
+
+    // 種族の特性追加 TODO: 種族追加特性を作るならここよりも先にしないといけない。+種族をこれで返すようにしないといけない
+    if (RACES[unit.race].traits) {
+        st.traits = [...new Set([...st.traits, ...RACES[unit.race].traits])];
+    }
+
+    // 特性の反映
+    for (const traitId of st.traits) {
+        const trait = TRAITS[traitId];
+        if (trait && trait.statModifier) {
+            Object.entries(trait.statModifier).forEach(([stat, val]) => {
                 st[stat] += val;
             });
         }
@@ -1738,9 +1769,11 @@ export function calcAllStatus(unit) {
         }
     };
     Object.keys(st).map(stat => {
-        st[stat] = Math.max(0, Math.floor(st[stat] * modifier[stat]))
+        if (stat === "traits") {
+            return st[stat];
+        }
+        return Math.max(0, Math.floor(st[stat] * modifier[stat]))
     });
-
 
     if (unit.hp > st.maxHp) {
         unit.hp = st.maxHp;
@@ -2151,7 +2184,7 @@ async function applyEffects(effects, targets, actor = null, isMagic = false) {
                         effect.fix, effect.add, effect.armor_pierce
                     );
                 } else {
-                    const damage = effect.fix ? effect.fix : getRandom(effect.min, effect.max);
+                    damage = effect.fix ? effect.fix : getRandom(effect.min, effect.max);
                 }
                 applyDamage(target, damage, false)
                 addToast(`${target.name} に ${damage} のダメージ！`);
@@ -2171,7 +2204,7 @@ async function applyEffects(effects, targets, actor = null, isMagic = false) {
                         effect.fix, effect.add
                     );
                 } else {
-                    const heal = effect.fix ? effect.fix : getRandom(effect.min, effect.max);
+                    heal = effect.fix ? effect.fix : getRandom(effect.min, effect.max);
                 }
                 target.hp = Math.min(buffedStatus.maxHp, target.hp + heal);
                 addToast(`${target.name} は ${heal} 回復した！`);
@@ -2236,10 +2269,11 @@ async function applyEffects(effects, targets, actor = null, isMagic = false) {
                 let msg = `${target.name}は${mod}のランク経験値を得た！`;
                 if (ret) {
                     // TODO: ランクアップ結果解体
-                    const [statText, skillText] = getRankUpText(ret);
+                    const [statText, skillText, traitText] = getRankUpText(ret);
                     msg += `<br>${target.name}は${JOBS[ret.jobId].name}のランクが上がった！<br>${ret.before} → ${ret.after}`
                         + `${statText === "" ? "" : "<br>ステータスアップ：" + statText}`
                         + `${skillText === "" ? "" : "<br>習得：" + skillText}`
+                        + `${traitText === "" ? "" : "<br>特性獲得：" + traitText}`
                 }
                 addToast(msg, 5000);
             }
@@ -2377,7 +2411,10 @@ function getEnemyById(id) {
     }
     const data = structuredClone(enemy);
     data.sex = enemy.sex ?? getRandom(1,3) <= 2 ? SEXES.female.id : getRandom(1,2) === 1 ? SEXES.male.id : SEXES.none.id;
-    return structuredClone(enemy);
+    const st = calcAllStatus(data);
+    data.hp = data.hp < st.maxHp ? st.maxHp: st.hp;
+    data.mp = data.mp < st.maxMp ? st.maxMp: st.mp;
+    return data;
 }
 
 /**
@@ -2426,6 +2463,10 @@ export function getRankUpText(rankUpData) {
         ,
         (rankUpData.learnSkills ?? [])
                 .map(v => getSkillById(v).name)
+                .join(' | ')
+        ,
+        (rankUpData.addTraits ?? [])
+                .map(v => TRAITS[v].name)
                 .join(' | ')
     ];
 }
@@ -2567,13 +2608,24 @@ function roll(chance) {
 async function battleInit(enemies) {
     gameState.battle = new Proxy({
         party: player.party,
-        enemies: enemies.map(enemy => 
-            new Proxy({
+        enemies: enemies.map(enemy => {
+            const def = getEnemyById(enemy.id);
+            // エネミーなら3%で強化
+            if (def && Math.floor(Math.random() * 100) < 3) {
+                enemy.traits = enemy.traits.includes(TRAITS.mutant.id)
+                                ? enemy.traits
+                                : [...enemy.traits, TRAITS.mutant.id];
+                enemy.name = `${enemy.name}(${TRAITS.mutant.name})` 
+                const st = calcAllStatus(enemy);
+                enemy.hp = enemy.hp < st.maxHp ? st.maxHp: st.hp;
+                enemy.mp = enemy.mp < st.maxMp ? st.maxMp: st.mp;
+            }
+            return new Proxy({
                 ...enemy,
-                defId: enemy.id,
+                defId: def.id,
                 id: self.crypto.randomUUID(),
             }, {set: setAndRender})
-        ),
+        }),
         dominations: [],
         turnOrder: [],
         turn: 0,
@@ -2648,7 +2700,7 @@ async function battleExecOrder() {
     // 味方ならコマンド選択を表示｜敵ならランダムに決定してコマンド実行処理
     gameState.battle.actor = gameState.battle.turnOrder.shift();
     gameState.battle.actor_stan = null;
-    applyBatleStatus("act_before", gameState.battle.actor);
+    applyBatleStatus("actBefore", gameState.battle.actor);
 
     // 麻痺等のスタン状態や戦闘不能なら次へ TODO: 行動不能判定
     if (gameState.battle.actor_stan || isDead(gameState.battle.actor)) {
@@ -2954,7 +3006,8 @@ async function battleExecCommand() {
  */
 async function battleFinishCommand() {
     console.log(4);
-    applyBatleStatus("act_after", gameState.battle.actor);
+    await applyTraitEffect("actAfter", gameState.battle.actor);
+    applyBatleStatus("actAfter", gameState.battle.actor);
     gameState.battle.actor = null;
     gameState.battle.actor_stan = null;
     // 次の行動につなぐ
@@ -3182,6 +3235,9 @@ async function battleEnd() {
             // モンスターなら定義から再取得してユニット化
             if (domination.defId) {
                 const unit = getUnitForEnemyId(domination.defId, domination.sex);
+                if (domination.traits) {
+                    unit.traits = [...new Set([...domination.traits, ...unit.traits])];
+                }
                 player.party.push(unit);
                 showTextInputModal(
                     "名前変更",
@@ -3234,6 +3290,15 @@ function levelUp(unit) {
         size: 20 + (job.growthRates.size ?? 0),
     };
 
+    // 特性の反映
+    for (const traitId of unit.traits) {
+        const trait = TRAITS[traitId];
+        if (trait && trait.growthRates) {
+            Object.entries(trait.growthRates).forEach(([stat, val]) => {
+                st[stat] += val;
+            });
+        }
+    }
 
     const statusUp = {};
     for (const [stat, rate] of Object.entries(growthRates)) {
@@ -3349,14 +3414,16 @@ function addRankExp(unit, exp) {
     // 上昇量集計
     let totalStatusUp = {};
     let totalSkills = [];
+    let totalTraits = [];
     while (job.maxRank > job_history.rank && job_history.exp >= getRequiredRankExp(unit.currentJob, job_history.rank)) {
         // レベルアップ
-        const [status_up, skills] = rankUp(unit, job_history);
+        const [status_up, skills, traits] = rankUp(unit, job_history);
         // 上昇量を加算
         for (const [key, value] of Object.entries(status_up)) {
             totalStatusUp[key] = (totalStatusUp[key] ?? 0) + value;
         }
         totalSkills.push(...skills);
+        totalTraits.push(...traits);
     }
     gameState.dirty = true;
     if (before_rank === job_history.rank) {
@@ -3388,6 +3455,7 @@ function addRankExp(unit, exp) {
         after: job_history.rank,
         statChanges: Object.keys(totalStatusUp).length === 0 ? null : totalStatusUp,
         learnSkills: Object.keys(totalSkills).length === 0 ? null : totalSkills,
+        addTraits: totalTraits.length === 0 ? null : totalTraits,
         jobId: unit.currentJob,
     };
 }
@@ -3405,6 +3473,7 @@ function rankUp(unit, job_history) {
     // 現在のランクのボーナスを取得して適用
     const statusUp = {};
     const skills = [];
+    const traits = [];
     const job = JOBS[unit.currentJob];
     const bonuses = job.rankBonuses.filter((bonus) => bonus.rank === job_history.rank);
     for (const bonus of bonuses) {
@@ -3434,9 +3503,25 @@ function rankUp(unit, job_history) {
             });
             skills.push(...bonus.learnSkills);
         }
+        if (bonus.learnSkills) {
+            const orderMap = new Map(
+                SKILL_ORDER.map((id, index) => [id, index])
+            );
+            bonus.addTraits.forEach(traitId => {
+                if (!unit.traits.some((t) => t === traitId)) {
+                    unit.traits.push(traitId);
+                    // TODO: traitのソート
+                    // unit.skillList.sort((a, b) =>
+                    //     (orderMap.get(a.id) ?? Infinity) -
+                    //     (orderMap.get(b.id) ?? Infinity)
+                    // );
+                }
+            });
+            traits.push(...bonus.addTraits);
+        }
     }
 
-    return [statusUp, skills];
+    return [statusUp, skills, traits];
 }
 
 /**
@@ -3511,8 +3596,51 @@ async function advanceTimeline(unitId) {
 }
 
 /**
+ * 特性の効果発揮
+ * 行動開始/終了などはtargetあり、その他は全体に反映なのでなし
+ */
+async function applyTraitEffect(timing, target = null) {
+    // 処理を格納
+    const func = async (target, timing) => {
+        for (const traitId of target.traits) {
+            const trait = TRAITS[traitId];
+            const st = calcAllStatus(target)
+
+            // 効果発揮
+            if (trait.battle && trait.battle[timing]) {
+                for (const ef of trait.battle[timing]) {
+                    if (ef.type === "regene") {
+                        const heal = Math.floor(
+                            ef.calcMethod === "rate"
+                                ? (st[ef.base] ?? target[ef.base]) * (ef.rate / 100)
+                                : ef.value
+                        );
+                        const limit = ef.target === "hp" ? st.maxHp
+                                        : (ef.target === "mp" ? st.maxMp : 1)
+                        target[ef.target] = Math.min(limit, target[ef.target] + heal);
+                        addMessage(`${target.name} は ${heal} 回復した！`);
+                        await sleep(100);
+                    }
+                }
+            }
+        }
+    }
+
+    // 個別処理の場合
+    if (target) {
+        await func(target, timing);
+        return;
+    }
+    // 全体処理の場合
+    for(const unit of TARGET_TYPE_EXTRACTOR["alive_all"](gameState.battle.party, gameState.battle.enemies)) {
+        await func(unit, timing);
+    }
+}
+
+/**
  * 状態異常の効果発揮、減算処理
  * 行動開始/終了などはtargetあり、その他は全体に反映なのでなし
+ * TODO: calcしてないな 毒が軽くなってる？
  */
 function applyBatleStatus(timing, target = null) {
     // 処理を格納

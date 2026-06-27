@@ -5,7 +5,7 @@ import { loadGame } from './save.js';
 import { JOBS } from './data/jobs.js';
 import { MAPS } from './data/maps.js';
 import { EVENTS } from './data/events.js';
-import { SCREENS, SUB_SCREENS, BOTTOM_SHEETS, BOTTOM_MENU_TABS, LABEL, BATTLE_STATUSES, SEXES, RACES, EQUIP_CATEGORIES, EQUIP_TAGS, TARGET_TYPE_EXTRACTOR } from './const.js';
+import { SCREENS, SUB_SCREENS, BOTTOM_SHEETS, BOTTOM_MENU_TABS, LABEL, TRAITS, BATTLE_STATUSES, SEXES, RACES, EQUIP_CATEGORIES, EQUIP_TAGS, TARGET_TYPE_EXTRACTOR } from './const.js';
 
 // DOM Elements
 // TODO:精査してね
@@ -442,8 +442,20 @@ function renderMenu() {
             area.innerHTML += `<div class="status-params">
                 ${Object.entries(statuses).map(([k,v])=>`<div class="status-param"><span class="status-param-label">${LABEL[k]}</span><span class="status-param-val">${v}</span></div>`).join('')}</div>
             </div>`;
-            area.innerHTML += `<div class="status-params">
+            // 職歴を表示
+            area.innerHTML += `<div class="status-params-header">職歴</div>`
+                + `<div class="status-params">
                 ${Object.entries(unit.jobs).map(([k,v])=>`<div class="status-param"><span class="status-param-label">${JOBS[k].name}</span><span class="status-param-val">ランク${v.rank}</span></div>`).join('')}</div>
+            </div>`;
+            // 特性を表示
+            area.innerHTML += `<div class="status-params-header">特性</div>`
+                + `<div class="status-params" style="margin-bottom: 2em">`
+                + (
+                    buffedStatus.traits.length > 0
+                        ? `${buffedStatus.traits.map(k => `<div class="status-param"><span class="status-param-label">${TRAITS[k].name}</span></div>`).join('')}`
+                        : "なし"
+                )
+                + `</div>
             </div>`;
         } else if (gameState.bottomMenuPartyTabSubType === 'equip') {
             area.innerHTML = `<div class="equip-panel">${unit.equipmentSlot.map(e=>{
@@ -1110,7 +1122,7 @@ function renderResultPanel() {
         r.rankUps.forEach(ru => {
             const card = document.createElement('div');
             card.className = 'result-levelup-card';
-            const [statLines, skillLines] = getRankUpText(ru);
+            const [statLines, skillLines, traitText] = getRankUpText(ru);
             card.innerHTML = `
                 <strong>${ru.name}-${JOBS[ru.jobId].name}</strong>
                 <span class="result-rankup-card">${ru.before}</span>
@@ -1119,6 +1131,7 @@ function renderResultPanel() {
                 ${JOBS[ru.jobId].maxRank === ru.after ? '<br><span class="result-rankup-card" style="color:#ffd700">★' + JOBS[ru.jobId].name + 'をマスターした！！</span>' : ''}
                 ${statLines === "" ? "" : ("<br><small>ステータスアップ：" + statLines + "</small>")}
                 ${skillLines === "" ? "" : "<br><small>スキル習得：" + skillLines + "</small>"}
+                ${traitText === "" ? "" : "<br><small>特性獲得：" + traitText + "</small>"}
             `;
             rkList.appendChild(card);
         });

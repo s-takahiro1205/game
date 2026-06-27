@@ -766,6 +766,7 @@ function renderExplore() {
     exploreMapTitle.innerHTML = "";
     exploreMapTitle.innerHTML = MAPS[player.explore.mapId].name;
     baseExploreTileGrid.innerHTML = "";
+    baseExploreTileGrid.style.width = `${player.explore.map[0].length * 20}%`;
     baseExploreTileGrid.style.gridTemplateColumns = `repeat(${player.explore.map[0].length}, 1fr)`;
     [...player.explore.map].reverse().forEach((row, floor) =>{
         const realFloor = player.explore.map.length - floor;

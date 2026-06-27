@@ -208,7 +208,7 @@ export const MAPS = {
             mapClear: {gte: {beginingForest: 1}}
         },
         floorCount: 10,// 階層数
-        tileCount: 10,// 階層ごとのカード数。列数
+        tileCount: 5,// 階層ごとのカード数。列数
         tileGenRules: {// マップ初期化時の各タイル生成処理のイベント割合 タイルの見た目に影響するならここ 合計1になるように設定する
             enemy: 0.75,// 通常エネミー
             eliteEnemy: 0.10,// 強敵
@@ -232,7 +232,7 @@ export const MAPS = {
             mapClear: {gte: {lostForestShallow: 1}}
         },
         floorCount: 8,// 階層数
-        tileCount: 10,// 階層ごとのカード数。列数
+        tileCount: 5,// 階層ごとのカード数。列数
         tileGenRules: {// マップ初期化時の各タイル生成処理のイベント割合 タイルの見た目に影響するならここ 合計1になるように設定する
             enemy: 0.75,// 通常エネミー
             eliteEnemy: 0.10,// 強敵

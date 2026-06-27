@@ -19,14 +19,20 @@ export const ITEM_TABLES = {
     },
     lostForestShallow01: {
         potionOfDecay: 0.20,
+        rootOfAmbrosius: 0.05,
         elixirOfShadow: 0.01,
-        pigIronKnife: 0.05,
-        twigsWand: 0.05,
-        singlePieceOfFur: 0.05,
-        clothRobe: 0.05,
-        woodenShield: 0.05,
-        woodenBracelet: 0.05,
-        clothGloves: 0.05,
+        bronzeSword: 0.10,
+        pigIronKnife: 0.10,
+        twigsWand: 0.10,
+        singlePieceOfFur: 0.10,
+        clothRobe: 0.10,
+        woodenShield: 0.10,
+        woodenBracelet: 0.10,
+        clothGloves: 0.10,
+        scrollOfFireBullet: 0.01,
+        scrollOfSandStorm: 0.01,
+        orbOfGrowthSmall: 0.01,
+        orbOfExperienceSmall: 0.01,
     },
 };
 export const MONSTER_GROUPS = {
@@ -41,6 +47,7 @@ export const MONSTER_GROUPS = {
     movingMushroom: ["moving-mushroom"],
     forestGhoulAndmovingMushroom: ["forest-ghoul", "moving-mushroom"],
     wildBoar: ["wild-boar"],
+    oakTwo: ["oak", "oak"],
 
     bloodWolf: ["blood-wolf"],
     mossGolem: ["moss-golem"],
@@ -51,6 +58,7 @@ export const MONSTER_GROUPS = {
     littleSpiritOfSkill: ["little-spirit-of-skill"],
 
     guardianOfTheRuins: ["guardian-of-the-ruins"],
+    bigOakAndOakTwo: ["big-oak", "oak", "oak"],
     guardianOfTheForestAndwanderingGhostTwo: ["guardian-of-the-forest", "wandering-ghost", "wandering-ghost"],
 }
 export const ENCOUNTER_TABLES = {
@@ -67,11 +75,12 @@ export const ENCOUNTER_TABLES = {
         starvingDog: 0.20,
         rottingCrowThree: 0.15,
         twistedRatAndStarvingDog: 0.15,
-        forestGhoulAndStarvingDogTwo: 0.10,
         thornSpiderTwo: 0.10,
         movingMushroom: 0.10,
-        forestGhoulAndmovingMushroom: 0.10,
-        wildBoar: 0.08,
+        forestGhoulAndStarvingDogTwo: 0.08,
+        forestGhoulAndmovingMushroom: 0.08,
+        wildBoar: 0.06,
+        oakTwo: 0.06,
         littleSpiritOfLearning: 0.01,
         littleSpiritOfSkill: 0.01,
     },
@@ -84,7 +93,8 @@ export const ENCOUNTER_TABLES = {
         littleSpiritOfSkill: 0.03,
     },
     lostForestShallowBoss01: {
-        guardianOfTheForestAndwanderingGhostTwo: 1.00
+        bigOakAndOakTwo: 0.80
+        guardianOfTheForestAndwanderingGhostTwo: 0.20
     },
 }
 export const MAPS = {

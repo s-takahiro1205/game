@@ -635,6 +635,56 @@ export const SKILLS = [
         ]
     },
     {
+        id: "swing",
+        name: "殴る",
+        cost: {},
+        target_type: "alive_enemy_one",
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: true,
+        },
+        category: "combat",
+        type: "attack",// ボタンの色分け専用
+        effects: [
+            {
+                type: "damage",
+                element: "physical",
+                power: 1.30,
+                fix: 0,
+                add: 3,
+                armor_pierce: 0.00,
+                hit: -15,
+                critical: 8,
+            },
+        ]
+    },
+    {
+        id: "wild-swing",
+        name: "ブン殴る",
+        cost: {},
+        target_type: "alive_enemy_one",
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: true,
+        },
+        category: "combat",
+        type: "attack",// ボタンの色分け専用
+        effects: [
+            {
+                type: "damage",
+                element: "physical",
+                power: 1.45,
+                fix: 0,
+                add: 5,
+                armor_pierce: 0.00,
+                hit: -20,
+                critical: 10,
+            },
+        ]
+    },
+    {
         id: "charge",
         name: "突進",
         cost: {

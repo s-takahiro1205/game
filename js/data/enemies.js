@@ -87,7 +87,7 @@ export const ENEMIES = [
         battleStatus: [],
         dropItems: [
             {
-                id: "potionOfDecay",
+                id: "wolfStone",
                 chance: 1
             }
         ],
@@ -306,9 +306,44 @@ export const ENEMIES = [
         sex: null,
         dominationResist: 1.00,
     },
+
+    
+    {
+        id: "blood-wolf",
+        name: "ブラッドウルフ",
+        level: 6,
+        exp: 8,
+        hp: 38,
+        maxHp: 38,
+        mp: 0,
+        maxMp: 0,
+        atk: 15,
+        description: "俊敏な動きで獲物の体をかみちぎる獰猛な狼。",
+        def: 8,
+        spd: 12,
+        int: 1,
+        dex: 18,
+        size: 4,
+        multiAction: 1,
+        currentJob: "monster",
+        jobs: {},
+        equipmentSlot: [],
+        skillList: {attack: 30, guard: 0, bite: 50, "double-bite": 20},
+        battleStatus: [],
+        dropItems: [
+            {
+                id: "wolfStone",
+                chance: 10
+            }
+        ],
+        money: 30,
+        race: RACES.monster.id,
+        sex: null,
+        dominationResist: 0.80,
+    },
     {
         id: "moss-golem",
-        name: "苔ゴーレム",
+        name: "モスゴーレム",
         level: 5,
         exp: 18,
         hp: 48,

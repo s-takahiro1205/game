@@ -5,7 +5,7 @@ import { loadGame } from './save.js';
 import { JOBS } from './data/jobs.js';
 import { MAPS } from './data/maps.js';
 import { EVENTS } from './data/events.js';
-import { SCREENS, SUB_SCREENS, BOTTOM_SHEETS, BOTTOM_MENU_TABS, LABEL, BATTLE_STATUSES, SEXES, RACES, EQUIP_CATEGORIES, TARGET_TYPE_EXTRACTOR } from './const.js';
+import { SCREENS, SUB_SCREENS, BOTTOM_SHEETS, BOTTOM_MENU_TABS, LABEL, BATTLE_STATUSES, SEXES, RACES, EQUIP_CATEGORIES, EQUIP_TAGS, TARGET_TYPE_EXTRACTOR } from './const.js';
 
 // DOM Elements
 // TODO:精査してね
@@ -486,6 +486,10 @@ function renderMenu() {
                 }
                 return 
             });
+            // 使用タイミングを満たさないか、コストが足りないか対象がいないならfalse
+            const isDisabled = !s.usableIn[gameState.screen === SCREENS.baseScreen ? "home" : "explore"]
+                || TARGET_TYPE_EXTRACTOR[s.target_type](player.party).length === 0
+                || (s.cost && Object.keys(s.cost).some(key => unit[key] < s.cost[key]));
             return `
             <div class="skill-card">
                 <div class="skill-icon">${s.icon ?? ""}</div>
@@ -496,8 +500,12 @@ function renderMenu() {
                         ${`<span class="skill-tag tag-${s.category}">${tagList[s.category]}</span>`}
                     </div>
                     <div class="skill-desc">${LABEL[s.target_type]}</div>
-                    ${effectLabels.map(label => `<div class="skill-desc">${label}</div>`)}
+                    ${effectLabels.map(label => `<div class="skill-desc">${label}</div>`).join("")}
                     <div class="skill-cost">${Object.keys(s.cost).map(key => key + "" + (-1 * s.cost[key])).join(' ')}</div>
+                    <!-- 下段：ボタン -->
+                    <div class="skill-btn-buttons${!s.usableIn[gameState.screen === SCREENS.baseScreen ? "home" : "explore"] ? " hidden" : ""}">
+                        <button class="skill-btn skill-btn-use"${isDisabled ? " disabled" : ' data-id="' + s.id + '"'}>使用</button>
+                    </div>
                 </div>
             </div>`}).join('')}
             </div>`;
@@ -548,7 +556,9 @@ function renderEquipChange(area, unit) {
                 <div class="equip-item-icon" style="width:32px;height:32px;font-size:18px">${item.useType ? iconMap[item.useType] : (item.equipCategory ? iconMap[item.equipCategory] : "")}</div>
                 <div>
                     <div class="equip-item-name" style="font-size:10px">${item.name}</div>
-                    <div class="equip-item-sub" style="font-size:8px">${effectLabels||'—'}</div>
+                    <div class="equip-item-sub" style="font-size:8px">${effectLabels||'—'}</div>`
+                    + (item.equipTags || item.equipCondition ? `<div class="equip-item-tag" style="font-size:8px">タグ：${item.equipTags.map(t => EQUIP_TAGS[t].name).join("|")}</div>` : "")
+                    +`
                 </div>
             </div>
     </div>`}).join('');

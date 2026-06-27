@@ -5,10 +5,10 @@ import { MAPS, EVENT_TABLES, ITEM_TABLES, MONSTER_GROUPS, ENCOUNTER_TABLES } fro
 import { EVENTS } from './data/events.js';
 import { ITEMS } from './data/items.js';
 import { ENEMIES } from './data/enemies.js';
-import { IGNORE_PARTY_SKILL, SKILLS } from './data/skills.js';
+import { IGNORE_PARTY_SKILL, SKILL_ORDER, SKILLS } from './data/skills.js';
 import { JOBS } from './data/jobs.js';
 import { scheduleRender } from './render.js';
-import { LABEL, SCREENS, SUB_SCREENS, BOTTOM_SHEETS, BOTTOM_MENU_TABS, BATTLE_STATUSES, DEBUFF_STATUS_MODIFIERS, SEXES, RACES, EQUIP_CATEGORIES, SELECT_TARGET_TYPE, TARGET_TYPE_EXTRACTOR, isDead } from './const.js';
+import { LABEL, SCREENS, SUB_SCREENS, BOTTOM_SHEETS, BOTTOM_MENU_TABS, BATTLE_STATUSES, DEBUFF_STATUS_MODIFIERS, SEXES, RACES, EQUIP_CATEGORIES, EQUIP_TAGS, SELECT_TARGET_TYPE, TARGET_TYPE_EXTRACTOR, isDead } from './const.js';
 
 // ============================================================================
 // 1. グローバル変数とDOM要素
@@ -444,8 +444,7 @@ baseSelectExploreMapScreenBack.addEventListener("click", async () => {
     backSubScreen();
 });
 
-/* メニュー装備スロット選択 */
-/* 装備アイテム選択 */
+/* メニュー：メンバー内 */
 const menuTabPartyMemberContent = document.getElementById("menu-tab-party-member-content");
 menuTabPartyMemberContent.addEventListener("click", async (e) => {
     await sleep(50);
@@ -454,6 +453,7 @@ menuTabPartyMemberContent.addEventListener("click", async (e) => {
     const equipItemUnequip = e.target.closest('.equip-item-unequip');
     const equipItemBack = e.target.closest('.equip-item-back');
     const statusRenameBtn = e.target.closest('.status-rename-btn');
+    const skillBtnUse = e.target.closest('.skill-btn-use');
     const unit = player.party[gameState.bottomMenuPartyTabIndex];
     if (statusRenameBtn) {
         showTextInputModal(
@@ -493,6 +493,70 @@ menuTabPartyMemberContent.addEventListener("click", async (e) => {
         // 装備アイテム選択から戻る
         gameState.equipChangeSlotId = null;
         gameState.bottomMenuPartyTabSubType = "equip";
+        return;
+    } else if (skillBtnUse && skillBtnUse.dataset.id) {
+        // スキル使用
+        const skill = unit.skillList.find(s => s.id === skillBtnUse.dataset.id);
+        if (!skill) {
+            throw new Error(`Unknown skill id: ${skillBtnUse.dataset.id}`)
+        }
+
+        // TODO: 共通化したほうがいいんじゃない？
+        const tagList = {
+            attack:'攻撃', heal:'回復', support:'補助',
+            combat:'物理', magic:'魔法', special:'特殊',
+        };
+        const effectLabels = skill.effects.map(ef => {
+            if(ef.type === "damage" || ef.type === "heal") {
+                return `威力 ${ef.fix ? ef.fix : ((ef.power * 100))}`
+                        + `${ef.add ? `+${ef.add}`: ""}`
+                        + `${ef.hit ? ` ${LABEL["hit"]}${ef.hit > 0 ? "+" : ""}${ef.hit}`: ""}`
+                        + `${ef.critical ? ` ${LABEL["critical"]}${ef.critical > 0 ? "+" : ""}${ef.critical}`: ""}`
+                        + `${ef.armor_pierce ? "(貫通)" + (ef.armor_pierce * 100) + "%" : ""}`
+                        ;
+            } else if(ef.type === "addState") {
+                return `付与:${LABEL[ef.stateId]} 約${ef.turn}ターン ${ef.fix}%`;
+            } else if(ef.type === "recoverState") {
+                return `治癒:${LABEL[ef.stateId]} ${ef.fix}%`;
+            } else if(ef.type === "revive") {
+                return `蘇生 ${ef.fix}%`;
+            }
+            return 
+        });
+
+        const description = tagList[skill.type] + " | " + tagList[skill.category] + "<br>"
+                            + effectLabels.join("")
+
+        // 単体対象ならモーダルで対象選択
+        if (SELECT_TARGET_TYPE.includes(skill.target_type)) {
+            const list = TARGET_TYPE_EXTRACTOR[skill.target_type](player.party);
+            const actions = list.map(unit => {
+                const data = {
+                    "event-name": "modalUseSkill",
+                    "unit-id": unit.id,
+                    "skill-id": skill.id
+                };
+                return {text: unit.name, data: data, type: "safe"}}
+            )
+            showChoiceModal(
+                "誰に使用しますか？",
+                `${skill.name}<br>${description}`,
+                [
+                    ...actions,
+                    {text: "キャンセル", data: {"event-name": "cancel"}, type: "cancel"}
+                ],
+            );
+        } else {
+            showChoiceModal(
+                `${skill.name}を使用します`,
+                `${description}`,
+                [
+                    {text: "OK", data: {"event-name": "modalUseSkill", "unit-id": "all", "skill-id": skill.id}, type: "safe"},
+                    {text: "キャンセル", data: {"event-name": "cancel"}, type: "cancel"}
+                ],
+            );
+        }
+        return;
     }
 });
 /* メニューアイテム選択 */
@@ -585,6 +649,7 @@ modalInputContents.addEventListener("click", async (e) => {
 // モーダル選択肢選択後のイベントマップ
 const modalEvents = {
     cancel: modalCancel,
+    modalUseSkill: modalUseSkill,
     modalUseItem: modalUseItem,
     modalDiscardItem: modalDiscardItem,
     modalChangeUnitName: modalChangeUnitName,
@@ -593,6 +658,21 @@ const modalEvents = {
 // モーダル：閉じる
 function modalCancel() {
     gameState.modal = null;
+}
+
+// モーダル：スキル使用
+function modalUseSkill(dataset) {
+    const unit = player.party.find(u => u.id === dataset.unitId);
+    if (!unit) {
+        throw new Error(`Unknown unit id: ${dataset.unitId}`)
+    }
+    useSkill(
+        unit,
+        dataset.skillId,
+        dataset.unitId === "all" ? player.party.map(unit => unit.id) : [dataset.unitId]
+    );
+    gameState.modal = null;
+    gameState.dirty = true;
 }
 
 // モーダル：アイテム使用
@@ -2053,27 +2133,26 @@ async function changeUnitName(unit, name) {
 }
 
 /**
- * 使用ボタンのイベント
+ * 効果の処理
  * TODO: 戦闘との共通化を考えた方がいい
  */
-async function useItem(itemUuid, unitIds) {
-    const item = player.itemSlot.find(item => item.uuid === itemUuid);
-    // 対象を取り直して対象となっているユニットにのみ使用する
-    const list = TARGET_TYPE_EXTRACTOR[item.useTargetType](player.party);
-    const targets =  list.filter(unit =>
-        unitIds.some(id => id === unit.id)
-    );
-    if (targets.length === 0) {
-        addToast('対象がいませんでした')
-        return;
-    }
-    for (const effect of item.effects) {
+async function applyEffects(effects, targets, actor = null, isMagic = false) {
+    for (const effect of effects) {
         if (effect.type === "damage") {
             for (const target of targets) {
                 if (isDead(target)) {
                     continue;
                 }
-                const damage = effect.fix ? effect.fix : getRandom(effect.min, effect.max);
+                let damage = 0;
+                if (actor) {
+                    damage = calculateDamage(
+                        actor, target, effect.power,
+                        isMagic,
+                        effect.fix, effect.add, effect.armor_pierce
+                    );
+                } else {
+                    const damage = effect.fix ? effect.fix : getRandom(effect.min, effect.max);
+                }
                 applyDamage(target, damage, false)
                 addToast(`${target.name} に ${damage} のダメージ！`);
             }
@@ -2082,8 +2161,18 @@ async function useItem(itemUuid, unitIds) {
                 if (isDead(target)) {
                     continue;
                 }
+                const actoruffedStatus = actor ? calcAllStatus(actor) : null;
                 const buffedStatus = calcAllStatus(target);
-                const heal = effect.fix ? effect.fix : getRandom(effect.min, effect.max);
+                let heal = 0;
+                if (actor) {
+                    heal = calculateHeal(
+                        actor, target,
+                        effect.power, isMagic,
+                        effect.fix, effect.add
+                    );
+                } else {
+                    const heal = effect.fix ? effect.fix : getRandom(effect.min, effect.max);
+                }
                 target.hp = Math.min(buffedStatus.maxHp, target.hp + heal);
                 addToast(`${target.name} は ${heal} 回復した！`);
             }
@@ -2156,6 +2245,49 @@ async function useItem(itemUuid, unitIds) {
             }
         }
     }
+
+    saveGame(player);
+}
+
+/**
+ * スキル使用ボタンのイベント
+ */
+async function useSkill(actor, skillId, unitIds) {
+    const skill = actor.skillList.find(s => s.id === skillId);
+    // 対象を取り直して対象となっているユニットにのみ使用する
+    const list = TARGET_TYPE_EXTRACTOR[skill.target_type](player.party);
+    const targets =  list.filter(unit =>
+        unitIds.some(id => id === unit.id)
+    );
+    if (targets.length === 0) {
+        addToast('対象がいませんでした')
+        return;
+    }
+
+    // コストを支払う
+    for (const costType in skill.cost) {
+        actor[costType] -= skill.cost[costType];
+    }
+
+    applyEffects(skill.effects, targets, actor, skill.category === "magic");
+}
+
+/**
+ * アイテム使用ボタンのイベント
+ */
+async function useItem(itemUuid, unitIds) {
+    const item = player.itemSlot.find(item => item.uuid === itemUuid);
+    // 対象を取り直して対象となっているユニットにのみ使用する
+    const list = TARGET_TYPE_EXTRACTOR[item.useTargetType](player.party);
+    const targets =  list.filter(unit =>
+        unitIds.some(id => id === unit.id)
+    );
+    if (targets.length === 0) {
+        addToast('対象がいませんでした')
+        return;
+    }
+    applyEffects(item.effects, targets);
+
     // 無制限でないものは使用回数を減らす
     if (item.uses) {
         item.uses -= 1;
@@ -2165,8 +2297,6 @@ async function useItem(itemUuid, unitIds) {
         const msg = `${item.name} を使い切った！`;
         addToast(msg);
     }
-
-    saveGame(player);
 }
 
 /**
@@ -2723,7 +2853,6 @@ async function battleExecCommand() {
                     if (!isDead(target)) {
                         continue;
                     }
-                    const is_magic = skill.category === "magic";
                     const is_success = effect.roll(effect.fix)
                     if (is_success) {
                         revive(target, effect.heal);
@@ -3152,7 +3281,7 @@ function addExp(unit, exp) {
     unit.exp += exp;
 
     // 上昇量集計
-    const totalStatusUp = {};
+    let totalStatusUp = {};
     while (unit.exp >= getRequiredExp(unit.level)) {
         // レベルアップ
         const statusUp = levelUp(unit);
@@ -3218,8 +3347,8 @@ function addRankExp(unit, exp) {
     job_history.exp += exp;
 
     // 上昇量集計
-    const totalStatusUp = {};
-    const totalSkills = [];
+    let totalStatusUp = {};
+    let totalSkills = [];
     while (job.maxRank > job_history.rank && job_history.exp >= getRequiredRankExp(unit.currentJob, job_history.rank)) {
         // レベルアップ
         const [status_up, skills] = rankUp(unit, job_history);
@@ -3291,9 +3420,16 @@ function rankUp(unit, job_history) {
             }
         }
         if (bonus.learnSkills) {
+            const orderMap = new Map(
+                SKILL_ORDER.map((id, index) => [id, index])
+            );
             bonus.learnSkills.forEach(skill_id => {
                 if (!unit.skillList.some((skill) => skill.id === skill_id)) {
                     unit.skillList.push(getSkillById(skill_id));
+                    unit.skillList.sort((a, b) =>
+                        (orderMap.get(a.id) ?? Infinity) -
+                        (orderMap.get(b.id) ?? Infinity)
+                    );
                 }
             });
             skills.push(...bonus.learnSkills);
@@ -3542,10 +3678,17 @@ function getUnitById(id) {
  * @returns {Proxy}
  */
 export function canEquip(unit, item) {
-    // 装備出ないならfalse
+    // 装備でないならfalse
     if (item.category !== "equipment") {
         return false;
     }
+
+    // 紋章以外の装備タグがあり、すべて満たさないならNG
+    const equipTags = (item.equipTags ?? []).filter(t => t !== EQUIP_TAGS.emblem.id);
+    if (equipTags.length > 0 && !equipTags.every(t => JOBS[unit.currentJob].equipTags.includes(t))) {
+        return false;
+    }
+
     // 条件なしならOK
     if (!item.equipCondition) {
         return true;
@@ -3562,6 +3705,18 @@ export function canEquip(unit, item) {
             } case "notJob": {
                 // 不可ジョブ指定なら1つでも一致したらアウト
                 isNot = conds[type].some(jobId => unit.currentJob === jobId);
+                break;
+            } case "race": {
+                // 種族指定なら1つでも一致しなければアウト
+                isNot = !conds[type].some(jobId => unit.currentJob === jobId);
+                break;
+            } case "notRace": {
+                // 不可種族指定なら1つでも一致したらアウト
+                isNot = conds[type].some(jobId => unit.currentJob === jobId);
+                break;
+            } case "uniqueTag": {
+                // タグ重複ならNG
+                isNot = conds[type].some(tag => unit.equipmentSlot.some(slot => slot.equippedItem && slot.equippedItem.equipTags.some(t => t === tag)));
                 break;
             } default : {
                 throw new Error(`Unknown EquipCondition type: ${type}`)

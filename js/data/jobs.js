@@ -1,4 +1,5 @@
 // 職業データ配列
+import { EQUIP_TAGS } from '../const.js';
 
 export const JOBS = {
     warrior: {
@@ -28,10 +29,11 @@ export const JOBS = {
             dex: 10,
             size: 10,
         },
-        equipTypes: [// 装備適正(仮)
-            "sword",
-            "spear",
-            "axe",
+        equipTags: [// 装備適正(仮)
+            EQUIP_TAGS.sword.id,
+            EQUIP_TAGS.dagger.id,
+            EQUIP_TAGS.axe.id,
+            EQUIP_TAGS.spear.id,
         ],
         rankBonuses: [// ランクボーナス
             {
@@ -97,11 +99,12 @@ export const JOBS = {
             dex: 20,
             size: 20,
         },
-        equipTypes: [// 装備適正(仮)
-            "sword",
-            "spear",
-            "axe",
-            "heavy",
+        equipTags: [// 装備適正(仮)
+            EQUIP_TAGS.sword.id,
+            EQUIP_TAGS.dagger.id,
+            EQUIP_TAGS.axe.id,
+            EQUIP_TAGS.spear.id,
+            EQUIP_TAGS.heavy.id,
         ],
         rankBonuses: [// ランクボーナス
             {
@@ -185,9 +188,11 @@ export const JOBS = {
             dex: 15,
             size: 0,
         },
-        equipTypes: [
-            "wand",
-            "stuff",
+        equipTags: [
+            EQUIP_TAGS.dagger.id,
+            EQUIP_TAGS.staff.id,
+            EQUIP_TAGS.whip.id,
+            EQUIP_TAGS.book.id,
         ],
         rankBonuses: [
             {
@@ -250,9 +255,12 @@ export const JOBS = {
             dex: 5,
             size: 0,
         },
-        equipTypes: [
-            "wand",
-            "stuff",
+        equipTags: [
+            EQUIP_TAGS.spear.id,
+            EQUIP_TAGS.dagger.id,
+            EQUIP_TAGS.staff.id,
+            EQUIP_TAGS.whip.id,
+            EQUIP_TAGS.book.id,
         ],
         rankBonuses: [
             {
@@ -315,10 +323,10 @@ export const JOBS = {
             dex: 35,
             size: 0,
         },
-        equipTypes: [// 装備適正(仮)
-            "sword",
-            "shield",
-            "heavyArmor"
+        equipTags: [
+            EQUIP_TAGS.dagger.id,
+            EQUIP_TAGS.bow.id,
+            EQUIP_TAGS.whip.id,
         ],
         rankBonuses: [// ランクボーナス
             {
@@ -387,7 +395,9 @@ export const JOBS = {
             dex: 10,
             size: 10,
         },
-        equipTypes: [],// 装備適正(仮)
+        equipTags: [
+            EQUIP_TAGS.monsterStone.id,
+        ],
         rankBonuses: [// ランクボーナス
             {
                 rank: 2,
@@ -512,7 +522,9 @@ export const JOBS = {
             dex: 20,
             size: 0,
         },
-        equipTypes: [],// 装備適正(仮)
+        equipTags: [
+            EQUIP_TAGS.monsterStone.id,
+        ],
         rankBonuses: [// ランクボーナス
             {
                 rank: 2,

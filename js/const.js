@@ -107,6 +107,23 @@ export const EQUIP_CATEGORIES = {
     accessory: {id: "accessory", name: "装飾品"},
 };
 
+export const EQUIP_TAGS = {
+    sword: {id: "sword", name: "剣"},
+    dagger: {id: "dagger", name: "短剣"},
+    axe: {id: "axe", name: "斧"},
+    spear: {id: "spear", name: "槍"},
+    bow: {id: "bow", name: "弓"},
+    staff: {id: "staff", name: "杖"},
+    whip: {id: "whip", name: "鞭"},
+    book: {id: "book", name: "本"},
+    monsterStone: {id: "monsterStone", name: "魔石"},
+
+    magicWeapon: {id: "magicWeapon", name: "魔法武器"},
+
+    heavy: {id: "heavy", name: "重装備"},
+    emblem: {id: "emblem", name: "紋章"},
+};
+
 /**
  * 状態異常の一覧
 盲目	👁️‍🗨️❌ / 🙈	

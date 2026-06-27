@@ -42,6 +42,7 @@ export const MONSTER_GROUPS = {
     forestGhoulAndmovingMushroom: ["forest-ghoul", "moving-mushroom"],
     wildBoar: ["wild-boar"],
 
+    bloodWolf: ["blood-wolf"],
     mossGolem: ["moss-golem"],
     mossGolemAndTwoMovingMushroom: ["moss-golem", "moving-mushroom", "moving-mushroom"],
     rogueBanditFour: ["rogue-bandit", "rogue-bandit", "rogue-bandit", "rogue-bandit"],
@@ -75,8 +76,9 @@ export const ENCOUNTER_TABLES = {
         littleSpiritOfSkill: 0.01,
     },
     lostForestShallowElite01: {
-        mossGolemAndTwoMovingMushroom: 0.34,
-        rogueBanditFour: 0.30,
+        bloodWolf: 0.24,
+        mossGolemAndTwoMovingMushroom: 0.20,
+        rogueBanditFour: 0.20,
         guardianOfTheRuins: 0.30,
         littleSpiritOfLearning: 0.03,
         littleSpiritOfSkill: 0.03,

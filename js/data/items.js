@@ -1,6 +1,6 @@
 // アイテムデータ定義
 
-import { EQUIP_CATEGORIES } from '../const.js';
+import { EQUIP_CATEGORIES, EQUIP_TAGS } from '../const.js';
 import { JOBS } from './jobs.js';
 /**
  * @typedef {object} Effect
@@ -26,6 +26,7 @@ import { JOBS } from './jobs.js';
  * @property {string} useTargetType - 使用対象種別
  * @property {object | null} statModifier - 増減ステータス（例: { atk: +5, def: +2 }）
  * @property {"weapon" | "def" | "shield" | "accessory" | null} equipCategory - 装備種別
+ * @property {array<string | null>} equipTags - 装備タグ
  * @property {array} equipCondition - 装備条件
  */
 
@@ -59,6 +60,7 @@ export const ITEMS = [
         useTargetType: "damaged_ally_one",
         statModifier: null,
         equipCategory: null,
+        equipTags: null,
         equipCondition: null,
         uuid: "",
     },
@@ -87,6 +89,7 @@ export const ITEMS = [
         useTargetType: "damaged_ally_one",
         statModifier: null,
         equipCategory: null,
+        equipTags: null,
         equipCondition: null,
         uuid: "",
     },
@@ -138,6 +141,7 @@ export const ITEMS = [
         useTargetType: "alive_ally_one",
         statModifier: null,
         equipCategory: null,
+        equipTags: null,
         equipCondition: null,
         uuid: "",
     },
@@ -167,6 +171,7 @@ export const ITEMS = [
         useTargetType: "alive_ally_one",
         statModifier: null,
         equipCategory: null,
+        equipTags: null,
         equipCondition: null,
         uuid: "",
     },
@@ -194,6 +199,7 @@ export const ITEMS = [
         useTargetType: "alive_ally_one",
         statModifier: null,
         equipCategory: null,
+        equipTags: null,
         equipCondition: null,
         uuid: "",
     },
@@ -221,6 +227,7 @@ export const ITEMS = [
         useTargetType: "alive_ally_one",
         statModifier: null,
         equipCategory: null,
+        equipTags: null,
         equipCondition: null,
         uuid: "",
     },
@@ -248,6 +255,7 @@ export const ITEMS = [
         useTargetType: "alive_enemy_all",
         statModifier: null,
         equipCategory: null,
+        equipTags: null,
         equipCondition: null,
         uuid: "",
     },
@@ -275,6 +283,7 @@ export const ITEMS = [
         useTargetType: "alive_enemy_one",
         statModifier: null,
         equipCategory: null,
+        equipTags: null,
         equipCondition: null,
         uuid: "",
     },
@@ -304,6 +313,7 @@ export const ITEMS = [
         useTargetType: "alive_enemy_one",
         statModifier: null,
         equipCategory: null,
+        equipTags: null,
         equipCondition: null,
         uuid: "",
     },
@@ -333,6 +343,7 @@ export const ITEMS = [
         useTargetType: "alive_enemy_one",
         statModifier: null,
         equipCategory: null,
+        equipTags: null,
         equipCondition: null,
         uuid: "",
     },
@@ -362,6 +373,7 @@ export const ITEMS = [
         useTargetType: "alive_enemy_one",
         statModifier: null,
         equipCategory: null,
+        equipTags: null,
         equipCondition: null,
         uuid: "",
     },
@@ -411,6 +423,7 @@ export const ITEMS = [
         useTargetType: "alive_ally_one",
         statModifier: null,
         equipCategory: null,
+        equipTags: null,
         equipCondition: null,
         uuid: "",
     },
@@ -439,9 +452,11 @@ export const ITEMS = [
         useTargetType: "dead_ally_one",
         statModifier: null,
         equipCategory: null,
+        equipTags: null,
         equipCondition: null,
         uuid: "",
     },
+
     // 装備アイテム
     {
         id: "pigIronKnife",
@@ -462,6 +477,7 @@ export const ITEMS = [
             atk: 2,
         },
         equipCategory: EQUIP_CATEGORIES.weapon.id,
+        equipTags: [EQUIP_TAGS.dagger.id],
         equipCondition: null,
         uuid: "",
     },
@@ -484,6 +500,7 @@ export const ITEMS = [
             int: 2
         },
         equipCategory: EQUIP_CATEGORIES.weapon.id,
+        equipTags: [EQUIP_TAGS.staff.id],
         equipCondition: null,
         uuid: "",
     },
@@ -509,9 +526,41 @@ export const ITEMS = [
             critical: 30,
         },
         equipCategory: EQUIP_CATEGORIES.weapon.id,
+        equipTags: [EQUIP_TAGS.dagger.id],
         equipCondition: null,
         uuid: "",
     },
+
+    // 魔物武器
+    {
+        id: "wolfStone",
+        name: "狼の魔石",
+        description: "狼の力が宿る魔石。身に着けた魔物は耐久力が失われるが、力と敏捷性が増す。",
+        category: "equipment",
+        price: 2000,
+        effects: null,
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: false,
+        },
+        uses: null,
+        useType: null,
+        useTargetType: null,
+        statModifier: {
+            atk: 8,
+            def: -5,
+            spd: 8,
+            hit: 10,
+            dodge: 15,
+            critical: 10,
+        },
+        equipCategory: EQUIP_CATEGORIES.weapon.id,
+        equipTags: [EQUIP_TAGS.monsterStone.id],
+        equipCondition: null,
+        uuid: "",
+    },
+
     {
         id: "singlePieceOfFur",
         name: "毛皮の一枚布",
@@ -529,6 +578,7 @@ export const ITEMS = [
         useTargetType: null,
         statModifier: { maxHp: 5, def: 4 },
         equipCategory: EQUIP_CATEGORIES.mainArmor.id,
+        equipTags: null,
         equipCondition: null,
         uuid: "",
     },
@@ -549,6 +599,7 @@ export const ITEMS = [
         useTargetType: null,
         statModifier: { maxMp: 5, def: 1, spd: 1, dodge: 10 },
         equipCategory: EQUIP_CATEGORIES.mainArmor.id,
+        equipTags: null,
         equipCondition: null,
         uuid: "",
     },
@@ -569,6 +620,7 @@ export const ITEMS = [
         useTargetType: null,
         statModifier: { maxHp: 15, def: 15, spd: -1, dodge: -20 },
         equipCategory: EQUIP_CATEGORIES.mainArmor.id,
+        equipTags: [EQUIP_TAGS.heavy.id],
         equipCondition: null,
         uuid: "",
     },
@@ -589,6 +641,7 @@ export const ITEMS = [
         useTargetType: null,
         statModifier: { def: 2 },
         equipCategory: EQUIP_CATEGORIES.subArmor.id,
+        equipTags: null,
         equipCondition: null,
         uuid: "",
     },
@@ -609,6 +662,7 @@ export const ITEMS = [
         useTargetType: null,
         statModifier: { int: 3 },
         equipCategory: EQUIP_CATEGORIES.accessory.id,
+        equipTags: null,
         equipCondition: null,
         uuid: "",
     },
@@ -629,6 +683,7 @@ export const ITEMS = [
         useTargetType: null,
         statModifier: { dex: 3, hit: 12 },
         equipCategory: EQUIP_CATEGORIES.accessory.id,
+        equipTags: null,
         equipCondition: null,
         uuid: "",
     },
@@ -649,6 +704,7 @@ export const ITEMS = [
         useTargetType: null,
         statModifier: { maxHp: 5, maxMp: 5, atk: 2, def: 2, spd: 2, int: 2, dex: 2, hit: 8, dodge: 8, critical: 8 },
         equipCategory: EQUIP_CATEGORIES.accessory.id,
+        equipTags: null,
         equipCondition: null,
         uuid: "",
     },
@@ -669,12 +725,13 @@ export const ITEMS = [
         useTargetType: null,
         statModifier: { int: 5, maxMp: 5 },
         equipCategory: EQUIP_CATEGORIES.accessory.id,
+        equipTags: null,
         equipCondition: null,
         uuid: "",
     },
     {
         id: "wearyBrandOfShadow",
-        name: "擦り切れた影の烙印",
+        name: "擦り切れた影の紋章",
         description: "影の大精霊によって紋章を授けられている指輪。長い時間が経ち紋章が風化している。",
         category: "equipment",
         price: 1000000,
@@ -689,7 +746,10 @@ export const ITEMS = [
         useTargetType: null,
         statModifier: { maxMp: 50, int: 10 },
         equipCategory: EQUIP_CATEGORIES.accessory.id,
-        equipCondition: null,
+        equipTags: [EQUIP_TAGS.emblem.id],
+        equipCondition: {
+            uniqueTag: [EQUIP_TAGS.emblem.id]
+        },
         uuid: "",
     },
     {
@@ -709,8 +769,9 @@ export const ITEMS = [
         useTargetType: null,
         statModifier: { spd: 15, multiAction: 1 },
         equipCategory: EQUIP_CATEGORIES.accessory.id,
+        equipTags: [EQUIP_TAGS.emblem.id],
         equipCondition: {
-            // notJob: [JOBS.warrior.id]
+            uniqueTag: [EQUIP_TAGS.emblem.id]
         },
         uuid: "",
     },

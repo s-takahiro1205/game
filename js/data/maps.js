@@ -93,8 +93,8 @@ export const ENCOUNTER_TABLES = {
         littleSpiritOfSkill: 0.03,
     },
     lostForestShallowBoss01: {
-        bigOakAndOakTwo: 0.80
-        guardianOfTheForestAndwanderingGhostTwo: 0.20
+        bigOakAndOakTwo: 0.80,
+        guardianOfTheForestAndwanderingGhostTwo: 0.20,
     },
 }
 export const MAPS = {

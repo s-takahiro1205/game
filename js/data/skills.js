@@ -249,7 +249,7 @@ export const SKILLS = [
     // 戦技 戦技はHP消費
     {
         id: "domination",
-        name: "支配の呪印",
+        name: "支配の紋章",
         cost: {},
         target_type: "alive_enemy_one",
         usableIn: {
@@ -261,12 +261,7 @@ export const SKILLS = [
         type: "support",// ボタンの色分け専用
         effects: [
             {
-                type: "addState",
-                stateId: "domination",
-                min: 0,
-                max: 0,
-                fix: 100,
-                turn: 1,
+                type: "domination",
             },
         ]
     },

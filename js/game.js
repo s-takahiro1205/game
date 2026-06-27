@@ -2570,7 +2570,7 @@ function calculateDamage(attacker, target, power = 1.00, isMagic = false, fix = 
  * @param {number} add // 追加ダメージ
  * @param {number} armorPierce // アーマー貫通割合（小数）
  */
-function calculateHeal(attacker, target, power = 1.00, isMagic = false, fix = 0, add = 0,) {
+function calculateHeal(attacker, target, power = 1.00, isMagic = false, fix = 0, add = 0) {
     let heal = 0;
     const attackerBS = calcAllStatus(attacker);
     if (fix > 0) {
@@ -2586,6 +2586,31 @@ function calculateHeal(attacker, target, power = 1.00, isMagic = false, fix = 0,
     }
 
     return Math.max(0, Math.floor(heal));
+}
+
+/**
+ * 支配判定
+ * (基本値10 + Lv差|0) * (エネミー難易度1.00 + hp減少率) * 状態補正
+ * @param {Object} actor 
+ * @param {Object} target 
+ */
+async function checkDomination(actor, target) {
+    const base = 10;
+    const lvDiff = Math.max(0, actor.level -  target.level);
+    const hpRemain = 1.00 - target.hp / target.maxHp;
+    let stateRate = 1.00;
+    if (target.battleStatus.length > 0) {
+        if (target.battleStatus.some(s => s.id === "sleep" || s.id === "paralyze")) {
+            stateRate += 0.50;
+        }
+        if (target.battleStatus.some(s => s.id === "poison" || s.id === "stan")) {
+            stateRate += 0.20;
+        }
+    }
+    const chance = (base + lvDiff) * ((target.dominationResist ?? 0.01) + hpRemain) * stateRate;
+    addMessage(`支配の紋章が${target.name}に刻まれていく…`, false)
+    addMessage(`支配強度：${Math.ceil(chance)}`);
+    return roll(chance);
 }
 
 function getRandom(min, max) {
@@ -2909,6 +2934,23 @@ async function battleExecCommand() {
                     if (is_success) {
                         revive(target, effect.heal);
                     }
+                }
+            } else if (effect.type === "domination") {
+                const target = targets[0];
+                if (isDead(target)) {
+                    continue;
+                }
+                const isDomination = await checkDomination(actor, target);
+                await sleep(1000);
+                if (isDomination) {
+                    addMessage(`${target.name}を支配した！`);
+                    gameState.battle.enemies = gameState.battle.enemies.filter(unit => unit.id !== target.id);
+                    gameState.battle.dominations.push(target);
+                    // 後処理
+                    gameState.battle.turnOrder = gameState.battle.turnOrder.filter(order => target.id !== order.id);
+                    advanceTimeline(target.id);
+                } else {
+                    addMessage(`${target.name} は支配から逃れた。`);
                 }
             }
         }
@@ -3743,23 +3785,9 @@ function addBattleStatus(state_id, target, turn) {
     const current_status = target.battleStatus.find(s => s.type === state_id);
     if (!current_status) {
         target.battleStatus.push({type: state_id, turn: turn});
-    } else if (state_id === "domination") {
-        //　支配なら加算する
-        current_status.turn += turn;
-        addMessage(`支配：${current_status.turn}`)
     } else if (state_id !== "guard") {
         //　防御以外ならターンを最大値に更新する
         current_status.turn = Math.max(current_status.turn, turn);
-    }
-
-    // 支配の効き目チェック 5以上なら支配成功
-    if (target.battleStatus.find(s => s.type === "domination")?.turn >= 5) {
-        addMessage(`${target.name}を支配した！`);
-        gameState.battle.enemies = gameState.battle.enemies.filter(unit => unit.id !== target.id);
-        gameState.battle.dominations.push(target);
-        // 後処理
-        gameState.battle.turnOrder = gameState.battle.turnOrder.filter(order => target.id !== order.id);
-        advanceTimeline(target.id);
     }
 }
 

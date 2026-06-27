@@ -126,7 +126,7 @@ export const EQUIP_TAGS = {
 };
 
 export const TRAITS = {
-    fairy: {id: "fairy", name: "妖精の身のこなし", statModifier: {def: -100, dodge: 90}},
+    fairy: {id: "fairy", name: "妖精の身のこなし", statModifier: {dodge: 80}, growthRates: {maxHp: -50, maxMp: 50, atk: -50, def: -100, spd: 50, int: 50, dex: 50, size: -100}},
     mutant: {id: "mutant", name: "突然変異", statModifier: {maxHp: 15, maxMp: 10, atk: 5, def: 5, spd: 5, int: 5, dex: 5, size: 5}, growthRates: {maxHp: 25, maxMp: 25, atk: 10, def: 10, spd: 10, int: 10, dex: 10, size: 10}},
 
     regene5: {id: "regene", name: "HP自動回復", battle:{actAfter: [{type: "regene", target: "hp", calcMethod: "rate", base: "maxHp", rate: 5}]}},

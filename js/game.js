@@ -3033,10 +3033,17 @@ async function battleTurnEnd() {
 function battleResult(isVictory) {
     gameState.battle.phase = "result";// ログパネル描画
     if (isVictory) {
+        // mutant特性があれば2倍
+        const getRate = (enemy) => {
+            const st = calcAllStatus(enemy);
+            return st.traits.length > 0 && st.traits.includes(t => t === TRAITS.mutant.id)
+                    ? 2
+                    : 1
+        };
         // 勝利時にリザルトを組み立ててセット
-        const totalMoney = gameState.battle.enemies.reduce((acc, enemy) => acc + enemy.money, 0);
-        const totalExp = gameState.battle.enemies.reduce((acc, enemy) => acc + enemy.exp, 0);
-        const totalRankExp = gameState.battle.enemies.reduce((acc, enemy) => acc + (enemy.rankExp ? enemy.rankExp : (Math.floor(enemy.exp / 100) + 1)), 0);
+        const totalMoney = gameState.battle.enemies.reduce((acc, enemy) => acc + enemy.money * getRate(enemy), 0);
+        const totalExp = gameState.battle.enemies.reduce((acc, enemy) => acc + enemy.exp * getRate(enemy), 0);
+        const totalRankExp = gameState.battle.enemies.reduce((acc, enemy) => acc + (enemy.rankExp ? enemy.rankExp * getRate(enemy) : (Math.floor(enemy.exp * getRate(enemy) / 100) + 1)), 0);
 
         // 経験値加算処理
         const level_ups = [];
@@ -3503,7 +3510,7 @@ function rankUp(unit, job_history) {
             });
             skills.push(...bonus.learnSkills);
         }
-        if (bonus.learnSkills) {
+        if (bonus.addTraits) {
             const orderMap = new Map(
                 SKILL_ORDER.map((id, index) => [id, index])
             );
@@ -3533,10 +3540,12 @@ function rollDropItems(enemies) {
     const result = {};
 
     for (const enemy of enemies) {
+        // mutantがあれば+2かつ2倍
+        const st = calcAllStatus(enemy);
         for (const drop of enemy.dropItems ?? []) {
             const roll = Math.floor(Math.random() * 100) + 1;
 
-            if (roll <= drop.chance) {
+            if (roll <= (st.traits.length > 0 && st.traits.includes(t => t === TRAITS.mutant.id) ? (drop.chance+2) * 2 : drop.chance)) {
                 result[drop.id] = (result[drop.id] ?? 0) + 1;
             }
         }

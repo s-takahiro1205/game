@@ -1,6 +1,6 @@
 // 画面描画
 
-import { player, gameState, getItemById, getUsableList, getRequiredExp, getRequiredRankExp, canEquip, calcAllStatus, checkJobCondition } from './game.js';
+import { player, gameState, getItemById, getUsableList, getRequiredExp, getRequiredRankExp, canEquip, calcAllStatus, checkJobCondition, getLevelUpText, getRankUpText } from './game.js';
 import { loadGame } from './save.js';
 import { JOBS } from './data/jobs.js';
 import { MAPS } from './data/maps.js';
@@ -316,11 +316,11 @@ function showModal() {
         });
         modalActions.innerHTML = actions.join("");
     } else if (gameState.modal.type === "textInput") {
-        modalInputContents.classList.remove("hidden");
-        modalTextInput.classList.remove("hidden");
         if (isTextInputHidden) {
             modalTextInput.value = gameState.modal.default;
         }
+        modalInputContents.classList.remove("hidden");
+        modalTextInput.classList.remove("hidden");
     }
     modalOverlay.classList.add("active");
     return true;
@@ -1079,13 +1079,11 @@ function renderResultPanel() {
         r.levelUps.forEach(lu => {
             const card = document.createElement('div');
             card.className = 'result-levelup-card';
-            const statLines = Object.entries(lu.statChanges || {})
-                .map(([k, v]) => `${k} +${v}`)
-                .join(' | ');
+            const statLines = getLevelUpText(lu);
             card.innerHTML = `
                 <strong>${lu.name}</strong>
                 Lv${lu.before} → <span style="color:#ffd700">Lv${lu.after}</span>
-                <br><small>ステータスアップ：${statLines}</small>
+                ${statLines === "" ?  "" : ("<br><small>ステータスアップ：" + statLines + "</small>")}
             `;
             lvList.appendChild(card);
         });
@@ -1102,19 +1100,15 @@ function renderResultPanel() {
         r.rankUps.forEach(ru => {
             const card = document.createElement('div');
             card.className = 'result-levelup-card';
-            const statLines = Object.entries(ru.statChanges || {})
-                .map(([k, v]) => `${k} +${v}`)
-                .join(' | ');
-            const skillLines = (ru.learnSkills ?? [])
-                .join(' | ');
+            const [statLines, skillLines] = getRankUpText(ru);
             card.innerHTML = `
                 <strong>${ru.name}-${JOBS[ru.jobId].name}</strong>
                 <span class="result-rankup-card">${ru.before}</span>
                 → 
                 <span class="result-rankup-card" style="color:#ffd700">${ru.after}</span>
                 ${JOBS[ru.jobId].maxRank === ru.after ? '<br><span class="result-rankup-card" style="color:#ffd700">★' + JOBS[ru.jobId].name + 'をマスターした！！</span>' : ''}
-                <br><small>ステータスアップ：${statLines}</small>
-                <br><small>スキル習得：${skillLines}</small>
+                ${statLines === "" ? "" : ("<br><small>ステータスアップ：" + statLines + "</small>")}
+                ${skillLines === "" ? "" : "<br><small>スキル習得：" + skillLines + "</small>"}
             `;
             rkList.appendChild(card);
         });

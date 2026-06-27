@@ -793,13 +793,13 @@ async function debugAcquireItem() {
         const itemToGive = getItemById(selectedItemId);
         if (itemToGive) {
             await acquireItem(itemToGive);
-            addMessage(`デバッグ: ${itemToGive.name} を取得しました！`, false);
+            addToast(`デバッグ: ${itemToGive.name} を取得しました！`, false);
             saveGame(player); // アイテム取得後にセーブ
         } else {
-            addMessage("デバッグ: 指定されたアイテムが見つかりませんでした。", false);
+            addToast("デバッグ: 指定されたアイテムが見つかりませんでした。", false);
         }
     } else {
-        addMessage("デバッグ: アイテムを選択してください。", false);
+        addToast("デバッグ: アイテムを選択してください。", false);
     }
 }
 
@@ -848,12 +848,14 @@ function debugAddExp() {
         const ret = addExp(unit, parseInt(exp));
         if (ret) {
             result.push(ret);
+            addToast(`${unit.name}はレベルが上がった！<br>${ret.before} → ${ret.after}`
+                + `${ret.statChanges === "" ? "" : "<br>" + getLevelUpText(ret)}`
+                , 10000);
         }
     }
 
     saveGame(player);
     console.log(result);
-    addToast(JSON.stringify(result), 10000);
 }
 
 /**
@@ -867,12 +869,16 @@ function debugAddRankExp() {
         const ret = addRankExp(unit, parseInt(exp));
         if (ret) {
             result.push(ret);
+            const [statText, skillText] = getRankUpText(ret);
+            addToast(`${unit.name}は${JOBS[ret.jobId].name}のランクが上がった！<br>${ret.before} → ${ret.after}`
+                        + `${statText === "" ? "" : "<br>ステータスアップ：" + statText}`
+                        + `${skillText === "" ? "" : "<br>習得：" + skillText}`
+                        , 10000);
         }
     }
 
     saveGame(player);
     console.log(result);
-    addToast(JSON.stringify(result), 10000);
 }
 
 const debugStartCombatButton = document.getElementById("debug-start-combat");
@@ -939,7 +945,6 @@ function moveMenuTab(bottomMenuTabId) {
     }
     gameState.bottomMenuTabId = bottomMenuTabId;
 }
-
 
 /**
  * タイトル画面を表示する
@@ -1259,10 +1264,12 @@ async function resolveEventNode(nodeId) {
                 if (node.data.ref) {
                     point += Math.floor((buffedStatus[node.data.ref] ?? unit[node.data.ref]) * (node.data.rate / 100));
                 }
-                const mod_levels = addExp(unit, point);
-                if (mod_levels) {
-                    // TODO: レベルアップウィンドウを出してもいいかもね
-                    player.explore.event.data.message.push(`${JSON.stringify(mod_levels)}`);
+                const result = addExp(unit, point);
+                if (result) {
+                    player.explore.event.data.message.push(
+                        `${unit.name}はレベルが上がった！<br>${result.before} → ${result.after}`
+                        + `${result.statChanges === "" ? "" : "<br>" + getLevelUpText(result)}`
+                    );
                 }
             }
             next = node.next;
@@ -1282,8 +1289,10 @@ async function resolveEventNode(nodeId) {
                 }
                 const modRanks = addRankExp(unit, point);
                 if (modRanks) {
-                    // TODO: ランクアップウィンドウを出してもいいかもね
-                    player.explore.event.data.message.push(`${JSON.stringify(modRanks)}`);
+                    const [statText, skillText] = getRankUpText(modRanks);
+                    player.explore.event.data.message.push(`${unit.name}は${JOBS[modRanks.jobId].name}のランクが上がった！<br>${modRanks.before} → ${modRanks.after}`
+                                + `${statText === "" ? "" : "<br>ステータスアップ：" + statText}`
+                                + `${skillText === "" ? "" : "<br>習得：" + skillText}`);
                 }
             }
             next = node.next;
@@ -1674,85 +1683,11 @@ async function acquireItem(item) {
     if (player.itemSlot.length < 50) {
         item.uuid = self.crypto.randomUUID();
         player.itemSlot.push(item);
-        // addToast(`${item.name} を手に入れた！`);
         return true;
     } else {
-        // addToast(`持ち物がいっぱいだ！`);
+        addToast(`持ち物がいっぱいだ！`);
     }
 }
-
-// /**
-//  * アイテム破棄モーダルを開き、プレイヤーのアイテムを表示する。
-//  * プレイヤーがアイテムを破棄するか、キャンセルするまで待機する。
-//  * @returns {Promise<boolean>} アイテムが破棄された場合はtrue、キャンセルされた場合はfalseを返すPromise
-//  */
-// function openDiscardItemModal() {
-//     return new Promise(resolve => {
-//         discardItemList.innerHTML = ''; // リストをクリア
-//         selectedItemToDiscardIndex = -1; // 選択状態をリセット
-//         discardSelectedItemButton.disabled = true; // ボタンを無効化
-
-//         if (player.itemSlot.length === 0) {
-//             discardItemList.innerHTML = '<p>所持アイテムがありません。</p>';
-//             // アイテムがない場合は破棄できないので、自動的にキャンセル扱い
-//             addMessage("破棄できるアイテムがありません。アイテムの取得を諦めます。");
-//             discardItemModal.classList.add("hidden");
-//             resolve(false);
-//             return;
-//         }
-
-//         player.itemSlot.forEach((item, index) => {
-//             const listItem = document.createElement("li");
-//             listItem.textContent = `${item.name}`;// - ${item.description}
-//             listItem.dataset.index = index;
-//             listItem.addEventListener("click", () => {
-//                 // 選択状態を切り替える
-//                 if (selectedItemToDiscardIndex === index) {
-//                     selectedItemToDiscardIndex = -1;
-//                     listItem.classList.remove("selected");
-//                 } else {
-//                     // 他の選択を解除
-//                     const previouslySelected = discardItemList.querySelector(".selected");
-//                     if (previouslySelected) {
-//                         previouslySelected.classList.remove("selected");
-//                     }
-//                     selectedItemToDiscardIndex = index;
-//                     listItem.classList.add("selected");
-//                 }
-//                 discardSelectedItemButton.disabled = selectedItemToDiscardIndex === -1;
-//             });
-//             discardItemList.appendChild(listItem);
-//         });
-
-//         discardItemModal.classList.remove("hidden");
-//         document.body.style.overflow = "hidden"; // 背景のスクロールを禁止
-
-//         // 閉じるボタンのイベントリスナー (モーダルを閉じてキャンセル)
-//         const closeHandler = () => {
-//             discardItemModal.classList.add("hidden");
-//             document.body.style.overflow = "auto";
-//             discardCloseButton.removeEventListener("click", closeHandler);
-//             discardSelectedItemButton.removeEventListener("click", discardHandler);
-//             resolve(false); // キャンセル
-//         };
-//         discardCloseButton.addEventListener("click", closeHandler);
-
-//         // 破棄ボタンのイベントリスナー
-//         const discardHandler = () => {
-//             if (selectedItemToDiscardIndex !== -1) {
-//                 const discardedItem = player.itemSlot.splice(selectedItemToDiscardIndex, 1)[0];
-//                 addMessage(`${discardedItem.name} を捨てました。`);
-//                 discardItemModal.classList.add("hidden");
-//                 document.body.style.overflow = "auto";
-//                 saveGame(player);
-//                 discardCloseButton.removeEventListener("click", closeHandler);
-//                 discardSelectedItemButton.removeEventListener("click", discardHandler);
-//                 resolve(true); // 破棄成功
-//             }
-//         };
-//         discardSelectedItemButton.addEventListener("click", discardHandler);
-//     });
-// }
 
 /**
  * 転職
@@ -2200,7 +2135,8 @@ async function useItem(itemUuid, unitIds) {
                 let msg = `${target.name}は${mod}の経験値を得た！`;
                 if (ret) {
                     // TODO: レベルアップ結果解体
-                    msg += `<br>${JSON.stringify(ret)}`
+                    msg += `${target.name}はレベルが上がった！<br>${ret.before} → ${ret.after}`
+                        + `${ret.statChanges === "" ? "" : "<br>" + getLevelUpText(ret)}`;
                 }
                 addToast(msg, 5000);
             }
@@ -2211,7 +2147,10 @@ async function useItem(itemUuid, unitIds) {
                 let msg = `${target.name}は${mod}のランク経験値を得た！`;
                 if (ret) {
                     // TODO: ランクアップ結果解体
-                    msg += `<br>${JSON.stringify(ret)}`
+                    const [statText, skillText] = getRankUpText(ret);
+                    msg += `<br>${target.name}は${JOBS[ret.jobId].name}のランクが上がった！<br>${ret.before} → ${ret.after}`
+                        + `${statText === "" ? "" : "<br>ステータスアップ：" + statText}`
+                        + `${skillText === "" ? "" : "<br>習得：" + skillText}`
                 }
                 addToast(msg, 5000);
             }
@@ -2225,14 +2164,15 @@ async function useItem(itemUuid, unitIds) {
         player.itemSlot = player.itemSlot.filter(i => i.uuid !== item.uuid);
         const msg = `${item.name} を使い切った！`;
         addToast(msg);
-    } else {
-        const msg = `${item.name} を使用した！`;
-        addToast(msg);
     }
 
     saveGame(player);
 }
 
+/**
+ * 破棄
+ * @param {*} itemUuid 
+ */
 async function discardItem(itemUuid) {
     const item = player.itemSlot.find(item => item.uuid === itemUuid);
     player.itemSlot = player.itemSlot.filter(i => i.uuid !== item.uuid);
@@ -2332,6 +2272,32 @@ export function getSkillById(id) {
  */
 export function getUsableList(skills, timing) {
     return skills.filter(s => s.usableIn[timing]);
+}
+
+/**
+ * レベルアップデータから能力上昇一覧文字列を返す
+ * @param {Object} levelUpData
+ * @returns 
+ */
+export function getLevelUpText(levelUpData) {
+    return Object.entries(levelUpData.statChanges || {})
+                .map(([k, v]) => `${LABEL[k]} +${v}`)
+                .join(' | ');
+}
+
+/**
+ * ランクアップデータから能力上昇と習得スキル名一覧文字列を返す
+ * @param {Object} rankUpData 
+ * @returns 
+ */
+export function getRankUpText(rankUpData) {
+    return [
+        getLevelUpText(rankUpData)
+        ,
+        (rankUpData.learnSkills ?? [])
+                .map(v => getSkillById(v).name)
+                .join(' | ')
+    ];
 }
 
 /**
@@ -2638,6 +2604,7 @@ async function battleExecCommand() {
                 applyDamage(target, damage, true);
                 if (isCritical) {
                     addMessage(`クリティカル！！`);
+                    await sleep(100);
                 }
                 addMessage(`${target.name} に ${damage} のダメージ！`);
             } else {
@@ -2698,6 +2665,7 @@ async function battleExecCommand() {
                         applyDamage(target, damage, skill.category !== "magic");
                         if (isCritical) {
                             addMessage(`クリティカル！！`);
+                            await sleep(100);
                         }
                         addMessage(`${target.name} に ${damage} のダメージ！`);
                     } else {
@@ -3179,29 +3147,48 @@ function rollGrowth(rate) {
  * @returns 
  */
 function addExp(unit, exp) {
-    const before_level = unit.level;
+    const beforeLevel = unit.level;
     // 累積経験値
     unit.exp += exp;
 
     // 上昇量集計
-    const total_status_up = {};
+    const totalStatusUp = {};
     while (unit.exp >= getRequiredExp(unit.level)) {
         // レベルアップ
-        const status_up = levelUp(unit);
+        const statusUp = levelUp(unit);
         // 上昇量を加算
-        for (const [key, value] of Object.entries(status_up)) {
-            total_status_up[key] = (total_status_up[key] ?? 0) + value;
+        for (const [key, value] of Object.entries(statusUp)) {
+            totalStatusUp[key] = (totalStatusUp[key] ?? 0) + value;
         }
     }
-    if (before_level === unit.level) {
+    if (beforeLevel === unit.level) {
         return;
+    }
+
+    if (Object.keys(totalStatusUp).length >= 2) {
+        // 整列
+        const order = [
+            "maxHp",
+            "maxMp",
+            "atk",
+            "def",
+            "spd",
+            "int",
+            "dex",
+            "size",
+        ];
+
+        totalStatusUp = Object.fromEntries(
+            order.filter(key => key in totalStatusUp)
+                .map(key => [key, totalStatusUp[key]])
+        );
     }
 
     return {
         name: unit.name,
-        before: before_level,
+        before: beforeLevel,
         after: unit.level,
-        statChanges: total_status_up,
+        statChanges: totalStatusUp,
     };
 }
 
@@ -3231,28 +3218,47 @@ function addRankExp(unit, exp) {
     job_history.exp += exp;
 
     // 上昇量集計
-    const total_status_up = {};
-    const total_skills = [];
+    const totalStatusUp = {};
+    const totalSkills = [];
     while (job.maxRank > job_history.rank && job_history.exp >= getRequiredRankExp(unit.currentJob, job_history.rank)) {
         // レベルアップ
         const [status_up, skills] = rankUp(unit, job_history);
         // 上昇量を加算
         for (const [key, value] of Object.entries(status_up)) {
-            total_status_up[key] = (total_status_up[key] ?? 0) + value;
+            totalStatusUp[key] = (totalStatusUp[key] ?? 0) + value;
         }
-        total_skills.push(...skills);
+        totalSkills.push(...skills);
     }
     gameState.dirty = true;
     if (before_rank === job_history.rank) {
         return;
     }
 
+    if (Object.keys(totalStatusUp).length >= 2) {
+        // 整列
+        const order = [
+            "maxHp",
+            "maxMp",
+            "atk",
+            "def",
+            "spd",
+            "int",
+            "dex",
+            "size",
+        ];
+
+        totalStatusUp = Object.fromEntries(
+            order.filter(key => key in totalStatusUp)
+                .map(key => [key, totalStatusUp[key]])
+        );
+    }
+
     return {
         name: unit.name,
         before: before_rank,
         after: job_history.rank,
-        statChanges: Object.keys(total_status_up).length === 0 ? null : total_status_up,
-        learnSkills: Object.keys(total_skills).length === 0 ? null : total_skills,
+        statChanges: Object.keys(totalStatusUp).length === 0 ? null : totalStatusUp,
+        learnSkills: Object.keys(totalSkills).length === 0 ? null : totalSkills,
         jobId: unit.currentJob,
     };
 }

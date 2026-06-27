@@ -25,10 +25,23 @@ skills.sort((a, b) =>
 );
  */
 export const SKILL_ORDER = [
+    "domination",
+
+    "fire", "wind",
     "thunder", "full-thunder",
-    "heal",
+    "heal", "ra-heal",
+    "poi-cure",
+
     "slash", "power-slash", "full-slash",
-    "wait-and-see",
+    "poison-slash",
+    "aim-shot", "double-shot", "leg-shot",
+
+    "bite", "double-bite",
+    "poison-bite",
+    "charge",
+    "thrash",
+
+    "wait-and-see", "zoning-out",
 ];
 
 // 味方にするときに引き継がないスキル
@@ -280,7 +293,7 @@ export const SKILLS = [
                 add: 0,
                 armor_pierce: 0.00,
                 hit: 10, // 命中補正
-                critical: 100, // 会心補正
+                critical: 0, // 会心補正
             },
         ]
     },
@@ -307,6 +320,7 @@ export const SKILLS = [
                 add: 0,
                 armor_pierce: 0.00,
                 hit: 0,
+                critical: 0,
             },
         ]
     },
@@ -333,6 +347,7 @@ export const SKILLS = [
                 add: 0,
                 armor_pierce: 0.00,
                 hit: -20,
+                critical: 0,
             }
         ]
     },
@@ -340,7 +355,7 @@ export const SKILLS = [
         id: "aim-shot",
         name: "狙撃",
         cost: {
-            hp: 3
+            hp: 4
         },
         target_type: "alive_enemy_one",
         usableIn: {
@@ -356,9 +371,10 @@ export const SKILLS = [
                 element: "physical",
                 power: 1.10,
                 fix: 0,
-                add: 0,
+                add: 5,
                 armor_pierce: 0.33,
                 hit: 50,
+                critical: 20,
             },
         ]
     },
@@ -385,13 +401,14 @@ export const SKILLS = [
                 add: 0,
                 armor_pierce: 0.00,
                 hit: 30,
+                critical: 0,
             },
             {
                 type: "addState",
                 stateId: "stan",
                 min: 0,
                 max: 0,
-                fix: 25,
+                fix: 50,
                 turn: 1,
             }
         ]
@@ -419,6 +436,7 @@ export const SKILLS = [
                 add: 0,
                 armor_pierce: 0.00,
                 hit: 10,
+                critical: 0,
             },
             {
                 type: "addState",
@@ -453,6 +471,7 @@ export const SKILLS = [
                 add: 0,
                 armor_pierce: 0.00,
                 hit: -10,
+                critical: 0,
             },
             {
                 type: "damage",
@@ -543,6 +562,7 @@ export const SKILLS = [
                 add: 2,
                 armor_pierce: 0.00,
                 hit: 0,
+                critical: 0,
             },
         ]
     },
@@ -567,6 +587,7 @@ export const SKILLS = [
                 add: 2,
                 armor_pierce: 0.00,
                 hit: 0,
+                critical: 0,
             },
             {
                 type: "damage",
@@ -576,6 +597,7 @@ export const SKILLS = [
                 add: 2,
                 armor_pierce: 0.00,
                 hit: 0,
+                critical: 0,
             },
         ]
     },
@@ -600,6 +622,7 @@ export const SKILLS = [
                 add: 2,
                 armor_pierce: 0.00,
                 hit: 0,
+                critical: 0,
             },
             {
                 type: "addState",
@@ -634,6 +657,7 @@ export const SKILLS = [
                 add: 5,
                 armor_pierce: 0.00,
                 hit: 20,
+                critical: 0,
             },
         ]
     },
@@ -660,6 +684,7 @@ export const SKILLS = [
                 add: 5,
                 armor_pierce: 0.00,
                 hit: -35,
+                critical: -30,
             },
         ]
     },

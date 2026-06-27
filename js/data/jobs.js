@@ -335,7 +335,7 @@ export const JOBS = {
             },
             {
                 rank: 5,
-                learnSkills: ["leg-shot", "poison-slash"],
+                learnSkills: ["poison-slash"],
             },
             {
                 rank: 7,
@@ -344,6 +344,10 @@ export const JOBS = {
                     spd: 2,
                     tek: 2,
                 }
+            },
+            {
+                rank: 8,
+                learnSkills: ["leg-shot"],
             },
             {
                 rank: 10,

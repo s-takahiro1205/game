@@ -773,16 +773,15 @@ function renderBaseChangeJob() {
         const isUnlock = history || checkJobCondition(unit, job.unlockConditions);
         let conditions = !isUnlock ? getConditionText(job.unlockConditions) : "";
         const isPaid = history || (isUnlock && checkJobCondition(unit, job.cost));
-        const cost = !isPaid ? getConditionText(job.cost) : "";
+        const cost = getConditionText(job.cost);
         const isAllow = history || (isUnlock && checkJobCondition(unit, job.allowConditions));
         conditions += !isAllow ? getConditionText(job.allowConditions) : "";
         return `<div class="job-card${isCurrent ? ' current' : (isSelected ? " selected" : '')}${isAllow && isPaid ? '' : ' locked'}"${isAllow ? 'data-job-id="' + job.id + '"' : ""}>
             <div class="job-card-icon">${isAllow ? (job.icon ?? "") : ''}</div>
             <div class="job-card-name">${isAllow ? job.name : '🔒 '+ job.name}${rankText}</div>
             <table class="job-growth-table">${tableRows}</table>
-            <!-- ${!isCurrent && isAllow ? `<div class="job-cost">🪙 ${job.cost}</div>` : ''} -->
             ${!isUnlock || !isAllow ? `<div class="job-req">転職条件${conditions}</div>` : ''}
-            ${!isPaid ? `<div class="job-req">転職コスト${cost}</div>` : ''}
+            ${!history ? `<div class="job-req">転職コスト${cost}</div>` : ''}
         </div>`;
     }).join('');
 }
@@ -815,13 +814,14 @@ function getConditionText(conditions) {
 function renderBaseSelectExploreMap() {
     baseSelectExploreMapGrid.innerHTML = "";
     for (const map of gameState.selectExploreMap.mapList) {
-
+        const isClear = !!player.achievement?.mapClear[map.id];
         const btn = document.createElement("div");
         // TODO: highlightいらんかも
         btn.className = "base-btn highlight base-btn-wide";
         btn.dataset.mapId = map.id;
         // TODO: アイコンとか追加したら差し込み
         btn.innerHTML = `
+                    ${isClear ? `<div class="clear-map-badge">CLEAR!!</div>` : ""}
                     <span class="base-btn-icon"></span>
                     <div>
                         <div class="base-btn-label">${map.name}</div>

@@ -104,7 +104,7 @@ const unit_base = {
     ],
     battleStatus: [ // 状態異常
         // {// 例
-        //     id: "weakness",
+        //     type: "weakness",
         //     turn: 3
         // },
     ],
@@ -266,6 +266,11 @@ menuOverlay.addEventListener("click", async (e) => {
     if (e.target.id !== BOTTOM_SHEETS.menuOverlay) {
         return;
     }
+    // 装備変更中なら初期化して装備タブに変更
+    if(gameState.bottomMenuPartyTabSubType === "equipChange") {
+        gameState.equipChangeSlotId = null;
+        gameState.bottomMenuPartyTabSubType = "equip";
+    }
     closeBottomSheet();
 });
 // メニュータブ切り替え
@@ -288,7 +293,7 @@ menuTabPartyMemberTabArea.addEventListener("click", async (e) => {
         return;
     }
     // 装備変更中なら初期化して装備タブに変更
-    if(gameState.bottomMenuPartyTabSubType === "equipSet") {
+    if(gameState.bottomMenuPartyTabSubType === "equipChange") {
         gameState.equipChangeSlotId = null;
         gameState.bottomMenuPartyTabSubType = "equip";
     }
@@ -2005,7 +2010,7 @@ function systemHealAll(isHpMpHeal = true, isDieHeal = true) {
             unit.hp = buffedStatus.maxHp;
             unit.mp = buffedStatus.maxMp;
         }
-        unit.battleStatus = unit.battleStatus.filter(status => false);
+        unit.battleStatus = unit.battleStatus.filter(status => !isDieHeal && status.type === "dead");
     }
 }
 
@@ -2689,7 +2694,7 @@ function calculateHeal(attacker, target, power = 1.00, isMagic = false, fix = 0,
 
 /**
  * 支配判定
- * (基本値10 + Lv差|0) * (エネミー難易度1.00 + hp減少率) * 状態補正
+ * (基本値10 + Lv差|0) * (hp減少率 + 1.00) * (エネミー難易度1.00 + hp減少率/10) * 状態補正
  * @param {Object} actor 
  * @param {Object} target 
  */
@@ -2706,7 +2711,7 @@ async function checkDomination(actor, target) {
             stateRate += 0.20;
         }
     }
-    const chance = (base + lvDiff) * ((target.dominationResist ?? 0.01) + hpRemain) * stateRate;
+    const chance = (base + lvDiff) * (hpRemain + 1.00) * ((target.dominationResist ?? 0.01) + hpRemain / 10) * stateRate;
     addMessage(`支配の紋章が${target.name}に刻まれていく…`, false)
     addMessage(`支配強度：${Math.ceil(chance)}`);
     return roll(chance);

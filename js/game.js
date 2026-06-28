@@ -3193,7 +3193,7 @@ function battleResult(isVictory) {
         const getRate = (enemy) => {
             const st = calcAllStatus(enemy);
             return st.traits.length > 0 && st.traits.includes(t => t === TRAITS.mutant.id)
-                    ? 2
+                    ? 3
                     : 1
         };
         // 勝利時にリザルトを組み立ててセット
@@ -3460,7 +3460,7 @@ function levelUp(unit) {
         const trait = TRAITS[traitId];
         if (trait && trait.growthRates) {
             Object.entries(trait.growthRates).forEach(([stat, val]) => {
-                st[stat] += val;
+                growthRates[stat] += val;
             });
         }
     }

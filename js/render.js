@@ -1279,7 +1279,7 @@ function updatePartyStatus() {
                 const statusDef = BATTLE_STATUSES.find(_status => _status.id === status.type);
                 const color = statusDef.color ? `color: ${statusDef.color};` : "";
                 const isDown = status.value && status.value < 0 ? `display: inline-block; transform: scaleY(-1);` : "";
-                hpText += `<span${color || isDown ? ` style="${color + isDown}"` : ""}>${statusDef.icon + status.turn}</span>`;
+                hpText += `<span${color || isDown ? ` style="${color + isDown}"` : ""}>${statusDef.icon + (status.turn >= 0 ? status.turn : "")}</span>`;
             }
         }
         card.querySelector('.hp-label').innerHTML = hpText;
@@ -1322,7 +1322,7 @@ function updateEnemyStatus() {
                 const statusDef = BATTLE_STATUSES.find(_status => _status.id === status.type);
                 const color = statusDef.color ? `color: ${statusDef.color};` : "";
                 const isDown = status.value && status.value < 0 ? `display: inline-block; transform: scaleY(-1);` : "";
-                hpText += `<span${color || isDown ? ` style="${color + isDown}"` : ""}>${statusDef.icon + status.turn}</span>`;
+                hpText += `<span${color || isDown ? ` style="${color + isDown}"` : ""}>${statusDef.icon + (status.turn >= 0 ? status.turn : "")}</span>`;
             }
         }
         card.querySelector('.hp-label').innerHTML = hpText;

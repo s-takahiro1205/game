@@ -8,7 +8,7 @@ import { ENEMIES } from './data/enemies.js';
 import { IGNORE_PARTY_SKILL, SKILL_ORDER, SKILLS } from './data/skills.js';
 import { JOBS } from './data/jobs.js';
 import { scheduleRender } from './render.js';
-import { LABEL, SCREENS, SUB_SCREENS, BOTTOM_SHEETS, BOTTOM_MENU_TABS, TRAITS, BATTLE_STATUSES, DEBUFF_STATUS_MODIFIERS, SEXES, RACES, EQUIP_CATEGORIES, EQUIP_TAGS, SELECT_TARGET_TYPE, TARGET_TYPE_EXTRACTOR, isDead } from './const.js';
+import { LABEL, SCREENS, SUB_SCREENS, BOTTOM_SHEETS, BOTTOM_MENU_TABS, TRAITS, BATTLE_STATUSES, SEXES, RACES, EQUIP_CATEGORIES, EQUIP_TAGS, SELECT_TARGET_TYPE, TARGET_TYPE_EXTRACTOR, isDead } from './const.js';
 
 // ============================================================================
 // 1. グローバル変数とDOM要素
@@ -1839,24 +1839,30 @@ export function calcAllStatus(unit) {
         int: 1,
         dex: 1,
         size: 1,
-        hit: 1,
-        dodge: 1,
-        critical: 1,
-        multiAction: 1,
+        hit: 0,
+        dodge: 0,
+        critical: 0,
+        multiAction: 0,
     }
-    if (unit.statusEffects && unit.statusEffects.length >= 0) {
+
+    if (unit.battleStatus && unit.battleStatus.length >= 0) {
         // 状態変化を計算
-        for (const effect of unit.statusEffects) {
-            Object.entries(DEBUFF_STATUS_MODIFIERS[effect.type]).forEach(([stat, val]) => {
-                modifier[stat] += val;
-            });
+        for (const status of unit.battleStatus) {
+            if (Object.keys(modifier).includes(status.type)) {
+                modifier[status.type] += status.value / (["hit", "dodge", "critical", "multiAction"].includes(status.type) ? 1 : 100);
+            }
         }
     };
     Object.keys(st).map(stat => {
         if (stat === "traits") {
-            return st[stat];
+            return;
         }
-        return Math.max(0, Math.floor(st[stat] * modifier[stat]))
+        if (["hit", "dodge", "critical", "multiAction"].includes(stat)) {
+            st[stat] = Math.max(0, Math.floor(st[stat] + modifier[stat]));
+            return;
+        }
+        st[stat] = Math.max(0, Math.floor(st[stat] * modifier[stat]));
+        return;
     });
 
     if (unit.hp > st.maxHp) {
@@ -2795,6 +2801,8 @@ async function battleTurnStart() {
     gameState.battle.turnOrder = turnOrder.flatMap(unit =>
         Array(calcAllStatus(unit).multiAction ?? 1).fill(unit)
     );
+    await applyTraitEffect("turnStart");
+    applyBatleStatus("turnStart");
 
     await sleep(1000);
     await battleExecOrder();// 行動決定処理実行
@@ -3011,7 +3019,7 @@ async function battleExecCommand() {
                             turn *= magicRate(calcAllStatus(actor).int);
                             turn = Math.floor(turn);
                         }
-                        addBattleStatus(effect.stateId, target, turn);
+                        addBattleStatus(effect.stateId, target, turn, effect.value ?? null);
                     }
                 }
             } else if (effect.type === "recoverState") {
@@ -3092,7 +3100,7 @@ async function battleExecCommand() {
                     const is_success = roll(effect.fix);
                     if (is_success) {
                         const turn = effect.turn;
-                        addBattleStatus(effect.stateId, target, turn);
+                        addBattleStatus(effect.stateId, target, turn, effect.value ?? null);
                     }
                 }
             } else if (effect.type === "recoverState") {
@@ -3167,6 +3175,8 @@ async function battleFinishCommand() {
 async function battleTurnEnd() {
     console.log(5);
     gameState.battle.phase = "pending";// ログパネル描画
+    await applyTraitEffect("turnEnd");
+    applyBatleStatus("turnEnd");
     
     await sleep(750);
     await battleTurnStart();
@@ -3880,20 +3890,39 @@ function magicRate(int) {
  * @param {Object} target 
  * @param {number} turn 
  */
-function addBattleStatus(state_id, target, turn) {
+function addBattleStatus(state_id, target, turn, value = null) {
     const status_def = BATTLE_STATUSES.find(_status => _status.id === state_id);
     // メッセージ表示
-    const add_message = status_def.addMessageGen(target.name);
+    let add_message = "";
+    if (value < 0) {
+        add_message = status_def.addDownMessageGen(target.name);
+    } else {
+        add_message = status_def.addMessageGen(target.name);
+    }
     if (add_message) {
         addMessage(add_message);
     }
 
     const current_status = target.battleStatus.find(s => s.type === state_id);
     if (!current_status) {
-        target.battleStatus.push({type: state_id, turn: turn});
+        target.battleStatus.push({type: state_id, turn: turn, value: value});
     } else if (state_id !== "guard") {
-        //　防御以外ならターンを最大値に更新する
-        current_status.turn = Math.max(current_status.turn, turn);
+        //　防御以外かつ効果値がないならターンを最大値に更新する
+        if (current_status.value  === null || value === null) {
+            current_status.turn = Math.max(current_status.turn, turn);
+        } else if (current_status.value && value && current_status.value * value > 0) {
+            //　防御以外かつ効果値が同じ方向ならターンを最大値に更新する
+            current_status.turn = Math.max(current_status.turn, turn);
+        } else if (current_status.value && value && value - current_status.value >= 0) {
+            //　防御以外かつ効果値が与えられたものの方が大きいならターンを最大値に更新する
+            current_status.value = Math.max(current_status.value, value);
+        }
+
+        // 効果値を加算して上限修正
+        current_status.value = Math.max(current_status.value + value);
+        current_status.value = current_status.value >= 0
+            ? Math.min(status_def.limit, current_status.value)
+            : Math.max(-1 * status_def.limit, current_status.value);
     }
 }
 

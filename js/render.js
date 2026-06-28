@@ -603,6 +603,10 @@ function renderMenuItems() {
                     return `治癒:${LABEL[ef.stateId]} ${ef.fix}%`;
                 } else if(ef.type === "revive") {
                     return `蘇生 ${ef.fix}%`;
+                } else if(ef.type === "addExp") {
+                    return `経験値獲得 ${ef.fix}%`;
+                } else if(ef.type === "addRankExp") {
+                    return `ランク経験値獲得 ${ef.fix}%`;
                 }
                 return 
             }) : [];
@@ -1268,14 +1272,17 @@ function updatePartyStatus() {
             (unit.hp / buffedStatus.maxHp) * 100,
             0
         );
-        card.querySelector('.hp-label').textContent = `HP ${unit.hp}/${buffedStatus.maxHp}`;
+        let hpText = `HP ${unit.hp}/${buffedStatus.maxHp}`;
         // 状態異常アイコンの描画
         if (unit.battleStatus) {
             for (const status of unit.battleStatus) {
-                const status_def = BATTLE_STATUSES.find(_status => _status.id === status.type);
-                card.querySelector('.hp-label').textContent += status_def.icon;
+                const statusDef = BATTLE_STATUSES.find(_status => _status.id === status.type);
+                const color = statusDef.color ? `color: ${statusDef.color};` : "";
+                const isDown = status.value && status.value < 0 ? `display: inline-block; transform: scaleY(-1);` : "";
+                hpText += `<span${color || isDown ? ` style="${color + isDown}"` : ""}>${statusDef.icon + status.turn}</span>`;
             }
         }
+        card.querySelector('.hp-label').innerHTML = hpText;
         // 戦闘不能ならクラスを追加
         card.classList.toggle("dead", unit.battleStatus.some(s => s.type === "dead"));
 
@@ -1307,14 +1314,19 @@ function updateEnemyStatus() {
             (unit.hp / buffedStatus.maxHp) * 100,
             0
         );
-        card.querySelector('.hp-label').textContent =`HP ${unit.hp}/${buffedStatus.maxHp}`;
+
+        let hpText = `HP ${unit.hp}/${buffedStatus.maxHp}`;
         // 状態異常アイコンの描画
         if (unit.battleStatus) {
             for (const status of unit.battleStatus) {
-                const status_def = BATTLE_STATUSES.find(_status => _status.id === status.type);
-                card.querySelector('.hp-label').textContent += status_def.icon;
+                const statusDef = BATTLE_STATUSES.find(_status => _status.id === status.type);
+                const color = statusDef.color ? `color: ${statusDef.color};` : "";
+                const isDown = status.value && status.value < 0 ? `display: inline-block; transform: scaleY(-1);` : "";
+                hpText += `<span${color || isDown ? ` style="${color + isDown}"` : ""}>${statusDef.icon + status.turn}</span>`;
             }
         }
+        card.querySelector('.hp-label').innerHTML = hpText;
+
         // 戦闘不能ならクラスを追加
         card.classList.toggle("dead", unit.battleStatus.some(s => s.type === "dead"));
 

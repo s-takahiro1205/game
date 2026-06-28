@@ -6,6 +6,7 @@ import { RACES, SEXES, TRAITS } from '../const.js';
  * @typedef {object} Enemy
  * @property {string} id // 識別子UUID
  * @property {string} name
+ * @property {string} description
  * @property {number} level
  * @property {number} exp
  * @property {number} hp
@@ -13,7 +14,6 @@ import { RACES, SEXES, TRAITS } from '../const.js';
  * @property {number} mp
  * @property {number} maxMp
  * @property {number} atk
- * @property {string} description
  * @property {number} def
  * @property {number} spd
  * @property {number} int
@@ -33,6 +33,7 @@ export const ENEMIES = [
     {
         id: "mana-rabbit",
         name: "マナラビット",
+        description: "魔力によって大きく成長したウサギ。習性や食性には変化がないため、住処を荒らさない限り脅威にはならない。",
         level: 1,
         exp: 5,
         hp: 8,
@@ -40,7 +41,6 @@ export const ENEMIES = [
         mp: 15,
         maxMp: 15,
         atk: 3,
-        description: "魔力によって大きく成長したウサギ。習性や食性には変化がないため、住処を荒らさない限り脅威にはならない。",
         def: 1,
         spd: 4,
         int: 8,
@@ -67,6 +67,7 @@ export const ENEMIES = [
     {
         id: "starving-dog",
         name: "飢えた野犬",
+        description: "鋭い爪と牙を持つ、獰猛な獣だ。",
         level: 2,
         exp: 3,
         hp: 15,
@@ -74,7 +75,6 @@ export const ENEMIES = [
         mp: 15,
         maxMp: 15,
         atk: 5,
-        description: "鋭い爪と牙を持つ、獰猛な獣だ。",
         def: 4,
         spd: 4,
         int: 2,
@@ -101,6 +101,7 @@ export const ENEMIES = [
     {
         id: "rotting-crow",
         name: "ロッティバード",
+        description: "死肉を漁る不吉な烏。群れると危険だ。",
         level: 1,
         exp: 2,
         hp: 10,
@@ -108,7 +109,6 @@ export const ENEMIES = [
         mp: 0,
         maxMp: 0,
         atk: 5,
-        description: "死肉を漁る不吉な烏。群れると危険だ。",
         def: 3,
         spd: 5,
         int: 1,
@@ -135,6 +135,7 @@ export const ENEMIES = [
     {
         id: "twisted-rat",
         name: "ねじれネズミ",
+        description: "異常な成長を遂げ幾重にも体が捻じれた巨大な鼠。",
         level: 1,
         exp: 3,
         hp: 12,
@@ -142,7 +143,6 @@ export const ENEMIES = [
         mp: 0,
         maxMp: 0,
         atk: 4,
-        description: "異常な成長を遂げ幾重にも体が捻じれた巨大な鼠。",
         def: 2,
         spd: 4,
         int: 1,
@@ -169,6 +169,7 @@ export const ENEMIES = [
     {
         id: "forest-ghoul",
         name: "フォレストグール",
+        description: "行き場を失い森を徘徊する亡者。見かけたら天に召してあげよう。",
         level: 4,
         exp: 6,
         hp: 26,
@@ -176,7 +177,6 @@ export const ENEMIES = [
         mp: 5,
         maxMp: 5,
         atk: 8,
-        description: "行き場を失い森を徘徊する亡者。見かけたら天に召してあげよう。",
         def: 8,
         spd: 3,
         int: 2,
@@ -211,6 +211,7 @@ export const ENEMIES = [
     {
         id: "thorn-spider",
         name: "トゲグモ",
+        description: "鋭い棘に覆われた大型の毒蜘蛛。",
         level: 3,
         exp: 4,
         hp: 14,
@@ -218,7 +219,6 @@ export const ENEMIES = [
         mp: 0,
         maxMp: 0,
         atk: 8,
-        description: "鋭い棘に覆われた大型の毒蜘蛛。",
         def: 5,
         spd: 6,
         int: 1,
@@ -245,6 +245,7 @@ export const ENEMIES = [
     {
         id: "moving-mushroom",
         name: "うごくキノコ",
+        description: "魔力を浴びて運動能力を得たキノコ。強い生命力を持ち、通常のキノコよりも美味しいとされる。",
         level: 3,
         exp: 4,
         hp: 24,
@@ -252,7 +253,6 @@ export const ENEMIES = [
         mp: 0,
         maxMp: 0,
         atk: 6,
-        description: "魔力を浴びて運動能力を得たキノコ。強い生命力を持ち、通常のキノコよりも美味しいとされる。",
         def: 4,
         spd: 1,
         int: 1,
@@ -279,6 +279,7 @@ export const ENEMIES = [
     {
         id: "wild-boar",
         name: "あばれイノシシ",
+        description: "ひどく発達した筋肉を持つ狂暴な猪。",
         level: 5,
         exp: 8,
         hp: 35,
@@ -286,7 +287,6 @@ export const ENEMIES = [
         mp: 0,
         maxMp: 0,
         atk: 13,
-        description: "ひどく発達した筋肉を持つ狂暴な猪。",
         def: 11,
         spd: 3,
         int: 1,
@@ -317,6 +317,7 @@ export const ENEMIES = [
     {
         id: "oak",
         name: "オーク",
+        description: "森に住処を作り生き物を食い荒らす野蛮者だ。",
         level: 5,
         exp: 4,
         hp: 21,
@@ -324,7 +325,6 @@ export const ENEMIES = [
         mp: 0,
         maxMp: 0,
         atk: 8,
-        description: "森に住処を作り生き物を食い荒らす野蛮者だ。",
         def: 5,
         spd: 2,
         int: 1,
@@ -356,6 +356,7 @@ export const ENEMIES = [
     {
         id: "blood-wolf",
         name: "ブラッドウルフ",
+        description: "俊敏な動きで獲物の体をかみちぎる獰猛な狼。",
         level: 8,
         exp: 9,
         hp: 38,
@@ -363,7 +364,6 @@ export const ENEMIES = [
         mp: 0,
         maxMp: 0,
         atk: 15,
-        description: "俊敏な動きで獲物の体をかみちぎる獰猛な狼。",
         def: 8,
         spd: 12,
         int: 1,
@@ -390,6 +390,7 @@ export const ENEMIES = [
     {
         id: "moss-golem",
         name: "モスゴーレム",
+        description: "苔に覆われた岩塊に魔力が集まり、モンスターと化した。倒した獲物の上に陣取って栄養を吸収する。",
         level: 7,
         exp: 18,
         hp: 48,
@@ -397,7 +398,6 @@ export const ENEMIES = [
         mp: 10,
         maxMp: 10,
         atk: 20,
-        description: "苔に覆われた岩塊に魔力が集まり、モンスターと化した。倒した獲物の上に陣取って栄養を吸収する。",
         def: 24,
         spd: 2,
         int: 4,
@@ -432,6 +432,7 @@ export const ENEMIES = [
     {
         id: "rogue-bandit",
         name: "ならず者の盗賊",
+        description: "数の利を活かそうとする、卑劣な盗賊だ。",
         level: 4,
         exp: 10,
         hp: 32,
@@ -439,7 +440,6 @@ export const ENEMIES = [
         mp: 20,
         maxMp: 20,
         atk: 9,
-        description: "数の利を活かそうとする、卑劣な盗賊だ。",
         def: 5,
         spd: 6,
         int: 1,
@@ -478,6 +478,7 @@ export const ENEMIES = [
     {
         id: "wandering-ghost",
         name: "彷徨う亡霊",
+        description: "実体のない怨念の塊だ。",
         level: 4,
         exp: 10,
         hp: 25,
@@ -485,7 +486,6 @@ export const ENEMIES = [
         mp: 25,
         maxMp: 25,
         atk: 3,
-        description: "実体のない怨念の塊だ。",
         def: 3,
         spd: 2,
         int: 10,
@@ -516,6 +516,7 @@ export const ENEMIES = [
     {
         id: "guardian-of-the-ruins",
         name: "廃墟の番人",
+        description: "守るものを失った悲しき守護者。あるべき場所へ返してあげよう。",
         level: 5,
         exp: 30,
         hp: 60,
@@ -523,7 +524,6 @@ export const ENEMIES = [
         mp: 0,
         maxMp: 0,
         atk: 16,
-        description: "守るものを失った悲しき守護者。あるべき場所へ返してあげよう。",
         def: 18,
         spd: 4,
         int: 1,
@@ -556,6 +556,7 @@ export const ENEMIES = [
     {
         id: "little-spirit-of-learning",
         name: "経験の妖精",
+        description: "成長のオーブを食べてしまった幼い妖精。成長の日を迎えるまで、外敵から逃げ回る羽目になってしまった。",
         level: 5,
         exp: 200,
         hp: 6,
@@ -563,7 +564,6 @@ export const ENEMIES = [
         mp: 1,
         maxMp: 1,
         atk: 1,
-        description: "成長のオーブを食べてしまった幼い妖精。成長の日を迎えるまで、外敵から逃げ回る羽目になってしまった。",
         def: 1,
         spd: 10,
         int: 1,
@@ -590,6 +590,7 @@ export const ENEMIES = [
     {
         id: "little-spirit-of-skill",
         name: "技能の妖精",
+        description: "経験のオーブを食べてしまった幼い妖精。成長の日を迎えるまで、外敵から逃げ回る羽目になってしまった。",
         level: 5,
         exp: 5,
         rankExp: 20,
@@ -598,7 +599,6 @@ export const ENEMIES = [
         mp: 1,
         maxMp: 1,
         atk: 1,
-        description: "経験のオーブを食べてしまった幼い妖精。成長の日を迎えるまで、外敵から逃げ回る羽目になってしまった。",
         def: 1,
         spd: 10,
         int: 1,
@@ -627,6 +627,7 @@ export const ENEMIES = [
     {
         id: "guardian-of-the-ruin",
         name: "祠の番人",
+        description: "森の祠を守っていた静かなる武人。加護は切れてもその繋がりは消えず。",
         level: 5,
         exp: 25,
         hp: 65,
@@ -634,7 +635,6 @@ export const ENEMIES = [
         mp: 20,
         maxMp: 20,
         atk: 7,
-        description: "森の祠を守っていた静かなる武人。加護は切れてもその繋がりは消えず。",
         def: 11,
         spd: 3,
         int: 3,
@@ -656,6 +656,7 @@ export const ENEMIES = [
     {
         id: "big-oak",
         name: "ビッグオーク",
+        description: "森に住処を作り生き物を食い荒らす野蛮者のリーダーだ。どの町でも見かけ次第駆除するよう警告されている。",
         level: 8,
         exp: 18,
         hp: 42,
@@ -663,7 +664,6 @@ export const ENEMIES = [
         mp: 0,
         maxMp: 0,
         atk: 16,
-        description: "森に住処を作り生き物を食い荒らす野蛮者のリーダーだ。どの町でも見かけ次第駆除するよう警告されている。",
         def: 10,
         spd: 4,
         int: 1,
@@ -702,6 +702,7 @@ export const ENEMIES = [
     {
         id: "guardian-of-the-forest",
         name: "森の守護者",
+        description: "住処を荒らすものを容赦なく排除する、森の均衡を守る存在だ。",
         level: 10,
         exp: 28,
         hp: 62,
@@ -709,7 +710,6 @@ export const ENEMIES = [
         mp: 20,
         maxMp: 20,
         atk: 25,
-        description: "住処を荒らすものを容赦なく排除する、森の均衡を守る存在だ。",
         def: 16,
         spd: 18,
         int: 19,
@@ -750,6 +750,7 @@ export const ENEMIES = [
     {
         id: "river-rat",
         name: "リバーラット",
+        description: "水かきの発達した素早いネズミ。集団で現れてはいたるところを齧り尽くす。",
         level: 5,
         exp: 5,
         hp: 25,
@@ -757,7 +758,6 @@ export const ENEMIES = [
         mp: 0,
         maxMp: 0,
         atk: 9,
-        description: "水かきの発達した素早いネズミ。集団で現れてはいたるところを齧り尽くす。",
         def: 6,
         spd: 7,
         int: 5,
@@ -784,6 +784,7 @@ export const ENEMIES = [
     {
         id: "reed-frog",
         name: "リードフロッグ",
+        description: "葦に隠れて獲物を待つ大型のカエル。",
         level: 6,
         exp: 5,
         hp: 36,
@@ -791,7 +792,6 @@ export const ENEMIES = [
         mp: 0,
         maxMp: 0,
         atk: 7,
-        description: "葦に隠れて獲物を待つ大型のカエル。",
         def: 9,
         spd: 6,
         int: 4,
@@ -818,6 +818,7 @@ export const ENEMIES = [
     {
         id: "leese-fish",
         name: "リースフィッシュ",
+        description: "普段は群れで川の中を泳いでいるが、興奮状態になると大きく飛び上がり周りの生物に噛みつく。",
         level: 7,
         exp: 4,
         hp: 24,
@@ -825,7 +826,6 @@ export const ENEMIES = [
         mp: 0,
         maxMp: 0,
         atk: 11,
-        description: "普段は群れで川の中を泳いでいるが、興奮状態になると大きく飛び上がり周りの生物に噛みつく。",
         def: 3,
         spd: 7,
         int: 1,
@@ -852,6 +852,7 @@ export const ENEMIES = [
     {
         id: "giant-crab",
         name: "ジャイアントクラブ",
+        description: "筋肉が発達し大型化した蟹。地上に出てきて生き物を襲うこともしばしば。",
         level: 8,
         exp: 7,
         hp: 38,
@@ -859,7 +860,6 @@ export const ENEMIES = [
         mp: 0,
         maxMp: 0,
         atk: 11,
-        description: "筋肉が発達し大型化した蟹。地上に出てきて生き物を襲うこともしばしば。",
         def: 18,
         spd: 2,
         int: 2,
@@ -886,6 +886,7 @@ export const ENEMIES = [
     {
         id: "aqua-sprite",
         name: "アクアスプライト",
+        description: "水辺に現れる小さな水の精。敵対者には容赦なく水の魔法を浴びせる。",
         level: 8,
         exp: 12,
         hp: 32,
@@ -893,7 +894,6 @@ export const ENEMIES = [
         mp: 0,
         maxMp: 0,
         atk: 8,
-        description: "水辺に現れる小さな水の精。敵対者には容赦なく水の魔法を浴びせる。",
         def: 5,
         spd: 11,
         int: 16,
@@ -921,6 +921,7 @@ export const ENEMIES = [
     {
         id: "killer-flog",
         name: "キラーフロッグ",
+        description: "あまりにも大きいカエル。その巨体を生かした叩きつけは何人もの冒険者を葬ってきた。",
         level: 12,
         exp: 25,
         hp: 69,
@@ -928,7 +929,6 @@ export const ENEMIES = [
         mp: 0,
         maxMp: 0,
         atk: 23,
-        description: "あまりにも大きいカエル。その巨体を生かした叩きつけは何人もの冒険者を葬ってきた。",
         def: 15,
         spd: 8,
         int: 8,
@@ -951,6 +951,7 @@ export const ENEMIES = [
     {
         id: "leese-snake",
         name: "リースオロチ",
+        description: "リース河近辺に生息する大蛇。致死性の毒をもつため民間人は近づいてはならない。",
         level: 11,
         exp: 20,
         hp: 49,
@@ -958,7 +959,6 @@ export const ENEMIES = [
         mp: 0,
         maxMp: 0,
         atk: 20,
-        description: "リース河近辺に生息する大蛇。致死性の毒をもつため民間人は近づいてはならない。",
         def: 12,
         spd: 11,
         int: 12,
@@ -982,6 +982,7 @@ export const ENEMIES = [
     {
         id: "delta-croco",
         name: "デルタクロコ",
+        description: "リース河に生息する大鰐。この環境における生態系の頂点であり、すべての生物はこのモンスターのエサでしかない。",
         level: 15,
         exp: 48,
         hp: 88,
@@ -989,7 +990,6 @@ export const ENEMIES = [
         mp: 0,
         maxMp: 0,
         atk: 27,
-        description: "リース河に生息する大鰐。この環境における生態系の頂点であり、すべての生物はこのモンスターのエサでしかない。",
         def: 28,
         spd: 10,
         int: 7,

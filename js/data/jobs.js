@@ -38,7 +38,7 @@ export const JOBS = {
         rankBonuses: [// ランクボーナス
             {
                 rank: 2,
-                learnSkills: ["slash"],
+                learnSkills: ["slash", "build-up"],
                 status: {
                     maxHp: 5,
                     atk: 3,
@@ -322,7 +322,7 @@ export const JOBS = {
         rankBonuses: [// ランクボーナス
             {
                 rank: 2,
-                learnSkills: ["aim-shot"],
+                learnSkills: ["aim-shot", "with-draw"],
                 status: {
                     maxHp: 3,
                     spd: 2,

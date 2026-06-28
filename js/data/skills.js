@@ -508,31 +508,217 @@ export const SKILLS = [
             },
         ]
     },
-    // { 回避を作って->状態異常追加してから
-    //     id: "with-draw",
-    //     name: "回避体制",
-    //     cost: {
-    //         hp: 8
-    //     },
-    //     target_type: "own",
-    //     usableIn: {
-    //         home: false,
-    //         explore: false,
-    //         battle: true,
-    //     },
-    //     category: "special",
-    //     type: "support",
-    //     effects: [
-    //         {
-    //             type: "addState",
-    //             stateId: "avoidStance",
-    //             min: 0,
-    //             max: 0,
-    //             fix: 100,
-    //             turn: 6,
-    //         }
-    //     ]
-    // },
+
+    // 補助戦技
+    {
+        id: "build-up",
+        name: "力溜め",
+        cost: {
+            hp: 1
+        },
+        target_type: "own",
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: true,
+        },
+        category: "combat",
+        type: "attack",
+        effects: [
+            {
+                type: "addState",
+                stateId: "atk",
+                min: 0,
+                max: 0,
+                fix: 100,
+                turn: 5,
+                value: 20,
+            },
+        ]
+    },
+    {
+        id: "defensive-stance",
+        name: "防御態勢",
+        cost: {
+            hp: 1
+        },
+        target_type: "own",
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: true,
+        },
+        category: "combat",
+        type: "attack",
+        effects: [
+            {
+                type: "addState",
+                stateId: "def",
+                min: 0,
+                max: 0,
+                fix: 100,
+                turn: 5,
+                value: 20,
+            },
+        ]
+    },
+    {
+        id: "concentration",
+        name: "集中",
+        cost: {
+            hp: 1
+        },
+        target_type: "own",
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: true,
+        },
+        category: "special",
+        type: "support",
+        effects: [
+            {
+                type: "addState",
+                stateId: "int",
+                min: 0,
+                max: 0,
+                fix: 100,
+                turn: 5,
+                value: 50,
+            }
+        ]
+    },
+    {
+        id: "sprint",
+        name: "疾走",
+        cost: {
+            hp: 1
+        },
+        target_type: "own",
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: true,
+        },
+        category: "special",
+        type: "support",
+        effects: [
+            {
+                type: "addState",
+                stateId: "spd",
+                min: 0,
+                max: 0,
+                fix: 100,
+                turn: 5,
+                value: 20,
+            }
+        ]
+    },
+    {
+        id: "observation",
+        name: "観察",
+        cost: {
+            hp: 1
+        },
+        target_type: "own",
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: true,
+        },
+        category: "special",
+        type: "support",
+        effects: [
+            {
+                type: "addState",
+                stateId: "dex",
+                min: 0,
+                max: 0,
+                fix: 100,
+                turn: 5,
+                value: 20,
+            }
+        ]
+    },
+    {
+        id: "aim",
+        name: "狙う",
+        cost: {
+            hp: 1
+        },
+        target_type: "own",
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: true,
+        },
+        category: "special",
+        type: "support",
+        effects: [
+            {
+                type: "addState",
+                stateId: "hit",
+                min: 0,
+                max: 0,
+                fix: 100,
+                turn: 6,
+                value: 30,
+            }
+        ]
+    },
+    {
+        id: "with-draw",
+        name: "回避姿勢",
+        cost: {
+            hp: 1
+        },
+        target_type: "own",
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: true,
+        },
+        category: "special",
+        type: "support",
+        effects: [
+            {
+                type: "addState",
+                stateId: "dodge",
+                min: 0,
+                max: 0,
+                fix: 100,
+                turn: 6,
+                value: 30,
+            }
+        ]
+    },
+    {
+        id: "critical-stance",
+        name: "必殺の構え",
+        cost: {
+            hp: 1
+        },
+        target_type: "own",
+        usableIn: {
+            home: false,
+            explore: false,
+            battle: true,
+        },
+        category: "special",
+        type: "support",
+        effects: [
+            {
+                type: "addState",
+                stateId: "critical",
+                min: 0,
+                max: 0,
+                fix: 100,
+                turn: 3,
+                value: 30,
+            }
+        ]
+    },
+
 
     // 敵専用
     {// 行動が選択できなかったエネミー用

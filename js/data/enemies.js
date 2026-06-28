@@ -385,7 +385,7 @@ export const ENEMIES = [
         race: RACES.monster.id,
         sex: null,
         traits: [],
-        dominationResist: 0.40,
+        dominationResist: 0.10,
     },
     {
         id: "moss-golem",
@@ -427,7 +427,7 @@ export const ENEMIES = [
         race: RACES.monster.id,
         sex: null,
         traits: [],
-        dominationResist: 0.40,
+        dominationResist: 0.10,
     },
     {
         id: "rogue-bandit",
@@ -473,7 +473,7 @@ export const ENEMIES = [
         race: RACES.human.id,
         sex: null,
         traits: [],
-        dominationResist: 0.05,
+        dominationResist: 0.03,
     },
     {
         id: "wandering-ghost",
@@ -511,7 +511,7 @@ export const ENEMIES = [
         race: RACES.monster.id,
         sex: null,
         traits: [],
-        dominationResist: 0.30,
+        dominationResist: 0.10,
     },
     {
         id: "guardian-of-the-ruins",

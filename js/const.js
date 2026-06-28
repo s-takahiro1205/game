@@ -7,23 +7,22 @@ import { calcAllStatus } from './game.js';
 export const SCREENS = {
     titleScreen: "title-screen",// タイトル
     characterCreationScreen: "character-creation-screen",// 主人公作成
-
     baseScreen: "base-screen",// 拠点
-    tavernScreen: "tavern-screen",// 酒場
-    mansionScreen: "mansion-screen",// 待機所
-    storageScreen: "storage-screen",// 倉庫
-    changeJobScreen: "change-job-screen",// 転職
-    shopScreen: "shop-screen",// ショップ
-    questBoardScreen: "quest-board-screen",// 依頼板
 
     exploreScreen: "explore-screen",// 探索
     battleScreen: "battle-screen",// 戦闘
 };
 
 export const SUB_SCREENS = {
+    tavernScreen: "tavern-screen",// 酒場
+    mansionScreen: "mansion-screen",// 待機所
+    storageScreen: "storage-screen",// 倉庫
     changeJobScreen: "change-job-screen",// 転職
+    shopScreen: "shop-screen",// ショップ
+    questBoardScreen: "quest-board-screen",// 依頼板
     baseSelectExploreMapScreen: "base-select-explore-map-screen",// 探索マップ選択
-    exploreEventScreen: "explore-event-screen",// 探索マップ選択
+
+    exploreEventScreen: "explore-event-screen",// 探索イベント選択
     exploreClearScreen: "explore-clear-screen",// 探索クリア
     exploreGameOverScreen: "explore-game-over-screen",// 探索敗北
 };

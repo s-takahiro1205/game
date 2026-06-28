@@ -116,6 +116,7 @@ export let player = new Proxy({
         money: 0,
         itemSlot: [],// 最大20
         party: [],// 最大4
+        standby: [],
         explore: { //proxyを剥がしているのはsaveできなくなるため dirtyで反映かな
             mapId: "lostForest",// 現在マップのid
             map: [[]],// マップ入場時のランダム生成タイルデータ保存
@@ -171,6 +172,11 @@ export const gameState = new Proxy({
         openModal: null,// null | "menu" | "item_discard",
         menuTab: "status",// "status" | "items" | "equipments",
 
+        // 編成画面
+        mansion: {
+            selectedIds: [],
+            formationMode: false,
+        },
         // 転職画面
         changeJob: {
             unitId: null,
@@ -298,6 +304,144 @@ menuTabPartyMemberSubTabArea.addEventListener("click", async (e) => {
     gameState.bottomMenuPartyTabSubType = choice.dataset.subType;
 });
 
+// 待機所
+const baseBtnMansion = document.getElementById("base-btn-mansion");
+baseBtnMansion.addEventListener("click", async () => {
+    gameState.mansion.selectedIds = [];
+    gameState.mansion.formationMode = false;
+    await sleep(100);
+    moveScreen(SCREENS.baseScreen, SUB_SCREENS.mansionScreen)
+});
+
+const formationStart = document.getElementById("formation-start");
+formationStart.addEventListener("click", async () => {
+    gameState.mansion.selectedIds = player.party.map(unit => unit.id);
+    gameState.mansion.formationMode = true;
+    gameState.dirty = true;
+    await sleep(100);
+    // moveScreen(SCREENS.baseScreen, SUB_SCREENS.mansionScreen)
+});
+
+const formationCancel = document.getElementById("formation-cancel");
+formationCancel.addEventListener("click", async () => {
+    gameState.mansion.selectedIds = [];
+    gameState.mansion.formationMode = false;
+    gameState.dirty = true;
+    await sleep(100);
+    // moveScreen(SCREENS.baseScreen, SUB_SCREENS.mansionScreen)
+});
+
+const formationEnd = document.getElementById("formation-end");
+formationEnd.addEventListener("click", async () => {
+    // TODO: 本当にこれが最適か？
+    if (formationEnd.classList.contains("disabled")) {
+        return;
+    }
+    // パーティーを待機に加え、選択IDにて待機所からパーティーに引き抜く
+    player.standby.push(...player.party);
+    player.party = gameState.mansion.selectedIds.map(unitId => {
+        return player.standby.find(unit => unit.id === unitId);
+    });
+    player.standby = player.standby.filter(unit => !player.party.some(_unit => _unit.id === unit.id));
+
+    addToast(`パーティを編成しました`);
+    gameState.mansion.selectedIds = [];
+    gameState.mansion.formationMode = false;
+    gameState.dirty = true;
+    await sleep(100);
+    saveGame(player);
+});
+
+const mansionScreenBack = document.getElementById("mansion-screen-back");
+mansionScreenBack.addEventListener("click", async () => {
+    await sleep(100);
+    backSubScreen();
+});
+
+// 編成ユニット選択
+const standbyGrid = document.getElementById("standby-grid");
+standbyGrid.addEventListener("click", async (e) => {
+    const choice = e.target.closest('.standby-card.selectable');
+    if (!choice || !choice.dataset.unitId) {
+        return;
+    }
+    if(gameState.mansion.selectedIds.includes(choice.dataset.unitId)) {
+        gameState.mansion.selectedIds = gameState.mansion.selectedIds.filter(id => id !== choice.dataset.unitId);
+    } else if (gameState.mansion.selectedIds.length >= 4) {
+        // Do nothing
+    } else {
+        gameState.mansion.selectedIds.push(choice.dataset.unitId);
+    }
+    gameState.dirty = true;
+});
+
+/**
+ * デバッグ用　強制参加
+ * @returns 
+ */
+function debugKanyu() {
+    const partyCount = player.party.length;
+    if (partyCount >= 4) {
+        addToast("パーティーがいっぱいです。");
+        return;
+    }
+
+    const unitData = {
+        id: self.crypto.randomUUID(),
+        level: 1,
+        exp: 0,
+        multiAction: 1,
+        sex: SEXES.female.id,
+        race: RACES.human.id,
+        currentJob: null,
+    }
+
+    if (partyCount === 3) {
+        unitData.jobId = "scout";
+        unitData.name = "セッコ";
+        unitData.maxHp = 28;
+        unitData.maxMp = 0;
+        unitData.atk = 12;
+        unitData.def = 3;
+        unitData.spd = 8;
+        unitData.int = 3;
+        unitData.dex = 8;
+        unitData.size = 4;
+    } else if (partyCount === 2) {
+        unitData.jobId = "mage";
+        unitData.name = "マホカ";
+        unitData.maxHp = 23;
+        unitData.maxMp = 30;
+        unitData.atk = 3;
+        unitData.def = 0;
+        unitData.spd = 3;
+        unitData.int = 18;
+        unitData.dex = 3;
+        unitData.size = 3;
+    } else if (partyCount === 1) {
+        unitData.jobId = "priest";
+        unitData.name = "ソウ";
+        unitData.maxHp = 28;
+        unitData.maxMp = 20;
+        unitData.atk = 1;
+        unitData.def = 0;
+        unitData.spd = 4;
+        unitData.int = 13;
+        unitData.dex = 3;
+        unitData.size = 3;
+    }
+
+    const unit = createUnit(unitData);
+    addToast(`${unit.name} が加入しました！`, 5000);
+    // player.party.push(unit);
+    player.standby.push(unit);
+
+    gameState.dirty = true;
+
+    console.log("Player initialized:", player);
+    saveGame(player);
+}
+
 // 転職
 const baseBtnChangeJob = document.getElementById("base-btn-change-job");
 baseBtnChangeJob.addEventListener("click", async () => {
@@ -359,71 +503,6 @@ changeJobConfirm.addEventListener("click", async (e) => {
     } else {
         addToast(`条件を満たしていません`);
     }
-});
-
-// 待機所
-const baseBtnMansion = document.getElementById("base-btn-mansion");
-baseBtnMansion.addEventListener("click", () => {
-    const partyCount = player.party.length;
-    if (partyCount >= 4) {
-        addToast("パーティーがいっぱいです。");
-        return;
-    }
-
-    const unitData = {
-        id: self.crypto.randomUUID(),
-        level: 1,
-        exp: 0,
-        multiAction: 1,
-        sex: SEXES.female.id,
-        race: RACES.human.id,
-        currentJob: null,
-    }
-
-    if (partyCount === 3) {
-        unitData.jobId = "scout";
-        unitData.name = "セッコ";
-        unitData.maxHp = 28;
-        unitData.maxMp = 0;
-        unitData.atk = 12;
-        unitData.def = 3;
-        unitData.spd = 8;
-        unitData.int = 3;
-        unitData.dex = 8;
-        unitData.size = 4;
-    } else if (partyCount === 2) {
-        unitData.jobId = "mage";
-        unitData.name = "マホカ";
-        unitData.maxHp = 23;
-        unitData.maxMp = 30;
-        unitData.atk = 3;
-        unitData.def = 0;
-        unitData.spd = 3;
-        unitData.int = 18;
-        unitData.dex = 3;
-        unitData.size = 3;
-    } else if (partyCount === 1) {
-        unitData.jobId = "priest";
-        unitData.name = "ソウ";
-        unitData.maxHp = 28;
-        unitData.maxMp = 20;
-        unitData.atk = 1;
-        unitData.def = 0;
-        unitData.spd = 4;
-        unitData.int = 13;
-        unitData.dex = 3;
-        unitData.size = 3;
-    }
-
-    const unit = createUnit(unitData);
-    addToast(`${unit.name} が加入しました！`, 5000);
-    player.party.push(unit);
-
-    gameState.dirty = true;
-
-    console.log("Player initialized:", player);
-    saveGame(player);
-
 });
 
 // マップ選択
@@ -695,7 +774,7 @@ function modalDiscardItem(dataset) {
 
 // モーダル：名前変更
 function modalChangeUnitName(name) {
-    const unit = player.party.find(u => u.id === gameState.modal.unitId);
+    const unit = [...player.party, ...player.standby].find(u => u.id === gameState.modal.unitId);
     if (!unit) {
         throw new Error(`Unknown unit id: ${gameState.modal.unitId}`)
     }
@@ -3297,17 +3376,19 @@ async function battleEnd() {
             }
         }
         for (const domination of result.dominations) {
-            if (player.party.length >= 4) {
-                addToast(`パーティーがいっぱいのため仲間に加えられません。`);
-                return;
-            }
             // モンスターなら定義から再取得してユニット化
             if (domination.defId) {
                 const unit = getUnitForEnemyId(domination.defId, domination.sex);
                 if (domination.traits) {
                     unit.traits = [...new Set([...domination.traits, ...unit.traits])];
                 }
-                player.party.push(unit);
+                
+                if (player.party.length >= 4) {
+                    player.standby.push(unit);
+                    addToast(`パーティーがいっぱいのため待機所に送りました。`);
+                } else {
+                    player.party.push(unit);
+                }
                 showTextInputModal(
                     "名前変更",
                     "仲間にしたモンスターに名前を付けてください",

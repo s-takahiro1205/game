@@ -49,6 +49,7 @@ const modalTextInput = document.getElementById("modal-text-input");
 // 拠点
 const baseScreen = document.getElementById(SCREENS.baseScreen);
 const changeJobScreen = document.getElementById(SUB_SCREENS.changeJobScreen);
+const mansionScreen = document.getElementById(SUB_SCREENS.mansionScreen);
 const baseSelectExploreMapScreen = document.getElementById(SUB_SCREENS.baseSelectExploreMapScreen);
 
 // 転職
@@ -140,8 +141,11 @@ function render() {
     }
 
     // 拠点：サブ
-    if (gameState.screen === SCREENS.baseScreen && gameState.subScreen === SUB_SCREENS.changeJobScreen) {
-        // 拠点：探索マップ選択
+    if (gameState.screen === SCREENS.baseScreen && gameState.subScreen === SUB_SCREENS.mansionScreen) {
+        // 拠点：待機所
+        renderBaseMansion();
+    } else if (gameState.screen === SCREENS.baseScreen && gameState.subScreen === SUB_SCREENS.changeJobScreen) {
+        // 拠点：転職
         renderBaseChangeJob();
     } else if (gameState.screen === SCREENS.baseScreen && gameState.subScreen === SUB_SCREENS.baseSelectExploreMapScreen) {
         // 拠点：探索マップ選択
@@ -188,6 +192,7 @@ function showScreen() {
         [SCREENS.battleScreen]: battleScreen,
     };
     const subScreens = {
+        [SUB_SCREENS.mansionScreen]: mansionScreen,
         [SUB_SCREENS.changeJobScreen]: changeJobScreen,
         [SUB_SCREENS.baseSelectExploreMapScreen]: baseSelectExploreMapScreen,
         [SUB_SCREENS.exploreEventScreen]: exploreEventScreen,
@@ -417,8 +422,8 @@ function renderMenu() {
                 <!-- <div class="status-avatar">${unit.icon}</div> -->
                 <div>
                 <div class="status-name"><button class="status-rename-btn">🖌︎</button>${unit.name}</div>
-                <div class="status-class">${job.name} - ランク${jobHistory.rank} - [${rankExp}]</div>
-                <div class="status-lv">Lv ${unit.level} - [${exp}]</div>
+                <div class="status-class">${RACES[unit.race].name} ${SEXES[unit.sex].name}</div>
+                <div class="status-lv">Lv ${unit.level} - [${exp}]<br>${job.name} - ランク${jobHistory.rank} - [${rankExp}]</div>
                 <!-- <div class="status-cond">${unit.cond}</div> -->
                 </div>
             </div>
@@ -633,6 +638,80 @@ function renderMenuItems() {
 }
 
 /* ======================
+    待機所
+====================== */
+function renderBaseMansion() {
+    document.getElementById("mansion-screen-back").classList.toggle("hidden", gameState.mansion.formationMode);
+    document.getElementById("formation-start").classList.toggle("hidden", gameState.mansion.formationMode);
+    document.getElementById("formation-cancel").classList.toggle("hidden", !gameState.mansion.formationMode);
+    document.getElementById("formation-end").classList.toggle("hidden", !gameState.mansion.formationMode);
+    document.getElementById("formation-end").classList.toggle("disabled", gameState.mansion.selectedIds.length === 0);
+    // パーティー描画
+    const row = document.getElementById('mansion-party-row');
+    // 通常モード：現パーティ4スロット表示
+    // 編成モード：選択中ユニットをスロットに反映
+    const displayIds = gameState.mansion.formationMode ? gameState.mansion.selectedIds : player.party.map(unit => unit.id);
+    row.innerHTML = '';
+    for (let slot = 0; slot < 4; slot++) {
+        const unitId = displayIds[slot];
+        const all = [...player.party, ...player.standby];
+        const unit = unitId ? all.find(x => x.id === unitId) : null;
+        const div = document.createElement('div');
+        div.className = `mansion-party-slot${unit ? '' : ' empty'}`;
+        if (unit) {
+        div.innerHTML = `
+            <div class="mansion-party-slot-icon">${unit.icon ?? ""}</div>
+            <div class="mansion-party-slot-name">${unit.name}</div>
+            <div class="mansion-party-slot-job">Lv${unit.level}<br>${JOBS[unit.currentJob].name}-${unit.jobs[unit.currentJob].rank === JOBS[unit.currentJob].maxRank ? "マスター" : "ランク" + unit.jobs[unit.currentJob].rank}</div>`
+        } else {
+            div.innerHTML = `<div style="font-size:18px;color:var(--border)">＋</div><div class="mansion-party-slot-name" style="color:var(--text-dim)">空き</div>`;
+        }
+        row.appendChild(div);
+    }
+
+    // 待機ユニット描画
+    const standbys = gameState.mansion.formationMode ? [...player.party, ...player.standby] : player.standby;
+    const grid = document.getElementById('standby-grid');
+
+    grid.innerHTML = standbys.map((unit) => {
+        const selIdx = gameState.mansion.formationMode ? gameState.mansion.selectedIds.indexOf(unit.id) : -1;
+        const isSel = selIdx >= 0;
+        const inParty = player.party.some(_unit => _unit.id === unit.id);
+        const unitBS = calcAllStatus(unit);
+
+        const GKEYS = ['maxHp','maxMp','atk','def','spd','int','dex','size'];
+        // 4列2行に分割（左カラム: HP/攻撃/速度/器用、右カラム: MP/防御/知能/体格）
+        const LEFT  = ['maxHp','atk','spd','dex'];
+        const RIGHT = ['maxMp','def','int','size'];
+        const tableRows = LEFT.map((lk, ri) => {
+            const rk = RIGHT[ri];
+            return `<tr>
+                <td class="standby-card-status-label">${LABEL[lk]}</td>
+                <td><div class="standby-card-status-value">${unitBS[lk]}</div></td>
+                <td style="width:8px"></td>
+                <td class="standby-card-status-label">${LABEL[rk]}</td>
+                <td><div class="standby-card-status-value">${unitBS[rk]}</div></td>
+            </tr>`;
+        }).join('');
+
+        // ${job.name}${rankText}
+        return `<div class="standby-card${gameState.mansion.formationMode ? ' selectable' : ''}${isSel ? ' selected' : ''}" data-unit-id="${unit.id}">
+            <div class="standby-card-icon">
+                ${unit.icon ?? ""}
+                ${isSel ? `<div class="select-num-badge">${selIdx+1}</div>` : ''}
+            </div>
+            <div class="standby-card-name">
+                ${unit.name}
+                ${inParty ? '<span style="font-size:8px;color:var(--gold);margin-left:4px">編成中</span>' : ''}
+            </div>
+            <div class="standby-card-job">Lv${unit.level} [${JOBS[unit.currentJob].name}-${unit.jobs[unit.currentJob].rank === JOBS[unit.currentJob].maxRank ? "マスター" : "ランク" + unit.jobs[unit.currentJob].rank}]</div>
+            <div class="standby-card-sub">${RACES[unit.race].name} ${SEXES[unit.sex].name}</div>
+            <table class="standby-card-statuses">${tableRows}</table>
+        </div>`;
+    }).join('');
+}
+
+/* ======================
     転職
 ====================== */
 function renderBaseChangeJob() {
@@ -670,10 +749,6 @@ function renderBaseChangeJob() {
             if (g > -50) return down + down + mid;
             return down + down + down;
         }
-        // const GKEYS = ['HP','MP','攻撃','防御','速度','知能','器用','体格'];
-        // // 4列2行に分割（左カラム: HP/攻撃/速度/器用、右カラム: MP/防御/知能/体格）
-        // const LEFT  = ['HP','攻撃','速度','器用'];
-        // const RIGHT = ['MP','防御','知能','体格'];
         const GKEYS = ['maxHp','maxMp','atk','def','spd','int','dex','size'];
         // 4列2行に分割（左カラム: HP/攻撃/速度/器用、右カラム: MP/防御/知能/体格）
         const LEFT  = ['maxHp','atk','spd','dex'];

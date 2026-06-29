@@ -785,7 +785,7 @@ function renderBaseChangeJob() {
             <div class="job-card-name">${isAllow ? job.name : '🔒 '+ job.name}${rankText}</div>
             <table class="job-growth-table">${tableRows}</table>
             ${!isUnlock || !isAllow ? `<div class="job-req">転職条件${conditions}</div>` : ''}
-            ${!history ? `<div class="job-req">転職コスト${cost}</div>` : ''}
+            ${!history && cost !== "" ? `<div class="job-req">転職コスト${cost}</div>` : ''}
         </div>`;
     }).join('');
 }

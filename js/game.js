@@ -1933,7 +1933,7 @@ function changeJob(unit, job_id, force = false) {
                     player.money -= job.cost[type];
                     addToast(`${job.cost[type]}G支払った`)
                 } else if (type === "item") {
-                    for (const itemId of job.cost[type]) {
+                    for (const itemId in job.cost[type]) {
                         const targets = player.itemSlot.filter(item => item.id === itemId);
                         // 使用回数の少ない順に使用
                         targets.sort((a, b) => a.count - b.count).slice(0, job.cost[type][itemId]);
@@ -2746,7 +2746,7 @@ async function battleInit(enemies) {
         enemies: enemies.map(enemy => {
             const def = getEnemyById(enemy.id);
             // エネミーなら3%で強化
-            if (def && Math.floor(Math.random() * 100) < 3) {
+            if (def && Math.floor(Math.random() * 100) < 2) {
                 enemy.traits = enemy.traits.includes(TRAITS.mutant.id)
                                 ? enemy.traits
                                 : [...enemy.traits, TRAITS.mutant.id];
@@ -3192,14 +3192,14 @@ function battleResult(isVictory) {
         // mutant特性があれば2倍
         const getRate = (enemy) => {
             const st = calcAllStatus(enemy);
-            return st.traits.length > 0 && st.traits.includes(t => t === TRAITS.mutant.id)
+            return st.traits.length > 0 && st.traits.includes(TRAITS.mutant.id)
                     ? 3
                     : 1
         };
         // 勝利時にリザルトを組み立ててセット
         const totalMoney = gameState.battle.enemies.reduce((acc, enemy) => acc + enemy.money * getRate(enemy), 0);
         const totalExp = gameState.battle.enemies.reduce((acc, enemy) => acc + enemy.exp * getRate(enemy), 0);
-        const totalRankExp = gameState.battle.enemies.reduce((acc, enemy) => acc + (enemy.rankExp ? enemy.rankExp * getRate(enemy) : (Math.floor(enemy.exp * getRate(enemy) / 100) + 1)), 0);
+        const totalRankExp = gameState.battle.enemies.reduce((acc, enemy) => acc + (enemy.rankExp ? enemy.rankExp * getRate(enemy) : (Math.floor(enemy.exp / 100) + 1) * getRate(enemy)), 0);
 
         // 経験値加算処理
         const level_ups = [];
@@ -3710,10 +3710,10 @@ function rollDropItems(enemies) {
     }
 
     const items = [];
+    // ここは2
     for (const itemId in result) {
-        const item = getItemById(itemId);
         for (let i = 0; i < result[itemId]; i++) {
-            items.push(item);
+            items.push(getItemById(itemId));
         }
     }
 
